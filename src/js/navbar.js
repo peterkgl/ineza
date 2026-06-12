@@ -7,7 +7,9 @@
  */
 function toggleDropdown() {
   var dropdown = document.getElementById('profileDropdown');
-  dropdown.classList.toggle('open');
+  if (dropdown) {
+    dropdown.classList.toggle('open');
+  }
 }
 
 /**
@@ -24,17 +26,15 @@ document.addEventListener('click', function (e) {
 });
 
 /**
- * Handle Dark/Light theme toggling and local storage caching
+ * Handle Dark/Light theme toggling on the Dashboard Page
  */
 document.addEventListener('DOMContentLoaded', function () {
   var themeToggleBtn = document.getElementById('themeToggleBtn');
   if (themeToggleBtn) {
-    // Check localStorage or system theme preference
     var savedTheme = localStorage.getItem('theme');
     var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     var currentTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
 
-    // Apply the active theme
     document.documentElement.setAttribute('data-theme', currentTheme);
 
     themeToggleBtn.addEventListener('click', function () {
