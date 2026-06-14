@@ -1,3 +1,4 @@
+<?php require_once 'login/auth.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,7 +26,7 @@
 <!-- ========== MAIN ========== -->
 <div class="main">
 
-  <?php include './include/navbar.php'; ?>
+  <?php $page_title = "Cash Lead Schedule"; include './include/navbar.php'; ?>
 
   <!-- ========== CONTENT ========== -->
   <div class="content" id="dashboardContent">

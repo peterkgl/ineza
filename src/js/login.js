@@ -54,31 +54,51 @@ function handleLogin() {
     return;
   }
 
-  // Loading state
-  btn.disabled = true;
-  txt.textContent = 'Signing in…';
-  spin.style.display = 'block';
-  arr.style.display = 'none';
-  btn.style.opacity = '.85';
+  // Send AJAX request to PHP login backend
+  const formData = new URLSearchParams();
+  formData.append('email', email);
+  formData.append('password', pw);
 
-  setTimeout(() => {
+  fetch('pages/login/process', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: formData
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(data => {
     spin.style.display = 'none';
     arr.style.display = 'block';
     btn.disabled = false;
     btn.style.opacity = '1';
     txt.textContent = 'Sign In';
 
-    // Mock verification: accept any valid format email + min 6 char password
-    if (email.includes('@') && pw.length >= 6) {
+    if (data.success) {
       sucEl.style.display = 'flex';
       setTimeout(() => {
-        window.location.href = 'pages/dashboard.php';
+        window.location.href = 'pages/dashboard';
       }, 1000);
     } else {
-      errTxt.textContent = 'Invalid email or password. Please try again (min 6 char password).';
+      errTxt.textContent = data.message || 'Invalid email or password. Please try again.';
       errEl.style.display = 'flex';
     }
-  }, 1200);
+  })
+  .catch(error => {
+    spin.style.display = 'none';
+    arr.style.display = 'block';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    txt.textContent = 'Sign In';
+    errTxt.textContent = 'An error occurred. Please try again later.';
+    errEl.style.display = 'flex';
+    console.error('Login Error:', error);
+  });
 }
 
 // Add enter key submission listener

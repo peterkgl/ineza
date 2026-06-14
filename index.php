@@ -1,3 +1,13 @@
+<?php
+require_once __DIR__ . '/config/session.php';
+
+if (isset($_SESSION['user_id'])) {
+    $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME']);
+    $base_dir = rtrim(dirname($script), '/');
+    header("Location: " . $base_dir . "/pages/dashboard");
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
