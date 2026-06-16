@@ -9,7 +9,6 @@ if ($pages_pos !== false) {
 }
 $prefix_to_pages = ($depth === 2) ? '../' : './';
 ?>
-<!-- ========== SIDEBAR ========== -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="logo-badge">
@@ -21,7 +20,6 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
     </div>
   </div>
 
-  <!-- Main Section -->
   <div class="sidebar-section">Main</div>
   <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'dashboard') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>dashboard" id="nav-dashboard">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -30,7 +28,6 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
 
   <div class="sidebar-divider"></div>
 
-  <!-- Suppliers Section -->
   <div class="sidebar-section">Suppliers</div>
   <a class="nav-item" href="#" id="nav-suppliers">
     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -43,7 +40,6 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
 
   <div class="sidebar-divider"></div>
 
-  <!-- Product & Stock Section -->
   <div class="sidebar-section">Products &amp; Stock</div>
   <a class="nav-item" href="#" id="nav-products">
     <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
@@ -57,21 +53,19 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
 
   <div class="sidebar-divider"></div>
 
-  <!-- Finance Section -->
   <div class="sidebar-section">Finance</div>
   <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'currencies') !== false || strpos($_SERVER['SCRIPT_NAME'], 'Currencies') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>Currencies/index" id="nav-currencies">
     <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
     Currencies
     <span class="nav-badge">Base</span>
   </a>
-  <a class="nav-item" href="#" id="nav-exchange-rates">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'Exchange_Rates') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>Exchange_Rates/index" id="nav-exchange-rates">
     <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
     Exchange Rates
   </a>
 
   <div class="sidebar-divider"></div>
 
-  <!-- User Management Section -->
   <div class="sidebar-section">User Management</div>
   <a class="nav-item" href="#" id="nav-users">
     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -88,7 +82,6 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
 
   <div class="sidebar-divider"></div>
 
-  <!-- System Logs Section -->
   <div class="sidebar-section">System Logs</div>
   <a class="nav-item" href="#" id="nav-audit-logs">
     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
