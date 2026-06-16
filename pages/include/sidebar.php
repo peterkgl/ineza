@@ -67,7 +67,7 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
   <div class="sidebar-divider"></div>
 
   <div class="sidebar-section">User Management</div>
-  <a class="nav-item" href="#" id="nav-users">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'users') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>users/index" id="nav-users">
     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     Users
   </a>
