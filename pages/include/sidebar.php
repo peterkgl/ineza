@@ -71,7 +71,7 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     Users
   </a>
-  <a class="nav-item" href="#" id="nav-roles">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'role') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>role/index" id="nav-roles">
     <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     Roles
   </a>
