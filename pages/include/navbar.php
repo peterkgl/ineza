@@ -1,7 +1,19 @@
+<?php
+$script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME']);
+$pages_pos = strpos($script, '/pages/');
+$depth = 1;
+if ($pages_pos !== false) {
+    $sub_path = substr($script, $pages_pos + 7);
+    $segments = explode('/', $sub_path);
+    $depth = count($segments);
+}
+$prefix_to_pages = ($depth === 2) ? '../' : './';
+$prefix_to_root = ($depth === 2) ? '../../' : '../';
+?>
 <!-- TOPBAR / NAVBAR -->
 <header class="topbar">
   <div class="breadcrumb">
-    <a href="<?php echo (strpos($_SERVER['SCRIPT_NAME'], '/profile/') !== false) ? '../dashboard' : 'dashboard'; ?>">Home</a>
+    <a href="<?php echo $prefix_to_pages; ?>dashboard">Home</a>
     <span class="sep">/</span>
     <span class="cur"><?php echo isset($page_title) ? htmlspecialchars($page_title) : 'Cash Lead Schedule'; ?></span>
   </div>
@@ -26,7 +38,7 @@
         <div class="avatar">
           <?php 
           $userId = $_SESSION['user_id'] ?? 0;
-          $prefix = (strpos($_SERVER['SCRIPT_NAME'], '/profile/') !== false) ? '../../' : '../';
+          $prefix = $prefix_to_root;
           $avatarGlob = glob($prefix . "src/images/profile/user_" . $userId . ".*");
           if (!empty($avatarGlob)) {
               echo '<img src="' . htmlspecialchars($avatarGlob[0]) . '" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">';
@@ -63,12 +75,12 @@
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41"/></svg>
           Settings
         </div>
-        <a href="<?php echo (strpos($_SERVER['SCRIPT_NAME'], '/profile/') !== false) ? './my_profile' : '../pages/profile/my_profile'; ?>" class="dropdown-item" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%; gap: 10px;">
+        <a href="<?php echo (strpos($_SERVER['SCRIPT_NAME'], '/profile/') !== false) ? './my_profile' : $prefix_to_pages . 'profile/my_profile'; ?>" class="dropdown-item" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%; gap: 10px;">
           <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           My Profile
         </a>
         <div class="dropdown-divider"></div>
-        <a href="<?php echo (strpos($_SERVER['SCRIPT_NAME'], '/profile/') !== false) ? '../../pages/login/logout' : '../pages/login/logout'; ?>" class="dropdown-item danger" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%; gap: 10px;">
+        <a href="<?php echo $prefix_to_pages . 'login/logout'; ?>" class="dropdown-item danger" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%; gap: 10px;">
           <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
           Logout
         </a>

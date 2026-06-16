@@ -1,3 +1,14 @@
+<?php
+$script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME']);
+$pages_pos = strpos($script, '/pages/');
+$depth = 1;
+if ($pages_pos !== false) {
+    $sub_path = substr($script, $pages_pos + 7);
+    $segments = explode('/', $sub_path);
+    $depth = count($segments);
+}
+$prefix_to_pages = ($depth === 2) ? '../' : './';
+?>
 <!-- ========== SIDEBAR ========== -->
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -12,7 +23,7 @@
 
   <!-- Main Section -->
   <div class="sidebar-section">Main</div>
-  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'dashboard') !== false) ? 'active' : ''; ?>" href="<?php echo (strpos($_SERVER['SCRIPT_NAME'], '/profile/') !== false) ? '../dashboard' : 'dashboard'; ?>" id="nav-dashboard">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'dashboard') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>dashboard" id="nav-dashboard">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     Dashboard
   </a>
@@ -48,7 +59,7 @@
 
   <!-- Finance Section -->
   <div class="sidebar-section">Finance</div>
-  <a class="nav-item" href="#" id="nav-currencies">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'currencies') !== false || strpos($_SERVER['SCRIPT_NAME'], 'Currencies') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>Currencies/index" id="nav-currencies">
     <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
     Currencies
     <span class="nav-badge">Base</span>
