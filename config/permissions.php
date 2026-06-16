@@ -1,23 +1,11 @@
 <?php
-// Centralized permission checking and audit logging helpers
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-/**
- * Checks if the logged in user has a specific permission.
- * Admins are automatically granted all permissions.
- *
- * @param mysqli $conn
- * @param int $userId
- * @param string $permissionCode
- * @return bool
- */
 function hasPermission($conn, $userId, $permissionCode) {
     if (!$userId) return false;
 
-    // Check if user has 'admin' role
     $userId = (int)$userId;
     $roleQuery = "SELECT r.name FROM roles r 
                   JOIN user_roles ur ON r.id = ur.role_id 
@@ -31,7 +19,6 @@ function hasPermission($conn, $userId, $permissionCode) {
         }
     }
 
-    // Otherwise, check if user's roles have the permission
     $permissionCodeEsc = mysqli_real_escape_string($conn, $permissionCode);
     $permQuery = "SELECT COUNT(*) as count FROM role_permissions rp
                   JOIN permissions p ON rp.permission_id = p.id
@@ -47,19 +34,6 @@ function hasPermission($conn, $userId, $permissionCode) {
     return false;
 }
 
-/**
- * Log an action to the audit_log table.
- *
- * @param mysqli $conn
- * @param string $action CREATE, UPDATE, DELETE, VIEW, etc.
- * @param string $targetTable Table affected
- * @param string|null $targetName Human-readable name of the affected record
- * @param string|null $targetDescription Summary of the affected record
- * @param array|null $oldValues Array of values before change
- * @param array|null $newValues Array of values after change
- * @param string|null $notes Additional notes
- * @return bool
- */
 function logAudit($conn, $action, $targetTable, $targetName = null, $targetDescription = null, $oldValues = null, $newValues = null, $notes = null) {
     $firstName = $_SESSION['first_name'] ?? '';
     $lastName = $_SESSION['last_name'] ?? '';
