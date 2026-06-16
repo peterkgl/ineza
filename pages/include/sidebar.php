@@ -12,129 +12,79 @@
 
   <!-- Main Section -->
   <div class="sidebar-section">Main</div>
-  <a class="nav-item active" href="#" id="nav-main">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'dashboard') !== false) ? 'active' : ''; ?>" href="<?php echo (strpos($_SERVER['SCRIPT_NAME'], '/profile/') !== false) ? '../dashboard' : 'dashboard'; ?>" id="nav-dashboard">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     Dashboard
   </a>
-  <a class="nav-item" href="#" id="nav-totals">
-    <svg viewBox="0 0 24 24"><path d="M5 8h14M5 12h14M5 16h14M3 6v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2z"/></svg>
-    Totals
+
+  <div class="sidebar-divider"></div>
+
+  <!-- Suppliers Section -->
+  <div class="sidebar-section">Suppliers</div>
+  <a class="nav-item" href="#" id="nav-suppliers">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    Suppliers
   </a>
-  <a class="nav-item" href="#" id="nav-monthly">
-    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-    Monthly Transactions
+  <a class="nav-item" href="#" id="nav-supplier-advances">
+    <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    Supplier Advances
   </a>
 
   <div class="sidebar-divider"></div>
 
-  <!-- Bank Accounts -->
-  <div class="sidebar-section">Bank Accounts</div>
-  <a class="nav-item" href="#" id="nav-usd-equity">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-    US$ Equity
+  <!-- Product & Stock Section -->
+  <div class="sidebar-section">Products &amp; Stock</div>
+  <a class="nav-item" href="#" id="nav-products">
+    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    Products
+    <span class="nav-badge green">Active</span>
   </a>
-  <a class="nav-item" href="#" id="nav-rwf-equity">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-    RWF Equity
-  </a>
-  <a class="nav-item" href="#" id="nav-euro-equity">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-    Euro Equity
+  <a class="nav-item" href="#" id="nav-product-elements">
+    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Product Elements
   </a>
 
   <div class="sidebar-divider"></div>
 
-  <!-- Bank Reconciliation -->
-  <div class="sidebar-section">Bank Recon</div>
-  <a class="nav-item" href="#" id="nav-recon-usd">
-    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    Recon — $ Equity
-  </a>
-  <a class="nav-item" href="#" id="nav-recon-rwf">
-    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    Recon — RWF Equity
-  </a>
-  <a class="nav-item" href="#" id="nav-recon-euro">
-    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    Recon — Euro
-  </a>
-
-  <div class="sidebar-divider"></div>
-
-  <!-- Petty Cash -->
-  <div class="sidebar-section">Petty Cash</div>
-  <a class="nav-item" href="#" id="nav-pc-hq">
-    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
-    PC INEZA HQ
-  </a>
-  <a class="nav-item" href="#" id="nav-cashcount-hq">
-    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-    Cash Count HQ
-  </a>
-  <a class="nav-item" href="#" id="nav-pc-rub">
-    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
-    PC INEZA RUB
-  </a>
-  <a class="nav-item" href="#" id="nav-cashcount-rub">
-    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-    Cash Count RUB
-  </a>
-
-  <div class="sidebar-divider"></div>
-
-  <!-- Purchases & Stock -->
-  <div class="sidebar-section">Purchases &amp; Stock</div>
-  <a class="nav-item" href="#" id="nav-purchase-ta">
-    <svg viewBox="0 0 24 24"><path d="M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h4M15 3h4a2 2 0 012 2v10a2 2 0 01-2 2h-4M12 7v10M9 12h6"/></svg>
-    Purchase Logs — Ta
-    <span class="nav-badge green">Ta</span>
-  </a>
-  <a class="nav-item" href="#" id="nav-purchase-sn">
-    <svg viewBox="0 0 24 24"><path d="M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h4M15 3h4a2 2 0 012 2v10a2 2 0 01-2 2h-4M12 7v10M9 12h6"/></svg>
-    Purchase Logs — Sn
-    <span class="nav-badge green">Sn</span>
-  </a>
-  <a class="nav-item" href="#" id="nav-tin-summary">
-    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-    Tin Summary
-  </a>
-  <a class="nav-item" href="#" id="nav-ta-summary">
-    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-    Ta Summary
-  </a>
-
-  <div class="sidebar-divider"></div>
-
-  <!-- Finance -->
+  <!-- Finance Section -->
   <div class="sidebar-section">Finance</div>
-  <a class="nav-item" href="#" id="nav-accounts">
-    <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
-    Chart of Accounts
+  <a class="nav-item" href="#" id="nav-currencies">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Currencies
+    <span class="nav-badge">Base</span>
   </a>
-  <a class="nav-item" href="#" id="nav-payable">
-    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-    Accounts Payable
-    <span class="nav-badge">10</span>
-  </a>
-  <a class="nav-item" href="#" id="nav-daily-exp">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    Daily Expenses
-  </a>
-  <a class="nav-item" href="#" id="nav-gedeon">
-    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Gedeon Account
+  <a class="nav-item" href="#" id="nav-exchange-rates">
+    <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    Exchange Rates
   </a>
 
   <div class="sidebar-divider"></div>
 
-  <!-- System -->
-  <div class="sidebar-section">System</div>
-  <a class="nav-item" href="#" id="nav-settings">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41"/></svg>
-    Settings
+  <!-- User Management Section -->
+  <div class="sidebar-section">User Management</div>
+  <a class="nav-item" href="#" id="nav-users">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Users
   </a>
-  <a class="nav-item" href="#" id="nav-help">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-    Help &amp; Support
+  <a class="nav-item" href="#" id="nav-roles">
+    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Roles
+  </a>
+  <a class="nav-item" href="#" id="nav-permissions">
+    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Permissions
+  </a>
+
+  <div class="sidebar-divider"></div>
+
+  <!-- System Logs Section -->
+  <div class="sidebar-section">System Logs</div>
+  <a class="nav-item" href="#" id="nav-audit-logs">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Audit Logs
+  </a>
+  <a class="nav-item" href="#" id="nav-login-history">
+    <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+    Login History
   </a>
 </aside>
