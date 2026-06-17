@@ -128,8 +128,9 @@ if ($currResult) {
     <div class="rates-grid">
 
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
           <div class="card-title">Registered Rates Log</div>
+          <input type="text" id="searchInput" class="form-control" placeholder="Search..." style="max-width: 240px; padding: 6px 10px; font-size: 12px; margin: 0;">
         </div>
         
         <div id="alertPlaceholder"></div>
@@ -138,6 +139,7 @@ if ($currResult) {
           <table class="data-table" id="ratesTable">
             <thead>
               <tr>
+                <th style="width: 50px;">#</th>
                 <th>Date</th>
                 <th>From</th>
                 <th>To</th>
@@ -148,7 +150,7 @@ if ($currResult) {
             </thead>
             <tbody id="ratesList">
               <tr>
-                <td colspan="6" class="table-empty">Loading exchange rates...</td>
+                <td colspan="7" class="table-empty">Loading exchange rates...</td>
               </tr>
             </tbody>
           </table>

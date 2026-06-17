@@ -29,7 +29,7 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
   <div class="sidebar-divider"></div>
 
   <div class="sidebar-section">Suppliers</div>
-  <a class="nav-item" href="#" id="nav-suppliers">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'suppliers') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>suppliers/index" id="nav-suppliers">
     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
     Suppliers
   </a>
@@ -41,12 +41,12 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
   <div class="sidebar-divider"></div>
 
   <div class="sidebar-section">Products &amp; Stock</div>
-  <a class="nav-item" href="#" id="nav-products">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'products') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>products/index" id="nav-products">
     <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
     Products
     <span class="nav-badge green">Active</span>
   </a>
-  <a class="nav-item" href="#" id="nav-product-elements">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'product_elements') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>product_elements/index" id="nav-product-elements">
     <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
     Product Elements
   </a>
@@ -83,7 +83,7 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
   <div class="sidebar-divider"></div>
 
   <div class="sidebar-section">System Logs</div>
-  <a class="nav-item" href="#" id="nav-audit-logs">
+  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'audit_logs') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>audit_logs/index" id="nav-audit-logs">
     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
     Audit Logs
   </a>

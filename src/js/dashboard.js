@@ -30,4 +30,50 @@ document.addEventListener('DOMContentLoaded', function () {
       card.style.transform = 'translateY(0)';
     });
   });
+
+  // Live search and numbering for Accounts Payable table
+  var dashboardSearch = document.getElementById('dashboardSearch');
+  var payableList = document.getElementById('payableList');
+  
+  if (dashboardSearch && payableList) {
+    var originalRows = Array.prototype.slice.call(payableList.querySelectorAll('tr'));
+    
+    dashboardSearch.addEventListener('input', function () {
+      var query = dashboardSearch.value.toLowerCase().trim();
+      var visibleCount = 0;
+      
+      // Remove any existing "no match" row
+      var existingNoMatch = payableList.querySelector('.no-match-row');
+      if (existingNoMatch) {
+        existingNoMatch.parentNode.removeChild(existingNoMatch);
+      }
+      
+      originalRows.forEach(function (row) {
+        var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
+        if (cells.length < 2) return;
+        
+        // Collect text content from all cells except the first (# column)
+        var textContent = '';
+        for (var i = 1; i < cells.length; i++) {
+          textContent += ' ' + cells[i].textContent.toLowerCase();
+        }
+        
+        if (textContent.indexOf(query) !== -1) {
+          row.style.display = '';
+          visibleCount++;
+          // Update sequential numbering starting from 1
+          cells[0].textContent = visibleCount;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      
+      if (visibleCount === 0) {
+        var noMatchRow = document.createElement('tr');
+        noMatchRow.className = 'no-match-row';
+        noMatchRow.innerHTML = '<td colspan="8" class="table-empty" style="text-align: center;">No matching suppliers found.</td>';
+        payableList.appendChild(noMatchRow);
+      }
+    });
+  }
 });

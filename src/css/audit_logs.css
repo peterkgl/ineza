@@ -1,0 +1,316 @@
+.audit-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .audit-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+}
+
+.search-box svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  stroke: var(--text3);
+  fill: none;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 8px 10px 8px 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, background .15s;
+}
+
+.search-box input:focus {
+  border-color: var(--border-hover);
+  background: var(--card);
+  box-shadow: 0 0 0 3px rgba(232, 83, 26, 0.06);
+}
+
+.limit-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.badge-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badge-create {
+  background: var(--alert-green-bg);
+  color: var(--green);
+}
+
+.badge-update {
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+
+.badge-delete {
+  background: var(--alert-red-bg);
+  color: var(--red);
+}
+
+.badge-view {
+  background: var(--bg);
+  color: var(--text3);
+  border: 1px solid var(--border);
+}
+
+.badge-login {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+
+.badge-logout {
+  background: rgba(111, 66, 193, 0.1);
+  color: rgb(111, 66, 193);
+}
+
+.pagination-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text2);
+}
+
+@media (max-width: 576px) {
+  .pagination-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.pagination-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.pagination-nav button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  outline: none;
+}
+
+.pagination-nav button:hover:not(:disabled) {
+  background: var(--bg);
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+.pagination-nav button.active {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+  font-weight: 500;
+}
+
+.pagination-nav button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.details-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.details-modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.details-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.details-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.details-title svg {
+  stroke: var(--orange);
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+  fill: none;
+}
+
+.details-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text3);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.details-close:hover {
+  color: var(--text);
+}
+
+.details-body {
+  padding: 20px;
+  overflow-y: auto;
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+}
+
+.details-grid-label {
+  font-weight: 600;
+  color: var(--text3);
+  font-size: 11.5px;
+  text-transform: uppercase;
+}
+
+.details-payload-section {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.details-payload-title {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.details-payload-pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  font-family: monospace;
+  font-size: 11.5px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  color: var(--text);
+}
+
+.table-empty {
+  text-align: center;
+  padding: 30px !important;
+  color: var(--text3);
+  font-size: 12.5px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Action Buttons --- */
+.btn-icon-only.view-details-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--orange);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+.btn-icon-only.view-details-btn:hover {
+  background: var(--orange-light);
+  border-color: var(--orange);
+  color: var(--orange);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(232, 83, 26, 0.12), 0 2px 4px -1px rgba(232, 83, 26, 0.08);
+}
+
+.btn-icon-only.view-details-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  transition: transform 0.2s ease-in-out;
+}
+
+.btn-icon-only.view-details-btn:hover svg {
+  transform: scale(1.15);
+}

@@ -16,6 +16,54 @@ document.addEventListener('DOMContentLoaded', function () {
   var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   
   var activeDeleteId = null;
+  var allRates = [];
+  var searchInput = document.getElementById('searchInput');
+
+  function applySearchFilter() {
+    var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    var rows = Array.prototype.slice.call(ratesList.querySelectorAll('tr'));
+    
+    var existingNoMatch = ratesList.querySelector('.no-match-row');
+    if (existingNoMatch) {
+      existingNoMatch.parentNode.removeChild(existingNoMatch);
+    }
+    
+    var emptyRow = ratesList.querySelector('.table-empty');
+    if (emptyRow && rows.length === 1 && !existingNoMatch) {
+      return;
+    }
+    
+    var visibleCount = 0;
+    rows.forEach(function (row) {
+      if (row.classList.contains('no-match-row')) return;
+      var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
+      if (cells.length < 2) return;
+      
+      var textContent = '';
+      for (var i = 1; i < cells.length; i++) {
+        textContent += ' ' + cells[i].textContent.toLowerCase();
+      }
+      
+      if (textContent.indexOf(query) !== -1) {
+        row.style.display = '';
+        visibleCount++;
+        cells[0].textContent = visibleCount;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+    
+    if (visibleCount === 0 && rows.length > 0) {
+      var noMatchRow = document.createElement('tr');
+      noMatchRow.className = 'no-match-row';
+      noMatchRow.innerHTML = '<td colspan="7" class="table-empty" style="text-align: center;">No matching exchange rates found.</td>';
+      ratesList.appendChild(noMatchRow);
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', applySearchFilter);
+  }
 
   function fetchRates() {
     fetch('rates_api.php?action=list')
@@ -24,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .then(function (result) {
         if (result.success) {
+          allRates = result.data;
           renderRates(result.data);
           updateStats(result.data);
           if (result.token) {
@@ -41,15 +90,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function renderRates(rates) {
     if (!rates || rates.length === 0) {
-      ratesList.innerHTML = '<tr><td colspan="6" class="table-empty">No exchange rates registered yet.</td></tr>';
+      ratesList.innerHTML = '<tr><td colspan="7" class="table-empty">No exchange rates registered yet.</td></tr>';
       return;
     }
 
     var html = '';
-    rates.forEach(function (r) {
+    rates.forEach(function (r, index) {
       var sourceVal = r.source ? escapeHtml(r.source) : '—';
       
       html += '<tr>' +
+        '<td>' + (index + 1) + '</td>' +
         '<td>' + escapeHtml(r.rate_date) + '</td>' +
         '<td><span class="code-badge">' + escapeHtml(r.from_code) + '</span></td>' +
         '<td><span class="code-badge">' + escapeHtml(r.to_code) + '</span></td>' +
@@ -70,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     ratesList.innerHTML = html;
     attachRowEventListeners(rates);
+    applySearchFilter();
   }
 
   function updateStats(rates) {

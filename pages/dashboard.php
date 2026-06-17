@@ -110,9 +110,10 @@
       <div class="left-col">
         <!-- ACCOUNTS PAYABLE TABLE -->
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
             <div class="card-title">Accounts Payable — Mineral Suppliers</div>
-            <div class="card-actions">
+            <div class="card-actions" style="display: flex; align-items: center; gap: 8px;">
+              <input type="text" id="dashboardSearch" class="form-control" placeholder="Search..." style="max-width: 180px; padding: 6px 10px; font-size: 12px; margin: 0;">
               <button class="btn-sm">Filter</button>
               <button class="btn-sm">Export CSV</button>
             </div>
@@ -120,6 +121,7 @@
           <table class="data-table">
             <thead>
               <tr>
+                <th style="width: 50px;">#</th>
                 <th>Supplier</th>
                 <th>Lot</th>
                 <th>Weight (kg)</th>
@@ -129,8 +131,9 @@
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="payableList">
               <tr>
+                <td>1</td>
                 <td class="td-name">Paulin Murego</td>
                 <td><span class="code-badge">Tin-Lot 01&02</span></td>
                 <td>—</td>
@@ -140,6 +143,7 @@
                 <td><span class="status-pill pill-amber">Partial</span></td>
               </tr>
               <tr>
+                <td>2</td>
                 <td class="td-name">Paulin Murego</td>
                 <td><span class="code-badge">Tin-Lot 03</span></td>
                 <td>3,241.9</td>
@@ -149,6 +153,7 @@
                 <td><span class="status-pill pill-red">Unpaid</span></td>
               </tr>
               <tr>
+                <td>3</td>
                 <td class="td-name">Darius Bimenyimana</td>
                 <td><span class="code-badge">Tin-Lot 03</span></td>
                 <td>1,178.4</td>
@@ -158,6 +163,7 @@
                 <td><span class="status-pill pill-red">Unpaid</span></td>
               </tr>
               <tr>
+                <td>4</td>
                 <td class="td-name">Richard Akayezu</td>
                 <td><span class="code-badge">Tin-Lot 03</span></td>
                 <td>354.0</td>
@@ -167,6 +173,7 @@
                 <td><span class="status-pill pill-red">Unpaid</span></td>
               </tr>
               <tr>
+                <td>5</td>
                 <td class="td-name">Marc Nshimyumuremyi</td>
                 <td><span class="code-badge">Tin-Lot 03</span></td>
                 <td>1,843.0</td>
@@ -176,6 +183,7 @@
                 <td><span class="status-pill pill-red">Unpaid</span></td>
               </tr>
               <tr>
+                <td>6</td>
                 <td class="td-name">Eprocomi</td>
                 <td><span class="code-badge">Tin-Lot 03</span></td>
                 <td>2,599.8</td>
@@ -185,6 +193,7 @@
                 <td><span class="status-pill pill-amber">Partial</span></td>
               </tr>
               <tr>
+                <td>7</td>
                 <td class="td-name">Eprocomi</td>
                 <td><span class="code-badge">Ta-Lot 04</span></td>
                 <td>1,087.4</td>
@@ -194,6 +203,7 @@
                 <td><span class="status-pill pill-amber">Partial</span></td>
               </tr>
               <tr>
+                <td>8</td>
                 <td class="td-name">Bosco</td>
                 <td><span class="code-badge">Tin-Lot 05</span></td>
                 <td>1,407.5</td>
@@ -203,6 +213,7 @@
                 <td><span class="status-pill pill-amber">Partial</span></td>
               </tr>
               <tr>
+                <td>9</td>
                 <td class="td-name">Bosco</td>
                 <td><span class="code-badge">Tin-Lot 03</span></td>
                 <td>949.4</td>

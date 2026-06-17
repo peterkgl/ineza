@@ -19,6 +19,54 @@ document.addEventListener('DOMContentLoaded', function () {
   var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   
   var activeDeleteId = null;
+  var allUsers = [];
+  var searchInput = document.getElementById('searchInput');
+
+  function applySearchFilter() {
+    var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    var rows = Array.prototype.slice.call(usersList.querySelectorAll('tr'));
+    
+    var existingNoMatch = usersList.querySelector('.no-match-row');
+    if (existingNoMatch) {
+      existingNoMatch.parentNode.removeChild(existingNoMatch);
+    }
+    
+    var emptyRow = usersList.querySelector('.table-empty');
+    if (emptyRow && rows.length === 1 && !existingNoMatch) {
+      return;
+    }
+    
+    var visibleCount = 0;
+    rows.forEach(function (row) {
+      if (row.classList.contains('no-match-row')) return;
+      var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
+      if (cells.length < 2) return;
+      
+      var textContent = '';
+      for (var i = 1; i < cells.length; i++) {
+        textContent += ' ' + cells[i].textContent.toLowerCase();
+      }
+      
+      if (textContent.indexOf(query) !== -1) {
+        row.style.display = '';
+        visibleCount++;
+        cells[0].textContent = visibleCount;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+    
+    if (visibleCount === 0 && rows.length > 0) {
+      var noMatchRow = document.createElement('tr');
+      noMatchRow.className = 'no-match-row';
+      noMatchRow.innerHTML = '<td colspan="7" class="table-empty" style="text-align: center;">No matching users found.</td>';
+      usersList.appendChild(noMatchRow);
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', applySearchFilter);
+  }
 
   function fetchUsers() {
     fetch('users_api.php?action=list')
@@ -27,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .then(function (result) {
         if (result.success) {
+          allUsers = result.data;
           renderUsers(result.data);
           updateStats(result.data);
           if (result.token) {
@@ -44,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function renderUsers(users) {
     if (!users || users.length === 0) {
-      usersList.innerHTML = '<tr><td colspan="6" class="table-empty">No users registered yet.</td></tr>';
+      usersList.innerHTML = '<tr><td colspan="7" class="table-empty">No users registered yet.</td></tr>';
       return;
     }
 
@@ -52,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var currentUserId = usersTable ? parseInt(usersTable.getAttribute('data-current-user-id'), 10) : 0;
 
     var html = '';
-    users.forEach(function (u) {
+    users.forEach(function (u, index) {
       var nameVal = escapeHtml(u.first_name + ' ' + u.last_name);
       var phoneVal = u.phone_number ? escapeHtml(u.phone_number) : '—';
       var roleVal = escapeHtml(u.role_name);
@@ -69,6 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       html += '<tr>' +
+        '<td>' + (index + 1) + '</td>' +
         '<td><strong>' + nameVal + '</strong></td>' +
         '<td>' + escapeHtml(u.email) + '</td>' +
         '<td>' + phoneVal + '</td>' +
@@ -87,6 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     usersList.innerHTML = html;
     attachRowEventListeners(users);
+    applySearchFilter();
   }
 
   function updateStats(users) {

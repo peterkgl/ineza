@@ -128,8 +128,9 @@ if ($permsResult) {
     <div class="roles-grid">
 
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
           <div class="card-title">Configured Security Roles</div>
+          <input type="text" id="searchInput" class="form-control" placeholder="Search..." style="max-width: 240px; padding: 6px 10px; font-size: 12px; margin: 0;">
         </div>
         
         <div id="alertPlaceholder"></div>
@@ -138,6 +139,7 @@ if ($permsResult) {
           <table class="data-table" id="rolesTable">
             <thead>
               <tr>
+                <th style="width: 50px;">#</th>
                 <th>Role Name</th>
                 <th>Description</th>
                 <th>Privileges Assigned</th>
@@ -147,7 +149,7 @@ if ($permsResult) {
             </thead>
             <tbody id="rolesList">
               <tr>
-                <td colspan="5" class="table-empty">Loading security roles...</td>
+                <td colspan="6" class="table-empty">Loading security roles...</td>
               </tr>
             </tbody>
           </table>

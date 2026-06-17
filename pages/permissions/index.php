@@ -119,8 +119,9 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
     <div class="permissions-grid">
 
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
           <div class="card-title">Registered Security Privileges</div>
+          <input type="text" id="searchInput" class="form-control" placeholder="Search..." style="max-width: 240px; padding: 6px 10px; font-size: 12px; margin: 0;">
         </div>
         
         <div id="alertPlaceholder"></div>
@@ -129,6 +130,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
           <table class="data-table" id="permissionsTable">
             <thead>
               <tr>
+                <th style="width: 50px;">#</th>
                 <th>Permission Name</th>
                 <th>System Code</th>
                 <th>Roles Assigned</th>
@@ -138,7 +140,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
             </thead>
             <tbody id="permissionsList">
               <tr>
-                <td colspan="5" class="table-empty">Loading system permissions...</td>
+                <td colspan="6" class="table-empty">Loading system permissions...</td>
               </tr>
             </tbody>
           </table>

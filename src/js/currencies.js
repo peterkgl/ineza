@@ -16,6 +16,54 @@ document.addEventListener('DOMContentLoaded', function () {
   var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   
   var activeDeleteId = null;
+  var allCurrencies = [];
+  var searchInput = document.getElementById('searchInput');
+
+  function applySearchFilter() {
+    var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    var rows = Array.prototype.slice.call(currenciesList.querySelectorAll('tr'));
+    
+    var existingNoMatch = currenciesList.querySelector('.no-match-row');
+    if (existingNoMatch) {
+      existingNoMatch.parentNode.removeChild(existingNoMatch);
+    }
+    
+    var emptyRow = currenciesList.querySelector('.table-empty');
+    if (emptyRow && rows.length === 1 && !existingNoMatch) {
+      return;
+    }
+    
+    var visibleCount = 0;
+    rows.forEach(function (row) {
+      if (row.classList.contains('no-match-row')) return;
+      var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
+      if (cells.length < 2) return;
+      
+      var textContent = '';
+      for (var i = 1; i < cells.length; i++) {
+        textContent += ' ' + cells[i].textContent.toLowerCase();
+      }
+      
+      if (textContent.indexOf(query) !== -1) {
+        row.style.display = '';
+        visibleCount++;
+        cells[0].textContent = visibleCount;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+    
+    if (visibleCount === 0 && rows.length > 0) {
+      var noMatchRow = document.createElement('tr');
+      noMatchRow.className = 'no-match-row';
+      noMatchRow.innerHTML = '<td colspan="7" class="table-empty" style="text-align: center;">No matching currencies found.</td>';
+      currenciesList.appendChild(noMatchRow);
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', applySearchFilter);
+  }
 
   function fetchCurrencies() {
     fetch('currencies_api.php?action=list')
@@ -24,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .then(function (result) {
         if (result.success) {
+          allCurrencies = result.data;
           renderCurrencies(result.data);
           updateStats(result.data);
           if (result.token) {
@@ -41,12 +90,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function renderCurrencies(currencies) {
     if (!currencies || currencies.length === 0) {
-      currenciesList.innerHTML = '<tr><td colspan="6" class="table-empty">No currencies registered yet.</td></tr>';
+      currenciesList.innerHTML = '<tr><td colspan="7" class="table-empty">No currencies registered yet.</td></tr>';
       return;
     }
 
     var html = '';
-    currencies.forEach(function (curr) {
+    currencies.forEach(function (curr, index) {
       var baseLabel = curr.is_base_currency === 1
         ? '<span class="status-pill pill-green" style="font-weight:600;">Reporting Base</span>'
         : '<span class="status-pill" style="background:var(--bg); color:var(--text3)">Secondary</span>';
@@ -56,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function () {
         : '<span class="status-pill pill-red">Inactive</span>';
 
       html += '<tr>' +
+        '<td>' + (index + 1) + '</td>' +
         '<td><span class="code-badge">' + escapeHtml(curr.code) + '</span></td>' +
         '<td class="td-name">' + escapeHtml(curr.name) + '</td>' +
         '<td>' + (curr.symbol ? escapeHtml(curr.symbol) : '—') + '</td>' +
@@ -76,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     currenciesList.innerHTML = html;
     attachRowEventListeners(currencies);
+    applySearchFilter();
   }
 
   function updateStats(currencies) {

@@ -16,6 +16,54 @@ document.addEventListener('DOMContentLoaded', function () {
   var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   
   var activeDeleteId = null;
+  var allPermissions = [];
+  var searchInput = document.getElementById('searchInput');
+
+  function applySearchFilter() {
+    var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    var rows = Array.prototype.slice.call(permissionsList.querySelectorAll('tr'));
+    
+    var existingNoMatch = permissionsList.querySelector('.no-match-row');
+    if (existingNoMatch) {
+      existingNoMatch.parentNode.removeChild(existingNoMatch);
+    }
+    
+    var emptyRow = permissionsList.querySelector('.table-empty');
+    if (emptyRow && rows.length === 1 && !existingNoMatch) {
+      return;
+    }
+    
+    var visibleCount = 0;
+    rows.forEach(function (row) {
+      if (row.classList.contains('no-match-row')) return;
+      var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
+      if (cells.length < 2) return;
+      
+      var textContent = '';
+      for (var i = 1; i < cells.length; i++) {
+        textContent += ' ' + cells[i].textContent.toLowerCase();
+      }
+      
+      if (textContent.indexOf(query) !== -1) {
+        row.style.display = '';
+        visibleCount++;
+        cells[0].textContent = visibleCount;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+    
+    if (visibleCount === 0 && rows.length > 0) {
+      var noMatchRow = document.createElement('tr');
+      noMatchRow.className = 'no-match-row';
+      noMatchRow.innerHTML = '<td colspan="6" class="table-empty" style="text-align: center;">No matching permissions found.</td>';
+      permissionsList.appendChild(noMatchRow);
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', applySearchFilter);
+  }
 
   function fetchPermissions() {
     fetch('permissions_api.php?action=list')
@@ -24,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .then(function (result) {
         if (result.success) {
+          allPermissions = result.data;
           renderPermissions(result.data);
           updateStats(result.data);
           if (result.token) {
@@ -41,12 +90,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function renderPermissions(perms) {
     if (!perms || perms.length === 0) {
-      permissionsList.innerHTML = '<tr><td colspan="5" class="table-empty">No permissions defined yet.</td></tr>';
+      permissionsList.innerHTML = '<tr><td colspan="6" class="table-empty">No permissions defined yet.</td></tr>';
       return;
     }
 
     var html = '';
-    perms.forEach(function (p) {
+    perms.forEach(function (p, index) {
       var nameVal = escapeHtml(p.name);
       var codeVal = escapeHtml(p.code);
       var createdVal = escapeHtml(p.created_at.split(' ')[0]);
@@ -67,6 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       html += '<tr>' +
+        '<td>' + (index + 1) + '</td>' +
         '<td><strong>' + nameVal + '</strong></td>' +
         '<td><span class="code-badge">' + codeVal + '</span></td>' +
         '<td>' + roleBadge + '</td>' +
@@ -81,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     permissionsList.innerHTML = html;
     attachRowEventListeners(perms);
+    applySearchFilter();
   }
 
   function updateStats(perms) {

@@ -19,7 +19,7 @@ $prefix_to_root = ($depth === 2) ? '../../' : '../';
   </div>
   <div class="topbar-search">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" placeholder="Search anything…" id="searchInput">
+    <input type="text" placeholder="Search anything…" id="navbarSearchInput">
   </div>
   <div class="topbar-right">
     <button class="icon-btn" title="Notifications" id="notifBtn">

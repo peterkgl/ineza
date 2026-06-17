@@ -1,11 +1,11 @@
 document.addEventListener('DOMContentLoaded', function () {
-  var roleForm = document.getElementById('roleForm');
-  var rolesList = document.getElementById('rolesList');
+  var supplierForm = document.getElementById('supplierForm');
+  var suppliersList = document.getElementById('suppliersList');
   var alertPlaceholder = document.getElementById('alertPlaceholder');
   var formAlertPlaceholder = document.getElementById('formAlertPlaceholder');
   var formTitle = document.getElementById('formTitle');
-  var roleIdInput = document.getElementById('roleIdInput');
-  var roleTokenInput = document.getElementById('roleToken');
+  var supplierIdInput = document.getElementById('supplierIdInput');
+  var supplierTokenInput = document.getElementById('supplierToken');
   var cancelBtn = document.getElementById('cancelBtn');
   var saveBtn = document.getElementById('saveBtn');
   var refreshBtn = document.getElementById('refreshBtn');
@@ -16,19 +16,19 @@ document.addEventListener('DOMContentLoaded', function () {
   var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   
   var activeDeleteId = null;
-  var allRoles = [];
+  var allSuppliers = [];
   var searchInput = document.getElementById('searchInput');
 
   function applySearchFilter() {
     var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    var rows = Array.prototype.slice.call(rolesList.querySelectorAll('tr'));
+    var rows = Array.prototype.slice.call(suppliersList.querySelectorAll('tr'));
     
-    var existingNoMatch = rolesList.querySelector('.no-match-row');
+    var existingNoMatch = suppliersList.querySelector('.no-match-row');
     if (existingNoMatch) {
       existingNoMatch.parentNode.removeChild(existingNoMatch);
     }
     
-    var emptyRow = rolesList.querySelector('.table-empty');
+    var emptyRow = suppliersList.querySelector('.table-empty');
     if (emptyRow && rows.length === 1 && !existingNoMatch) {
       return;
     }
@@ -56,8 +56,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (visibleCount === 0 && rows.length > 0) {
       var noMatchRow = document.createElement('tr');
       noMatchRow.className = 'no-match-row';
-      noMatchRow.innerHTML = '<td colspan="6" class="table-empty" style="text-align: center;">No matching roles found.</td>';
-      rolesList.appendChild(noMatchRow);
+      noMatchRow.innerHTML = '<td colspan="8" class="table-empty" style="text-align: center;">No matching suppliers found.</td>';
+      suppliersList.appendChild(noMatchRow);
     }
   }
 
@@ -65,15 +65,15 @@ document.addEventListener('DOMContentLoaded', function () {
     searchInput.addEventListener('input', applySearchFilter);
   }
 
-  function fetchRoles() {
-    fetch('role_api.php?action=list')
+  function fetchSuppliers() {
+    fetch('suppliers_api.php?action=list')
       .then(function (response) {
         return response.json();
       })
       .then(function (result) {
         if (result.success) {
-          allRoles = result.data;
-          renderRoles(result.data);
+          allSuppliers = result.data;
+          renderSuppliers(result.data);
           updateStats(result.data);
           if (result.token) {
             updateToken(result.token);
@@ -83,95 +83,94 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       })
       .catch(function (error) {
-        console.error('Error fetching roles:', error);
-        showAlert(alertPlaceholder, 'error', 'An error occurred while loading roles.');
+        console.error('Error fetching suppliers:', error);
+        showAlert(alertPlaceholder, 'error', 'An error occurred while loading suppliers.');
       });
   }
 
-  function renderRoles(roles) {
-    if (!roles || roles.length === 0) {
-      rolesList.innerHTML = '<tr><td colspan="6" class="table-empty">No roles defined yet.</td></tr>';
+  function renderSuppliers(suppliers) {
+    if (!suppliers || suppliers.length === 0) {
+      suppliersList.innerHTML = '<tr><td colspan="8" class="table-empty">No suppliers configured yet.</td></tr>';
       return;
     }
 
     var html = '';
-    roles.forEach(function (r, index) {
-      var nameVal = escapeHtml(r.name);
-      var descVal = r.description ? escapeHtml(r.description) : '—';
-      var createdVal = escapeHtml(r.created_at.split(' ')[0]);
-      var permCount = r.permission_ids ? r.permission_ids.length : 0;
+    suppliers.forEach(function (s, index) {
+      var nameVal = escapeHtml(s.name);
+      var typeVal = escapeHtml(s.supplier_type.charAt(0).toUpperCase() + s.supplier_type.slice(1));
+      var nifVal = s.nif ? escapeHtml(s.nif) : '—';
+      var phoneVal = s.phone ? escapeHtml(s.phone) : '—';
+      var regionVal = s.region ? escapeHtml(s.region) : '—';
       
-      var permBadgeClass = permCount > 0 ? 'pill-green' : '';
-      var permBadge = '<span class="status-pill ' + permBadgeClass + '">' + permCount + ' Privileges</span>';
-
-      var deleteBtn = '';
-      if (r.name.toLowerCase() !== 'admin') {
-        deleteBtn = '<button class="btn-icon-only delete" title="Delete Role" data-id="' + r.id + '">' +
-          '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' +
-        '</button>';
-      }
+      var statusLabel = s.is_active === 1
+        ? '<span class="status-pill pill-green">Active</span>'
+        : '<span class="status-pill pill-red">Inactive</span>';
 
       html += '<tr>' +
         '<td>' + (index + 1) + '</td>' +
         '<td><strong>' + nameVal + '</strong></td>' +
-        '<td>' + descVal + '</td>' +
-        '<td>' + permBadge + '</td>' +
-        '<td>' + createdVal + '</td>' +
+        '<td><span class="code-badge">' + typeVal + '</span></td>' +
+        '<td>' + nifVal + '</td>' +
+        '<td>' + phoneVal + '</td>' +
+        '<td>' + regionVal + '</td>' +
+        '<td>' + statusLabel + '</td>' +
         '<td style="text-align: right;">' +
           '<div class="action-buttons" style="justify-content: flex-end;">' +
-            '<button class="btn-icon-only edit" title="Edit Role" data-id="' + r.id + '">' +
+            '<button class="btn-icon-only edit" title="Edit Supplier" data-id="' + s.id + '">' +
               '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
             '</button>' +
-            deleteBtn +
+            '<button class="btn-icon-only delete" title="Delete Supplier" data-id="' + s.id + '">' +
+              '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' +
+            '</button>' +
           '</div>' +
         '</td>' +
       '</tr>';
     });
 
-    rolesList.innerHTML = html;
-    attachRowEventListeners(roles);
+    suppliersList.innerHTML = html;
+    attachRowEventListeners(suppliers);
     applySearchFilter();
   }
 
-  function updateStats(roles) {
-    var total = roles.length;
-    var assigned = 0;
-    var maxPerms = 0;
-    var totalPermsCount = document.querySelectorAll('.perm-checkbox').length;
+  function updateStats(suppliers) {
+    var total = suppliers.length;
+    var active = 0;
+    var inactive = 0;
+    var coops = 0;
 
-    roles.forEach(function (r) {
-      if (r.user_count > 0) {
-        assigned++;
+    suppliers.forEach(function (s) {
+      if (s.is_active === 1) {
+        active++;
+      } else {
+        inactive++;
       }
-      
-      var permCount = r.permission_ids ? r.permission_ids.length : 0;
-      if (permCount > maxPerms) {
-        maxPerms = permCount;
+      if (s.supplier_type === 'cooperative') {
+        coops++;
       }
     });
 
     document.getElementById('stat-total').textContent = total;
-    document.getElementById('stat-active').textContent = assigned;
-    document.getElementById('stat-inactive').textContent = totalPermsCount;
-    document.getElementById('stat-base').textContent = maxPerms;
+    document.getElementById('stat-active').textContent = active;
+    document.getElementById('stat-inactive').textContent = inactive;
+    document.getElementById('stat-coops').textContent = coops;
   }
 
   function updateToken(token) {
-    if (roleTokenInput) {
-      roleTokenInput.value = token;
+    if (supplierTokenInput) {
+      supplierTokenInput.value = token;
     }
   }
 
-  function attachRowEventListeners(roles) {
+  function attachRowEventListeners(suppliers) {
     var editButtons = document.querySelectorAll('.action-buttons .edit');
     var deleteButtons = document.querySelectorAll('.action-buttons .delete');
 
     editButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = parseInt(btn.getAttribute('data-id'), 10);
-        var r = roles.find(function (x) { return x.id === id; });
-        if (r) {
-          setEditMode(r);
+        var s = suppliers.find(function (x) { return x.id === id; });
+        if (s) {
+          setEditMode(s);
         }
       });
     });
@@ -179,41 +178,33 @@ document.addEventListener('DOMContentLoaded', function () {
     deleteButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = parseInt(btn.getAttribute('data-id'), 10);
-        var r = roles.find(function (x) { return x.id === id; });
-        if (r) {
+        var s = suppliers.find(function (x) { return x.id === id; });
+        if (s) {
           activeDeleteId = id;
-          confirmBody.textContent = 'Are you sure you want to delete the security role "' + r.name + '"? This will fail if the role is assigned to users.';
+          confirmBody.textContent = 'Are you sure you want to delete the supplier configuration "' + s.name + '"? This will fail if advances are recorded under this supplier.';
           confirmOverlay.style.display = 'flex';
         }
       });
     });
   }
 
-  function setEditMode(r) {
-    if (!roleForm) return;
+  function setEditMode(s) {
+    if (!supplierForm) return;
     
-    roleIdInput.value = r.id;
-    var nameInput = document.getElementById('roleName');
-    nameInput.value = r.name;
-    
-    if (r.name.toLowerCase() === 'admin') {
-      nameInput.setAttribute('readonly', 'true');
-      nameInput.style.opacity = '0.7';
-    } else {
-      nameInput.removeAttribute('readonly');
-      nameInput.style.opacity = '1';
-    }
+    supplierIdInput.value = s.id;
+    document.getElementById('supplierType').value = s.supplier_type;
+    document.getElementById('supplierName').value = s.name;
+    document.getElementById('supplierNif').value = s.nif || '';
+    document.getElementById('supplierVat').value = s.vat_reg_no || '';
+    document.getElementById('supplierPhone').value = s.phone || '';
+    document.getElementById('supplierEmail').value = s.email || '';
+    document.getElementById('supplierAddress').value = s.address || '';
+    document.getElementById('supplierRegion').value = s.region || '';
+    document.getElementById('supplierNotes').value = s.notes || '';
+    document.getElementById('supplierActive').checked = s.is_active === 1;
 
-    document.getElementById('roleDescription').value = r.description || '';
-
-    var checkBoxes = document.querySelectorAll('.perm-checkbox');
-    checkBoxes.forEach(function (cb) {
-      var val = parseInt(cb.value, 10);
-      cb.checked = r.permission_ids && r.permission_ids.indexOf(val) !== -1;
-    });
-
-    formTitle.textContent = 'Edit Role: ' + r.name;
-    saveBtn.textContent = 'Update Role';
+    formTitle.textContent = 'Edit Supplier: ' + s.name;
+    saveBtn.textContent = 'Update Supplier';
     cancelBtn.style.display = 'inline-block';
     
     if (window.innerWidth <= 992) {
@@ -222,58 +213,61 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function resetForm() {
-    if (!roleForm) return;
-    roleForm.reset();
-    roleIdInput.value = '';
+    if (!supplierForm) return;
+    supplierForm.reset();
+    supplierIdInput.value = '';
     
-    var nameInput = document.getElementById('roleName');
-    nameInput.removeAttribute('readonly');
-    nameInput.style.opacity = '1';
+    document.getElementById('supplierType').value = 'individual';
+    document.getElementById('supplierActive').checked = true;
 
-    var checkBoxes = document.querySelectorAll('.perm-checkbox');
-    checkBoxes.forEach(function (cb) {
-      cb.checked = false;
-    });
-
-    formTitle.textContent = 'Add Security Role';
-    saveBtn.textContent = 'Save Role';
+    formTitle.textContent = 'Add New Supplier';
+    saveBtn.textContent = 'Save Supplier';
     cancelBtn.style.display = 'none';
     formAlertPlaceholder.innerHTML = '';
   }
 
-  if (roleForm) {
-    roleForm.addEventListener('submit', function (e) {
-      e.preventDefault();
+  if (supplierForm) {
+    supplierForm.addEventListener('submit', function (ev) {
+      ev.preventDefault();
 
-      var id = roleIdInput.value;
-      var name = document.getElementById('roleName').value.trim();
-      var description = document.getElementById('roleDescription').value.trim();
-      var token = roleTokenInput.value;
+      var id = supplierIdInput.value;
+      var type = document.getElementById('supplierType').value;
+      var name = document.getElementById('supplierName').value.trim();
+      var nif = document.getElementById('supplierNif').value.trim();
+      var vat = document.getElementById('supplierVat').value.trim();
+      var phone = document.getElementById('supplierPhone').value.trim();
+      var email = document.getElementById('supplierEmail').value.trim();
+      var address = document.getElementById('supplierAddress').value.trim();
+      var region = document.getElementById('supplierRegion').value.trim();
+      var notes = document.getElementById('supplierNotes').value.trim();
+      var active = document.getElementById('supplierActive').checked ? '1' : '0';
+      var token = supplierTokenInput.value;
 
       if (!name) {
-        showAlert(formAlertPlaceholder, 'error', 'Role name is required.');
+        showAlert(formAlertPlaceholder, 'error', 'Supplier name is required.');
         return;
       }
-
-      var selectedPerms = [];
-      var checkBoxes = document.querySelectorAll('.perm-checkbox:checked');
-      checkBoxes.forEach(function (cb) {
-        selectedPerms.push(cb.value);
-      });
 
       var action = id ? 'update' : 'create';
       
       var formData = new URLSearchParams();
       if (id) formData.append('id', id);
+      formData.append('supplier_type', type);
       formData.append('name', name);
-      formData.append('description', description);
-      formData.append('permissions', selectedPerms.join(','));
+      formData.append('nif', nif);
+      formData.append('vat_reg_no', vat);
+      formData.append('phone', phone);
+      formData.append('email', email);
+      formData.append('address', address);
+      formData.append('region', region);
+      formData.append('notes', notes);
+      formData.append('is_active', active);
       formData.append('token', token);
 
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
 
-      fetch('role_api.php?action=' + action, {
+      fetch('suppliers_api.php?action=' + action, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
@@ -285,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .then(function (result) {
         saveBtn.disabled = false;
-        saveBtn.textContent = id ? 'Update Role' : 'Save Role';
+        saveBtn.textContent = id ? 'Update Supplier' : 'Save Supplier';
 
         if (result.token) {
           updateToken(result.token);
@@ -294,16 +288,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (result.success) {
           showAlert(alertPlaceholder, 'success', result.message);
           resetForm();
-          fetchRoles();
+          fetchSuppliers();
         } else {
           showAlert(formAlertPlaceholder, 'error', result.message);
         }
       })
       .catch(function (error) {
-        console.error('Error saving role:', error);
+        console.error('Error saving supplier:', error);
         saveBtn.disabled = false;
-        saveBtn.textContent = id ? 'Update Role' : 'Save Role';
-        showAlert(formAlertPlaceholder, 'error', 'An error occurred while saving the role.');
+        saveBtn.textContent = id ? 'Update Supplier' : 'Save Supplier';
+        showAlert(formAlertPlaceholder, 'error', 'An error occurred while saving the supplier.');
       });
     });
   }
@@ -316,14 +310,14 @@ document.addEventListener('DOMContentLoaded', function () {
   confirmDeleteBtn.addEventListener('click', function () {
     if (!activeDeleteId) return;
 
-    var token = roleTokenInput.value;
+    var token = supplierTokenInput.value;
     var formData = new URLSearchParams();
     formData.append('id', activeDeleteId);
     formData.append('token', token);
 
     confirmOverlay.style.display = 'none';
     
-    fetch('role_api.php?action=delete', {
+    fetch('suppliers_api.php?action=delete', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -341,15 +335,15 @@ document.addEventListener('DOMContentLoaded', function () {
       if (result.success) {
         showAlert(alertPlaceholder, 'success', result.message);
         resetForm();
-        fetchRoles();
+        fetchSuppliers();
       } else {
         showAlert(alertPlaceholder, 'error', result.message);
       }
       activeDeleteId = null;
     })
     .catch(function (error) {
-      console.error('Error deleting role:', error);
-      showAlert(alertPlaceholder, 'error', 'An error occurred while deleting the role.');
+      console.error('Error deleting supplier:', error);
+      showAlert(alertPlaceholder, 'error', 'An error occurred while deleting the supplier.');
       activeDeleteId = null;
     });
   });
@@ -360,8 +354,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (refreshBtn) {
     refreshBtn.addEventListener('click', function () {
-      fetchRoles();
-      showAlert(alertPlaceholder, 'success', 'Roles list reloaded.');
+      fetchSuppliers();
+      showAlert(alertPlaceholder, 'success', 'Suppliers list reloaded.');
     });
   }
 
@@ -389,5 +383,5 @@ document.addEventListener('DOMContentLoaded', function () {
       .replace(/'/g, '&#039;');
   }
 
-  fetchRoles();
+  fetchSuppliers();
 });
