@@ -22,6 +22,16 @@ if (empty($_SESSION['products_token'])) {
 $canCreate = hasPermission($conn, $userId, 'create_product');
 $canEdit = hasPermission($conn, $userId, 'edit_product');
 $canDelete = hasPermission($conn, $userId, 'delete_product');
+
+// Load all active accounts for dropdown options
+$accountsQuery = "SELECT id, account_code, account_name FROM accounts WHERE is_active = 1 ORDER BY account_code ASC";
+$accountsResult = mysqli_query($conn, $accountsQuery);
+$accountOptionsHtml = "<option value=''>-- Select Account --</option>";
+if ($accountsResult) {
+    while ($row = mysqli_fetch_assoc($accountsResult)) {
+        $accountOptionsHtml .= "<option value='{$row['id']}'>[" . htmlspecialchars($row['account_code']) . "] " . htmlspecialchars($row['account_name']) . "</option>";
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -135,13 +145,16 @@ $canDelete = hasPermission($conn, $userId, 'delete_product');
                 <th>Name</th>
                 <th>Mineral Designation</th>
                 <th>Unit</th>
+                <th>Inventory A/C</th>
+                <th>Sales A/C</th>
+                <th>COGS A/C</th>
                 <th>Status</th>
                 <th style="width: 80px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="productsList">
               <tr>
-                <td colspan="7" class="table-empty">Loading mining products...</td>
+                <td colspan="10" class="table-empty">Loading mining products...</td>
               </tr>
             </tbody>
           </table>
@@ -183,6 +196,27 @@ $canDelete = hasPermission($conn, $userId, 'delete_product');
           <div class="form-group">
             <label for="productDescription">Description</label>
             <input type="text" id="productDescription" name="description" class="form-control" placeholder="e.g. Concentrated tin ore logs">
+          </div>
+
+          <div class="form-group">
+            <label for="inventoryAccount">Inventory Account</label>
+            <select id="inventoryAccount" name="inventory_account_id" class="form-control">
+              <?php echo $accountOptionsHtml; ?>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="salesAccount">Sales Account</label>
+            <select id="salesAccount" name="sales_account_id" class="form-control">
+              <?php echo $accountOptionsHtml; ?>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="cogsAccount">Cost of Goods Sold (COGS) Account</label>
+            <select id="cogsAccount" name="cogs_account_id" class="form-control">
+              <?php echo $accountOptionsHtml; ?>
+            </select>
           </div>
 
           <div class="checkbox-group">

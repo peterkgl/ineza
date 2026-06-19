@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 19, 2026 at 03:50 PM
+-- Generation Time: Jun 19, 2026 at 07:27 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -45,31 +45,75 @@ CREATE TABLE `accounts` (
 --
 
 INSERT INTO `accounts` (`id`, `account_type_id`, `account_code`, `account_name`, `opening_balance`, `current_balance`, `is_active`, `description`, `created_at`, `updated_at`) VALUES
-(1, 2, '1110', 'Cash on Hand', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(2, 2, '1120', 'Bank USD', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(3, 2, '1130', 'Bank EUR', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(4, 2, '1140', 'Bank RWF', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(5, 2, '1150', 'Accounts Receivable', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(6, 2, '1160', 'Inventory', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(7, 3, '1210', 'Machinery and Equipment', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(8, 3, '1220', 'Vehicles', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(9, 3, '1230', 'Computers and IT Equipment', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(10, 5, '2110', 'Accounts Payable', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(11, 5, '2120', 'Taxes Payable', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(12, 6, '2210', 'Long-Term Loan', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(13, 7, '3110', 'Owner Capital', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(14, 7, '3120', 'Retained Earnings', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(15, 9, '4110', 'Mineral Sales Revenue', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(16, 10, '4210', 'Foreign Exchange Gain', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(17, 11, '5110', 'Cost of Goods Sold', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(18, 13, '6110', 'Salaries Expense', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(19, 13, '6120', 'Fuel Expense', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(20, 13, '6130', 'Transport Expense', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(21, 13, '6140', 'Utilities Expense', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(22, 14, '6210', 'Office Supplies Expense', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(23, 15, '6310', 'Marketing Expense', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(24, 16, '6410', 'Bank Charges', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05'),
-(25, 16, '6420', 'Foreign Exchange Loss', 0.00, 0.00, 1, NULL, '2026-06-19 12:39:05', '2026-06-19 12:39:05');
+(1, 1, '1100', 'EQUITY - INEZA AFRICAN MINING USD', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(2, 1, '1110', 'EQUITY - INEZA AFRICAN MINING RWF', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(3, 1, '1120', 'BK - INEZA AFRICAN MINING', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(4, 1, '1130', 'Petty Cash Fund - INEZA', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(5, 1, '1140', 'Funds to Sites - Rubaya', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(6, 1, '1150', 'Accounts Receivables', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(7, 1, '1160', 'Advances - Employees', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(8, 1, '1170', 'Advances - Suppliers', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(9, 1, '1180', 'Advances - Cooperatives', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(10, 1, '1190', 'Advances - Others', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(11, 1, '1200', 'Prepayments', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(12, 1, '1210', 'Prepaid Rent', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(13, 1, '1220', 'Rental Deposits', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(14, 1, '1230', 'Stocks - Tin', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(15, 1, '1240', 'Stocks - Coltan', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(16, 1, '1250', 'Stocks - Others', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(17, 1, '1260', 'Due from EQUITY - INEZA AFRICAN MINING USD', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(18, 1, '1270', 'Due from EQUITY - INEZA AFRICAN MINING RWF', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(19, 1, '1280', 'Due from EQUITY - INEZA AFRICAN MINING EURO', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(20, 1, '1290', 'Land & Buildings - @ Cost', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(21, 1, '1300', 'Motor Vehicles - @ Cost', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(22, 1, '1310', 'Computer Equipment - @ Cost', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(23, 1, '1320', 'Office Equipment - @ Cost', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(24, 1, '1330', 'Furniture & Fittings - @ Cost', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(25, 1, '1340', 'Mineral Processing Equipment - @ Cost', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(26, 1, '1350', 'Goodwill / Intangible Assets', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(27, 1, '1360', 'Investments', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(28, 2, '2100', 'Accounts Payable', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(29, 2, '2110', 'Accounts Payable - Others', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(30, 2, '2120', 'Accrued Liabilities', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(31, 2, '2130', 'Advances from METALEKSPO SIA', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(32, 2, '2140', 'Advances from Star Metal Company', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(33, 2, '2150', 'Salaries Payable', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(34, 2, '2160', 'Consultancy Fee Payable', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(35, 2, '2170', 'Rent Payable', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(36, 2, '2180', 'Commission Payable', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(37, 2, '2190', 'Payroll Tax Payable', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(38, 2, '2200', 'Income Tax Payable', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(39, 2, '2210', 'Long Term Liabilities', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(40, 2, '2220', 'Loans Payable', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(41, 2, '2230', 'Due to EQUITY - INEZA AFRICAN MINING USD', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(42, 2, '2240', 'Due to EQUITY - INEZA AFRICAN MINING RWF', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(43, 2, '2250', 'Due to EQUITY - INEZA AFRICAN MINING EURO', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(44, 3, '3100', 'Common Shares', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(45, 3, '3110', 'Members Equity', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(46, 3, '3120', 'Retained Income / Accumulated Loss', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(47, 3, '3130', 'Prior Period Adjustment', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(48, 4, '4100', 'Sales', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(49, 5, '5100', 'Minerals Costs', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(50, 5, '5110', 'Export Costs', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(51, 5, '5120', 'Export Packaging', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(52, 5, '5130', 'Export Taxes', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(53, 5, '5140', 'Minerals Transport, Taxes & Tags', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(54, 5, '5150', 'Travel & Transport', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(55, 5, '5160', 'Salaries & Wages', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(56, 5, '5170', 'Sample Costs', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(57, 5, '5180', 'Cooperative Fees', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(58, 6, '6100', 'Advertising & Promotions', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(59, 6, '6110', 'Amortization', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(60, 6, '6120', 'Bad Debts', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(61, 6, '6130', 'Bank Charges', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(62, 6, '6140', 'Cleaning & Hygiene', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(63, 6, '6150', 'Computer Supplies & Others', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(64, 6, '6160', 'Consulting Fees', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(65, 6, '6170', 'Courier & Postage', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(66, 6, '6180', 'Commission Fees', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(67, 6, '6190', 'Custom Duties & Taxes', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(68, 6, '6200', 'Depreciation', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
+(69, 6, '6210', 'Donations', 0.00, 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26');
 
 -- --------------------------------------------------------
 
@@ -93,22 +137,12 @@ CREATE TABLE `account_types` (
 --
 
 INSERT INTO `account_types` (`id`, `code`, `name`, `parent_id`, `is_editable`, `is_deletable`, `created_at`, `updated_at`) VALUES
-(1, '1000', 'Assets', NULL, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(2, '1100', 'Current Assets', 1, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(3, '1200', 'Fixed Assets', 1, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(4, '2000', 'Liabilities', NULL, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(5, '2100', 'Current Liabilities', 4, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(6, '2200', 'Long-Term Liabilities', 4, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(7, '3000', 'Equity', NULL, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(8, '4000', 'Revenue', NULL, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(9, '4100', 'Operating Revenue', 8, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(10, '4200', 'Other Revenue', 8, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(11, '5000', 'Cost of Sales', NULL, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(12, '6000', 'Expenses', NULL, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(13, '6100', 'Operating Expenses', 12, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(14, '6200', 'Administrative Expenses', 12, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(15, '6300', 'Selling Expenses', 12, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42'),
-(16, '6400', 'Financial Expenses', 12, 0, 0, '2026-06-19 12:37:42', '2026-06-19 12:37:42');
+(1, '1000', 'Assets', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
+(2, '2000', 'Liabilities', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
+(3, '3000', 'Equity', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
+(4, '4000', 'Revenue', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
+(5, '5000', 'Cost of Sales', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
+(6, '6000', 'Operating Expenses', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41');
 
 -- --------------------------------------------------------
 
@@ -339,7 +373,49 @@ INSERT INTO `audit_log` (`id`, `user_full_name`, `action`, `target_table`, `targ
 (199, 'Super Admin', 'VIEW', 'permissions', 'Permissions List', 'User viewed the permissions list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 09:01:23'),
 (200, 'Super Admin', 'VIEW', 'permissions', 'Permissions List', 'User viewed the permissions list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 09:01:24'),
 (201, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 09:02:18'),
-(202, 'Super Admin', 'VIEW', 'currencies', 'Currencies List', 'User viewed the currencies list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 13:43:43');
+(202, 'Super Admin', 'VIEW', 'currencies', 'Currencies List', 'User viewed the currencies list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 13:43:43'),
+(203, 'Super Admin', 'VIEW', 'currencies', 'Currencies List', 'User viewed the currencies list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:04:18'),
+(204, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:04:21'),
+(205, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:05:03'),
+(206, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:37:33'),
+(207, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:37:55'),
+(208, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:40:31'),
+(209, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:41:24'),
+(210, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:42:10'),
+(211, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:52:05'),
+(212, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 14:56:06'),
+(213, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:18:26'),
+(214, 'Super Admin', 'CREATE', 'accounts', '1170', 'Created new account: neeuge (1170)', NULL, '{\"id\":26,\"account_type_id\":1,\"account_code\":\"1170\",\"account_name\":\"neeuge\",\"opening_balance\":0,\"current_balance\":0,\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:18:40'),
+(215, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:18:41'),
+(216, 'Super Admin', 'DELETE', 'accounts', '1170', 'Deleted account: neeuge (1170)', '{\"id\":\"26\",\"account_type_id\":\"1\",\"account_code\":\"1170\",\"account_name\":\"neeuge\",\"opening_balance\":\"0.00\",\"current_balance\":\"0.00\",\"is_active\":\"1\",\"description\":\"\",\"created_at\":\"2026-06-19 17:18:40\",\"updated_at\":\"2026-06-19 17:18:40\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:18:58'),
+(217, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:18:59'),
+(218, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:21:07'),
+(219, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:21:22'),
+(220, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:23:59'),
+(221, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:12'),
+(222, 'Super Admin', 'VIEW', 'product_elements', 'Product Elements List', 'User viewed the product elements list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:27'),
+(223, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:31'),
+(224, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:52'),
+(225, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:53'),
+(226, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:53'),
+(227, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:53'),
+(228, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:53'),
+(229, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:53'),
+(230, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:53'),
+(231, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:53'),
+(232, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:54'),
+(233, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:54'),
+(234, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:54'),
+(235, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:54'),
+(236, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:24:56'),
+(237, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:40:41'),
+(238, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 15:41:35'),
+(239, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 17:02:21'),
+(240, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 17:03:48'),
+(241, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 17:04:10'),
+(242, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 17:08:30'),
+(243, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 17:09:11'),
+(244, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'mkdve1tlfo9o0khjmp13dbt9bn', NULL, '2026-06-19 17:10:59');
 
 -- --------------------------------------------------------
 
@@ -485,7 +561,15 @@ INSERT INTO `permissions` (`id`, `permition_name`, `permition_code`, `created_at
 (27, 'View Suppliers', 'view_suppliers', '2026-06-16 23:56:33'),
 (28, 'Create Supplier', 'create_supplier', '2026-06-16 23:56:33'),
 (29, 'Edit Supplier', 'edit_supplier', '2026-06-16 23:56:33'),
-(30, 'Delete Supplier', 'delete_supplier', '2026-06-16 23:56:33');
+(30, 'Delete Supplier', 'delete_supplier', '2026-06-16 23:56:33'),
+(31, 'View Account Types', 'view_account_types', '2026-06-19 14:00:21'),
+(32, 'Create Account Type', 'create_account_type', '2026-06-19 14:00:21'),
+(33, 'Edit Account Type', 'edit_account_type', '2026-06-19 14:00:21'),
+(34, 'Delete Account Type', 'delete_account_type', '2026-06-19 14:00:21'),
+(35, 'View Accounts', 'view_accounts', '2026-06-19 14:00:21'),
+(36, 'Create Account', 'create_account', '2026-06-19 14:00:21'),
+(37, 'Edit Account', 'edit_account', '2026-06-19 14:00:21'),
+(38, 'Delete Account', 'delete_account', '2026-06-19 14:00:21');
 
 -- --------------------------------------------------------
 
@@ -500,19 +584,15 @@ CREATE TABLE `products` (
   `full_name` varchar(150) DEFAULT NULL,
   `unit_of_measure` varchar(20) DEFAULT 'kg' COMMENT 'kg, tonnes, etc.',
   `description` text DEFAULT NULL,
+  `inventory_account_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `sales_account_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `cogs_account_id` bigint(20) UNSIGNED DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `updated_by` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `products`
---
-
-INSERT INTO `products` (`id`, `code`, `name`, `full_name`, `unit_of_measure`, `description`, `is_active`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'SN', 'Tin', 'Cass', 'kg', '', 1, '2026-06-16 23:43:32', 2, '2026-06-16 23:43:32', NULL);
 
 -- --------------------------------------------------------
 
@@ -728,7 +808,10 @@ ALTER TABLE `permissions`
 -- Indexes for table `products`
 --
 ALTER TABLE `products`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_products_inventory_account` (`inventory_account_id`),
+  ADD KEY `fk_products_sales_account` (`sales_account_id`),
+  ADD KEY `fk_products_cogs_account` (`cogs_account_id`);
 
 --
 -- Indexes for table `product_elements`
@@ -787,19 +870,19 @@ ALTER TABLE `user_roles`
 -- AUTO_INCREMENT for table `accounts`
 --
 ALTER TABLE `accounts`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
 -- AUTO_INCREMENT for table `account_types`
 --
 ALTER TABLE `account_types`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `audit_log`
 --
 ALTER TABLE `audit_log`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=203;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=245;
 
 --
 -- AUTO_INCREMENT for table `currencies`
@@ -823,7 +906,7 @@ ALTER TABLE `login`
 -- AUTO_INCREMENT for table `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -890,6 +973,14 @@ ALTER TABLE `exchange_rates`
 --
 ALTER TABLE `login`
   ADD CONSTRAINT `fk_login_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `products`
+--
+ALTER TABLE `products`
+  ADD CONSTRAINT `fk_products_cogs_account` FOREIGN KEY (`cogs_account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_products_inventory_account` FOREIGN KEY (`inventory_account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_products_sales_account` FOREIGN KEY (`sales_account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `product_elements`

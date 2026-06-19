@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (visibleCount === 0 && rows.length > 0) {
       var noMatchRow = document.createElement('tr');
       noMatchRow.className = 'no-match-row';
-      noMatchRow.innerHTML = '<td colspan="7" class="table-empty" style="text-align: center;">No matching products found.</td>';
+      noMatchRow.innerHTML = '<td colspan="10" class="table-empty" style="text-align: center;">No matching products found.</td>';
       productsList.appendChild(noMatchRow);
     }
   }
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function renderProducts(products) {
     if (!products || products.length === 0) {
-      productsList.innerHTML = '<tr><td colspan="7" class="table-empty">No products configured yet.</td></tr>';
+      productsList.innerHTML = '<tr><td colspan="10" class="table-empty">No products configured yet.</td></tr>';
       return;
     }
 
@@ -105,12 +105,19 @@ document.addEventListener('DOMContentLoaded', function () {
         ? '<span class="status-pill pill-green">Active</span>'
         : '<span class="status-pill pill-red">Inactive</span>';
 
+      var invVal = p.inventory_code ? '<span class="parent-type-badge">[' + escapeHtml(p.inventory_code) + '] ' + escapeHtml(p.inventory_name) + '</span>' : '—';
+      var salVal = p.sales_code ? '<span class="parent-type-badge">[' + escapeHtml(p.sales_code) + '] ' + escapeHtml(p.sales_name) + '</span>' : '—';
+      var cogsVal = p.cogs_code ? '<span class="parent-type-badge">[' + escapeHtml(p.cogs_code) + '] ' + escapeHtml(p.cogs_name) + '</span>' : '—';
+
       html += '<tr>' +
         '<td>' + (index + 1) + '</td>' +
         '<td><span class="code-badge">' + codeVal + '</span></td>' +
         '<td><strong>' + nameVal + '</strong></td>' +
         '<td>' + fullNameVal + '</td>' +
         '<td>' + unitVal + '</td>' +
+        '<td>' + invVal + '</td>' +
+        '<td>' + salVal + '</td>' +
+        '<td>' + cogsVal + '</td>' +
         '<td>' + statusLabel + '</td>' +
         '<td style="text-align: right;">' +
           '<div class="action-buttons" style="justify-content: flex-end;">' +
@@ -202,6 +209,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('productFullName').value = p.full_name || '';
     document.getElementById('productUnit').value = p.unit_of_measure;
     document.getElementById('productDescription').value = p.description || '';
+    document.getElementById('inventoryAccount').value = p.inventory_account_id || '';
+    document.getElementById('salesAccount').value = p.sales_account_id || '';
+    document.getElementById('cogsAccount').value = p.cogs_account_id || '';
     document.getElementById('productActive').checked = p.is_active === 1;
 
     formTitle.textContent = 'Edit Product: ' + p.code;
@@ -223,6 +233,9 @@ document.addEventListener('DOMContentLoaded', function () {
     codeInput.style.opacity = '1';
     
     document.getElementById('productUnit').value = 'kg';
+    document.getElementById('inventoryAccount').value = '';
+    document.getElementById('salesAccount').value = '';
+    document.getElementById('cogsAccount').value = '';
 
     formTitle.textContent = 'Add New Product';
     saveBtn.textContent = 'Save Product';
@@ -240,6 +253,9 @@ document.addEventListener('DOMContentLoaded', function () {
       var fullName = document.getElementById('productFullName').value.trim();
       var unit = document.getElementById('productUnit').value.trim();
       var description = document.getElementById('productDescription').value.trim();
+      var inventoryAccountId = document.getElementById('inventoryAccount').value;
+      var salesAccountId = document.getElementById('salesAccount').value;
+      var cogsAccountId = document.getElementById('cogsAccount').value;
       var active = document.getElementById('productActive').checked ? '1' : '0';
       var token = productTokenInput.value;
 
@@ -257,6 +273,9 @@ document.addEventListener('DOMContentLoaded', function () {
       formData.append('full_name', fullName);
       formData.append('unit_of_measure', unit);
       formData.append('description', description);
+      formData.append('inventory_account_id', inventoryAccountId);
+      formData.append('sales_account_id', salesAccountId);
+      formData.append('cogs_account_id', cogsAccountId);
       formData.append('is_active', active);
       formData.append('token', token);
 

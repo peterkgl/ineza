@@ -41,7 +41,15 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to view products.');
         }
 
-        $query = "SELECT * FROM products ORDER BY code ASC";
+        $query = "SELECT p.*, 
+                         inv.account_code as inventory_code, inv.account_name as inventory_name,
+                         sal.account_code as sales_code, sal.account_name as sales_name,
+                         cogs.account_code as cogs_code, cogs.account_name as cogs_name
+                  FROM products p
+                  LEFT JOIN accounts inv ON p.inventory_account_id = inv.id
+                  LEFT JOIN accounts sal ON p.sales_account_id = sal.id
+                  LEFT JOIN accounts cogs ON p.cogs_account_id = cogs.id
+                  ORDER BY p.code ASC";
         $result = mysqli_query($conn, $query);
         $products = [];
 
@@ -54,6 +62,15 @@ switch ($action) {
                     'full_name' => $row['full_name'],
                     'unit_of_measure' => $row['unit_of_measure'],
                     'description' => $row['description'],
+                    'inventory_account_id' => $row['inventory_account_id'] !== null ? (int)$row['inventory_account_id'] : null,
+                    'inventory_code' => $row['inventory_code'],
+                    'inventory_name' => $row['inventory_name'],
+                    'sales_account_id' => $row['sales_account_id'] !== null ? (int)$row['sales_account_id'] : null,
+                    'sales_code' => $row['sales_code'],
+                    'sales_name' => $row['sales_name'],
+                    'cogs_account_id' => $row['cogs_account_id'] !== null ? (int)$row['cogs_account_id'] : null,
+                    'cogs_code' => $row['cogs_code'],
+                    'cogs_name' => $row['cogs_name'],
                     'is_active' => (int)$row['is_active'],
                     'created_at' => $row['created_at'],
                     'updated_at' => $row['updated_at']
@@ -77,6 +94,9 @@ switch ($action) {
         $unit = isset($_POST['unit_of_measure']) ? trim($_POST['unit_of_measure']) : 'kg';
         $description = isset($_POST['description']) ? trim($_POST['description']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
+        $inventory_account_id = isset($_POST['inventory_account_id']) && $_POST['inventory_account_id'] !== '' ? (int)$_POST['inventory_account_id'] : null;
+        $sales_account_id = isset($_POST['sales_account_id']) && $_POST['sales_account_id'] !== '' ? (int)$_POST['sales_account_id'] : null;
+        $cogs_account_id = isset($_POST['cogs_account_id']) && $_POST['cogs_account_id'] !== '' ? (int)$_POST['cogs_account_id'] : null;
 
         if (empty($code) || empty($name)) {
             sendResponse(false, 'Product code and name are required.');
@@ -96,8 +116,12 @@ switch ($action) {
             $unitEsc = mysqli_real_escape_string($conn, $unit);
             $descEsc = mysqli_real_escape_string($conn, $description);
 
-            $insertProduct = "INSERT INTO products (code, name, full_name, unit_of_measure, description, is_active, created_by) 
-                              VALUES ('$codeEsc', '$nameEsc', '$fullNameEsc', '$unitEsc', '$descEsc', $is_active, $userId)";
+            $invVal = $inventory_account_id !== null ? $inventory_account_id : "NULL";
+            $salVal = $sales_account_id !== null ? $sales_account_id : "NULL";
+            $cogsVal = $cogs_account_id !== null ? $cogs_account_id : "NULL";
+
+            $insertProduct = "INSERT INTO products (code, name, full_name, unit_of_measure, description, inventory_account_id, sales_account_id, cogs_account_id, is_active, created_by) 
+                              VALUES ('$codeEsc', '$nameEsc', '$fullNameEsc', '$unitEsc', '$descEsc', $invVal, $salVal, $cogsVal, $is_active, $userId)";
             
             if (mysqli_query($conn, $insertProduct)) {
                 $newId = mysqli_insert_id($conn);
@@ -108,6 +132,9 @@ switch ($action) {
                     'full_name' => $full_name,
                     'unit_of_measure' => $unit,
                     'description' => $description,
+                    'inventory_account_id' => $inventory_account_id,
+                    'sales_account_id' => $sales_account_id,
+                    'cogs_account_id' => $cogs_account_id,
                     'is_active' => $is_active
                 ];
 
@@ -137,6 +164,9 @@ switch ($action) {
         $unit = isset($_POST['unit_of_measure']) ? trim($_POST['unit_of_measure']) : 'kg';
         $description = isset($_POST['description']) ? trim($_POST['description']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
+        $inventory_account_id = isset($_POST['inventory_account_id']) && $_POST['inventory_account_id'] !== '' ? (int)$_POST['inventory_account_id'] : null;
+        $sales_account_id = isset($_POST['sales_account_id']) && $_POST['sales_account_id'] !== '' ? (int)$_POST['sales_account_id'] : null;
+        $cogs_account_id = isset($_POST['cogs_account_id']) && $_POST['cogs_account_id'] !== '' ? (int)$_POST['cogs_account_id'] : null;
 
         if ($id <= 0 || empty($code) || empty($name)) {
             sendResponse(false, 'Valid ID, product code, and name are required.');
@@ -163,12 +193,19 @@ switch ($action) {
             $unitEsc = mysqli_real_escape_string($conn, $unit);
             $descEsc = mysqli_real_escape_string($conn, $description);
 
+            $invVal = $inventory_account_id !== null ? $inventory_account_id : "NULL";
+            $salVal = $sales_account_id !== null ? $sales_account_id : "NULL";
+            $cogsVal = $cogs_account_id !== null ? $cogs_account_id : "NULL";
+
             $updateProduct = "UPDATE products SET 
                                 code = '$codeEsc', 
                                 name = '$nameEsc', 
                                 full_name = '$fullNameEsc', 
                                 unit_of_measure = '$unitEsc', 
                                 description = '$descEsc', 
+                                inventory_account_id = $invVal,
+                                sales_account_id = $salVal,
+                                cogs_account_id = $cogsVal,
                                 is_active = $is_active, 
                                 updated_by = $userId, 
                                 updated_at = CURRENT_TIMESTAMP 
@@ -182,6 +219,9 @@ switch ($action) {
                     'full_name' => $full_name,
                     'unit_of_measure' => $unit,
                     'description' => $description,
+                    'inventory_account_id' => $inventory_account_id,
+                    'sales_account_id' => $sales_account_id,
+                    'cogs_account_id' => $cogs_account_id,
                     'is_active' => $is_active
                 ];
 
