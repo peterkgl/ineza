@@ -6,12 +6,7 @@ require_once __DIR__ . '/../../config/permissions.php';
 $userId = $_SESSION['user_id'] ?? 0;
 
 if (!hasPermission($conn, $userId, 'view_permissions')) {
-    http_response_code(403);
-    echo "<div style='font-family:\"Inter\", sans-serif; text-align:center; margin-top:50px;'>";
-    echo "<h2 style='color:#E53E3E;'>Access Denied</h2>";
-    echo "<p>You do not have permission to access this page.</p>";
-    echo "<a href='../dashboard'>Back to Dashboard</a>";
-    echo "</div>";
+    header("Location: ../dashboard");
     exit();
 }
 

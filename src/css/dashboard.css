@@ -575,3 +575,80 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* --- Sticky Side Form and Scroll Protection --- */
+#formCard {
+  position: sticky;
+  top: 20px;
+  align-self: start;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+#formCard::-webkit-scrollbar {
+  width: 4px;
+}
+
+#formCard::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#formCard::-webkit-scrollbar-thumb {
+  background: #E0DDD8;
+  border-radius: 4px;
+}
+
+/* --- Pagination Styles --- */
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.pagination-info {
+  font-size: 12px;
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--bg);
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+.pagination-btn.active {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

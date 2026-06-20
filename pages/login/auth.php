@@ -14,14 +14,4 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: " . $base_dir . "/index");
     exit();
 }
-
-if (!isset($_SESSION['roles']) || !in_array('admin', $_SESSION['roles'])) {
-    http_response_code(403);
-    echo "<div style='font-family:\"Inter\", sans-serif; text-align:center; margin-top:50px;'>";
-    echo "<h2 style='color:#E53E3E;'>Access Denied</h2>";
-    echo "<p>You do not have permission to access this page.</p>";
-    echo "<a href='../../index'>Back to Login</a>";
-    echo "</div>";
-    exit();
-}
 ?>

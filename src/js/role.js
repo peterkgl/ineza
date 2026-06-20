@@ -19,50 +19,33 @@ document.addEventListener('DOMContentLoaded', function () {
   var allRoles = [];
   var searchInput = document.getElementById('searchInput');
 
-  function applySearchFilter() {
+  var currentPage = 1;
+  var itemsPerPage = 25;
+  var tableContainer = document.getElementById('rolesTable').parentElement;
+  var paginationContainer = document.createElement('div');
+  paginationContainer.className = 'table-pagination';
+  tableContainer.parentNode.insertBefore(paginationContainer, tableContainer.nextSibling);
+
+  function getFilteredRoles() {
     var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    var rows = Array.prototype.slice.call(rolesList.querySelectorAll('tr'));
-    
-    var existingNoMatch = rolesList.querySelector('.no-match-row');
-    if (existingNoMatch) {
-      existingNoMatch.parentNode.removeChild(existingNoMatch);
-    }
-    
-    var emptyRow = rolesList.querySelector('.table-empty');
-    if (emptyRow && rows.length === 1 && !existingNoMatch) {
-      return;
-    }
-    
-    var visibleCount = 0;
-    rows.forEach(function (row) {
-      if (row.classList.contains('no-match-row')) return;
-      var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
-      if (cells.length < 2) return;
-      
-      var textContent = '';
-      for (var i = 1; i < cells.length; i++) {
-        textContent += ' ' + cells[i].textContent.toLowerCase();
-      }
-      
-      if (textContent.indexOf(query) !== -1) {
-        row.style.display = '';
-        visibleCount++;
-        cells[0].textContent = visibleCount;
-      } else {
-        row.style.display = 'none';
-      }
+    if (!query) return allRoles;
+    return allRoles.filter(function (r) {
+      var nameVal = (r.name || '').toLowerCase();
+      var descVal = (r.description || '').toLowerCase();
+      var permCountVal = String(r.permission_ids ? r.permission_ids.length : 0) + ' privileges';
+      var createdVal = (r.created_at || '').split(' ')[0].toLowerCase();
+      return nameVal.indexOf(query) !== -1 ||
+             descVal.indexOf(query) !== -1 ||
+             permCountVal.indexOf(query) !== -1 ||
+             createdVal.indexOf(query) !== -1;
     });
-    
-    if (visibleCount === 0 && rows.length > 0) {
-      var noMatchRow = document.createElement('tr');
-      noMatchRow.className = 'no-match-row';
-      noMatchRow.innerHTML = '<td colspan="6" class="table-empty" style="text-align: center;">No matching roles found.</td>';
-      rolesList.appendChild(noMatchRow);
-    }
   }
 
   if (searchInput) {
-    searchInput.addEventListener('input', applySearchFilter);
+    searchInput.addEventListener('input', function () {
+      currentPage = 1;
+      renderRoles();
+    });
   }
 
   function fetchRoles() {
@@ -73,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (result) {
         if (result.success) {
           allRoles = result.data;
-          renderRoles(result.data);
+          renderRoles();
           updateStats(result.data);
           if (result.token) {
             updateToken(result.token);
@@ -88,14 +71,25 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
-  function renderRoles(roles) {
-    if (!roles || roles.length === 0) {
-      rolesList.innerHTML = '<tr><td colspan="6" class="table-empty">No roles defined yet.</td></tr>';
+  function renderRoles() {
+    var filtered = getFilteredRoles();
+    var totalItems = filtered.length;
+    var totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    if (currentPage > totalPages) {
+      currentPage = Math.max(1, totalPages);
+    }
+    
+    if (totalItems === 0) {
+      rolesList.innerHTML = '<tr><td colspan="6" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching roles found.' : 'No roles defined yet.') + '</td></tr>';
+      renderPagination(totalItems, totalPages);
       return;
     }
 
     var html = '';
-    roles.forEach(function (r, index) {
+    paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    paginated.forEach(function (r, index) {
+      var globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
       var nameVal = escapeHtml(r.name);
       var descVal = r.description ? escapeHtml(r.description) : '—';
       var createdVal = escapeHtml(r.created_at.split(' ')[0]);
@@ -112,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       html += '<tr>' +
-        '<td>' + (index + 1) + '</td>' +
+        '<td>' + globalIndex + '</td>' +
         '<td><strong>' + nameVal + '</strong></td>' +
         '<td>' + descVal + '</td>' +
         '<td>' + permBadge + '</td>' +
@@ -129,8 +123,66 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     rolesList.innerHTML = html;
-    attachRowEventListeners(roles);
-    applySearchFilter();
+    attachRowEventListeners(paginated);
+    renderPagination(totalItems, totalPages);
+  }
+
+  function renderPagination(totalItems, totalPages) {
+    if (totalPages <= 1) {
+      paginationContainer.style.display = 'none';
+      return;
+    }
+    paginationContainer.style.display = 'flex';
+
+    var startIndex = (currentPage - 1) * itemsPerPage + 1;
+    var endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
+
+    var infoHtml = 'Showing ' + startIndex + ' to ' + endIndex + ' of ' + totalItems + ' entries';
+    
+    var buttonsHtml = '';
+    
+    buttonsHtml += '<button class="pagination-btn" ' + (currentPage === 1 ? 'disabled' : '') + ' data-page="' + (currentPage - 1) + '">&laquo; Prev</button>';
+
+    var startPage = Math.max(1, currentPage - 2);
+    var endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) {
+      startPage = Math.max(1, endPage - 4);
+    }
+
+    if (startPage > 1) {
+      buttonsHtml += '<button class="pagination-btn" data-page="1">1</button>';
+      if (startPage > 2) {
+        buttonsHtml += '<span style="padding: 0 4px; color: var(--text3);">...</span>';
+      }
+    }
+
+    for (var p = startPage; p <= endPage; p++) {
+      buttonsHtml += '<button class="pagination-btn ' + (p === currentPage ? 'active' : '') + '" data-page="' + p + '">' + p + '</button>';
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        buttonsHtml += '<span style="padding: 0 4px; color: var(--text3);">...</span>';
+      }
+      buttonsHtml += '<button class="pagination-btn" data-page="' + totalPages + '">' + totalPages + '</button>';
+    }
+
+    buttonsHtml += '<button class="pagination-btn" ' + (currentPage === totalPages ? 'disabled' : '') + ' data-page="' + (currentPage + 1) + '">Next &raquo;</button>';
+
+    paginationContainer.innerHTML = 
+      '<div class="pagination-info">' + infoHtml + '</div>' +
+      '<div class="pagination-buttons">' + buttonsHtml + '</div>';
+
+    var buttons = paginationContainer.querySelectorAll('.pagination-btn');
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var page = parseInt(btn.getAttribute('data-page'), 10);
+        if (page && page !== currentPage) {
+          currentPage = page;
+          renderRoles();
+        }
+      });
+    });
   }
 
   function updateStats(roles) {

@@ -29,50 +29,37 @@ document.addEventListener('DOMContentLoaded', function () {
   var isRangeValid = true;
   var isCodeUnique = true;
 
-  function applySearchFilter() {
+  var currentPage = 1;
+  var itemsPerPage = 25;
+  var tableContainer = document.getElementById('accountsTable').parentElement;
+  var paginationContainer = document.createElement('div');
+  paginationContainer.className = 'table-pagination';
+  tableContainer.parentNode.insertBefore(paginationContainer, tableContainer.nextSibling);
+
+  function getFilteredAccounts() {
     var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    var rows = Array.prototype.slice.call(accountsList.querySelectorAll('tr'));
-    
-    var existingNoMatch = accountsList.querySelector('.no-match-row');
-    if (existingNoMatch) {
-      existingNoMatch.parentNode.removeChild(existingNoMatch);
-    }
-    
-    var emptyRow = accountsList.querySelector('.table-empty');
-    if (emptyRow && rows.length === 1 && !existingNoMatch) {
-      return;
-    }
-    
-    var visibleCount = 0;
-    rows.forEach(function (row) {
-      if (row.classList.contains('no-match-row')) return;
-      var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
-      if (cells.length < 2) return;
-      
-      var textContent = '';
-      for (var i = 1; i < cells.length; i++) {
-        textContent += ' ' + cells[i].textContent.toLowerCase();
-      }
-      
-      if (textContent.indexOf(query) !== -1) {
-        row.style.display = '';
-        visibleCount++;
-        cells[0].textContent = visibleCount;
-      } else {
-        row.style.display = 'none';
-      }
+    if (!query) return allAccounts;
+    return allAccounts.filter(function (a) {
+      var codeVal = (a.account_code || '').toLowerCase();
+      var nameVal = (a.account_name || '').toLowerCase();
+      var typeVal = (a.account_type_name + ' (' + a.account_type_code + ')').toLowerCase();
+      var opBal = String(a.opening_balance || '').toLowerCase();
+      var curBal = String(a.current_balance || '').toLowerCase();
+      var statusVal = (a.is_active === 1 ? 'active' : 'inactive').toLowerCase();
+      return codeVal.indexOf(query) !== -1 ||
+             nameVal.indexOf(query) !== -1 ||
+             typeVal.indexOf(query) !== -1 ||
+             opBal.indexOf(query) !== -1 ||
+             curBal.indexOf(query) !== -1 ||
+             statusVal.indexOf(query) !== -1;
     });
-    
-    if (visibleCount === 0 && rows.length > 0) {
-      var noMatchRow = document.createElement('tr');
-      noMatchRow.className = 'no-match-row';
-      noMatchRow.innerHTML = '<td colspan="8" class="table-empty" style="text-align: center;">No matching accounts found.</td>';
-      accountsList.appendChild(noMatchRow);
-    }
   }
 
   if (searchInput) {
-    searchInput.addEventListener('input', applySearchFilter);
+    searchInput.addEventListener('input', function () {
+      currentPage = 1;
+      renderAccounts();
+    });
   }
 
   function fetchAccounts() {
@@ -83,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (result) {
         if (result.success) {
           allAccounts = result.data;
-          renderAccounts(result.data);
+          renderAccounts();
           updateStats(result.data);
           if (result.token) {
             updateToken(result.token);
@@ -98,20 +85,40 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
-  function renderAccounts(accounts) {
-    if (!accounts || accounts.length === 0) {
+  function renderAccounts() {
+    if (!allAccounts || allAccounts.length === 0) {
       accountsList.innerHTML = '<tr><td colspan="8" class="table-empty">No accounts registered yet.</td></tr>';
+      renderPagination(0, 0);
       return;
     }
 
+    var filtered = getFilteredAccounts();
+    var totalItems = filtered.length;
+    var totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    if (currentPage > totalPages) {
+      currentPage = Math.max(1, totalPages);
+    }
+    
+    if (totalItems === 0) {
+      accountsList.innerHTML = '<tr><td colspan="8" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching accounts found.' : 'No accounts registered yet.') + '</td></tr>';
+      renderPagination(totalItems, totalPages);
+      return;
+    }
+
+    var startIndex = (currentPage - 1) * itemsPerPage;
+    var endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    var paginated = filtered.slice(startIndex, endIndex);
+
     var html = '';
-    accounts.forEach(function (a, index) {
+    paginated.forEach(function (a, index) {
+      var globalIndex = startIndex + index + 1;
       var activeLabel = a.is_active === 1
         ? '<span class="status-pill pill-green">Active</span>'
         : '<span class="status-pill pill-red">Inactive</span>';
 
       html += '<tr>' +
-        '<td>' + (index + 1) + '</td>' +
+        '<td>' + globalIndex + '</td>' +
         '<td><span class="code-badge" style="font-weight:600; font-family:monospace;">' + escapeHtml(a.account_code) + '</span></td>' +
         '<td class="td-name" style="font-weight:500;">' + escapeHtml(a.account_name) + '</td>' +
         '<td><span class="parent-type-badge">' + escapeHtml(a.account_type_name) + ' (' + escapeHtml(a.account_type_code) + ')</span></td>' +
@@ -132,8 +139,66 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     accountsList.innerHTML = html;
-    attachRowEventListeners(accounts);
-    applySearchFilter();
+    attachRowEventListeners(paginated);
+    renderPagination(totalItems, totalPages);
+  }
+
+  function renderPagination(totalItems, totalPages) {
+    if (totalPages <= 1) {
+      paginationContainer.style.display = 'none';
+      return;
+    }
+    paginationContainer.style.display = 'flex';
+
+    var startIndex = (currentPage - 1) * itemsPerPage + 1;
+    var endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
+
+    var infoHtml = 'Showing ' + startIndex + ' to ' + endIndex + ' of ' + totalItems + ' entries';
+    
+    var buttonsHtml = '';
+    
+    buttonsHtml += '<button class="pagination-btn" ' + (currentPage === 1 ? 'disabled' : '') + ' data-page="' + (currentPage - 1) + '">&laquo; Prev</button>';
+
+    var startPage = Math.max(1, currentPage - 2);
+    var endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) {
+      startPage = Math.max(1, endPage - 4);
+    }
+
+    if (startPage > 1) {
+      buttonsHtml += '<button class="pagination-btn" data-page="1">1</button>';
+      if (startPage > 2) {
+        buttonsHtml += '<span style="padding: 0 4px; color: var(--text3);">...</span>';
+      }
+    }
+
+    for (var p = startPage; p <= endPage; p++) {
+      buttonsHtml += '<button class="pagination-btn ' + (p === currentPage ? 'active' : '') + '" data-page="' + p + '">' + p + '</button>';
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        buttonsHtml += '<span style="padding: 0 4px; color: var(--text3);">...</span>';
+      }
+      buttonsHtml += '<button class="pagination-btn" data-page="' + totalPages + '">' + totalPages + '</button>';
+    }
+
+    buttonsHtml += '<button class="pagination-btn" ' + (currentPage === totalPages ? 'disabled' : '') + ' data-page="' + (currentPage + 1) + '">Next &raquo;</button>';
+
+    paginationContainer.innerHTML = 
+      '<div class="pagination-info">' + infoHtml + '</div>' +
+      '<div class="pagination-buttons">' + buttonsHtml + '</div>';
+
+    var buttons = paginationContainer.querySelectorAll('.pagination-btn');
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var page = parseInt(btn.getAttribute('data-page'), 10);
+        if (page && page !== currentPage) {
+          currentPage = page;
+          renderAccounts();
+        }
+      });
+    });
   }
 
   function updateStats(accounts) {

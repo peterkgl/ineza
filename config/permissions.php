@@ -13,7 +13,7 @@ function hasPermission($conn, $userId, $permissionCode) {
     $roleResult = mysqli_query($conn, $roleQuery);
     if ($roleResult) {
         while ($row = mysqli_fetch_assoc($roleResult)) {
-            if ($row['name'] === 'admin') {
+            if (strtolower($row['name']) === 'admin') {
                 return true;
             }
         }

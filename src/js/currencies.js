@@ -19,50 +19,35 @@ document.addEventListener('DOMContentLoaded', function () {
   var allCurrencies = [];
   var searchInput = document.getElementById('searchInput');
 
-  function applySearchFilter() {
+  var currentPage = 1;
+  var itemsPerPage = 25;
+  var tableContainer = document.getElementById('currenciesTable').parentElement;
+  var paginationContainer = document.createElement('div');
+  paginationContainer.className = 'table-pagination';
+  tableContainer.parentNode.insertBefore(paginationContainer, tableContainer.nextSibling);
+
+  function getFilteredCurrencies() {
     var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    var rows = Array.prototype.slice.call(currenciesList.querySelectorAll('tr'));
-    
-    var existingNoMatch = currenciesList.querySelector('.no-match-row');
-    if (existingNoMatch) {
-      existingNoMatch.parentNode.removeChild(existingNoMatch);
-    }
-    
-    var emptyRow = currenciesList.querySelector('.table-empty');
-    if (emptyRow && rows.length === 1 && !existingNoMatch) {
-      return;
-    }
-    
-    var visibleCount = 0;
-    rows.forEach(function (row) {
-      if (row.classList.contains('no-match-row')) return;
-      var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
-      if (cells.length < 2) return;
-      
-      var textContent = '';
-      for (var i = 1; i < cells.length; i++) {
-        textContent += ' ' + cells[i].textContent.toLowerCase();
-      }
-      
-      if (textContent.indexOf(query) !== -1) {
-        row.style.display = '';
-        visibleCount++;
-        cells[0].textContent = visibleCount;
-      } else {
-        row.style.display = 'none';
-      }
+    if (!query) return allCurrencies;
+    return allCurrencies.filter(function (curr) {
+      var codeVal = (curr.code || '').toLowerCase();
+      var nameVal = (curr.name || '').toLowerCase();
+      var symbolVal = (curr.symbol || '').toLowerCase();
+      var baseVal = (curr.is_base_currency === 1 ? 'reporting base' : 'secondary').toLowerCase();
+      var statusVal = (curr.is_active === 1 ? 'active' : 'inactive').toLowerCase();
+      return codeVal.indexOf(query) !== -1 ||
+             nameVal.indexOf(query) !== -1 ||
+             symbolVal.indexOf(query) !== -1 ||
+             baseVal.indexOf(query) !== -1 ||
+             statusVal.indexOf(query) !== -1;
     });
-    
-    if (visibleCount === 0 && rows.length > 0) {
-      var noMatchRow = document.createElement('tr');
-      noMatchRow.className = 'no-match-row';
-      noMatchRow.innerHTML = '<td colspan="7" class="table-empty" style="text-align: center;">No matching currencies found.</td>';
-      currenciesList.appendChild(noMatchRow);
-    }
   }
 
   if (searchInput) {
-    searchInput.addEventListener('input', applySearchFilter);
+    searchInput.addEventListener('input', function () {
+      currentPage = 1;
+      renderCurrencies();
+    });
   }
 
   function fetchCurrencies() {
@@ -73,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (result) {
         if (result.success) {
           allCurrencies = result.data;
-          renderCurrencies(result.data);
+          renderCurrencies();
           updateStats(result.data);
           if (result.token) {
             updateToken(result.token);
@@ -88,14 +73,28 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
-  function renderCurrencies(currencies) {
-    if (!currencies || currencies.length === 0) {
-      currenciesList.innerHTML = '<tr><td colspan="7" class="table-empty">No currencies registered yet.</td></tr>';
+  function renderCurrencies() {
+    var filtered = getFilteredCurrencies();
+    var totalItems = filtered.length;
+    var totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    if (currentPage > totalPages) {
+      currentPage = Math.max(1, totalPages);
+    }
+    
+    if (totalItems === 0) {
+      currenciesList.innerHTML = '<tr><td colspan="7" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching currencies found.' : 'No currencies registered yet.') + '</td></tr>';
+      renderPagination(totalItems, totalPages);
       return;
     }
 
+    var startIndex = (currentPage - 1) * itemsPerPage;
+    var endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    var paginated = filtered.slice(startIndex, endIndex);
+
     var html = '';
-    currencies.forEach(function (curr, index) {
+    paginated.forEach(function (curr, index) {
+      var globalIndex = startIndex + index + 1;
       var baseLabel = curr.is_base_currency === 1
         ? '<span class="status-pill pill-green" style="font-weight:600;">Reporting Base</span>'
         : '<span class="status-pill" style="background:var(--bg); color:var(--text3)">Secondary</span>';
@@ -105,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
         : '<span class="status-pill pill-red">Inactive</span>';
 
       html += '<tr>' +
-        '<td>' + (index + 1) + '</td>' +
+        '<td>' + globalIndex + '</td>' +
         '<td><span class="code-badge">' + escapeHtml(curr.code) + '</span></td>' +
         '<td class="td-name">' + escapeHtml(curr.name) + '</td>' +
         '<td>' + (curr.symbol ? escapeHtml(curr.symbol) : '—') + '</td>' +
@@ -125,8 +124,66 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     currenciesList.innerHTML = html;
-    attachRowEventListeners(currencies);
-    applySearchFilter();
+    attachRowEventListeners(paginated);
+    renderPagination(totalItems, totalPages);
+  }
+
+  function renderPagination(totalItems, totalPages) {
+    if (totalPages <= 1) {
+      paginationContainer.style.display = 'none';
+      return;
+    }
+    paginationContainer.style.display = 'flex';
+
+    var startIndex = (currentPage - 1) * itemsPerPage + 1;
+    var endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
+
+    var infoHtml = 'Showing ' + startIndex + ' to ' + endIndex + ' of ' + totalItems + ' entries';
+    
+    var buttonsHtml = '';
+    
+    buttonsHtml += '<button class="pagination-btn" ' + (currentPage === 1 ? 'disabled' : '') + ' data-page="' + (currentPage - 1) + '">&laquo; Prev</button>';
+
+    var startPage = Math.max(1, currentPage - 2);
+    var endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) {
+      startPage = Math.max(1, endPage - 4);
+    }
+
+    if (startPage > 1) {
+      buttonsHtml += '<button class="pagination-btn" data-page="1">1</button>';
+      if (startPage > 2) {
+        buttonsHtml += '<span style="padding: 0 4px; color: var(--text3);">...</span>';
+      }
+    }
+
+    for (var p = startPage; p <= endPage; p++) {
+      buttonsHtml += '<button class="pagination-btn ' + (p === currentPage ? 'active' : '') + '" data-page="' + p + '">' + p + '</button>';
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        buttonsHtml += '<span style="padding: 0 4px; color: var(--text3);">...</span>';
+      }
+      buttonsHtml += '<button class="pagination-btn" data-page="' + totalPages + '">' + totalPages + '</button>';
+    }
+
+    buttonsHtml += '<button class="pagination-btn" ' + (currentPage === totalPages ? 'disabled' : '') + ' data-page="' + (currentPage + 1) + '">Next &raquo;</button>';
+
+    paginationContainer.innerHTML = 
+      '<div class="pagination-info">' + infoHtml + '</div>' +
+      '<div class="pagination-buttons">' + buttonsHtml + '</div>';
+
+    var buttons = paginationContainer.querySelectorAll('.pagination-btn');
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var page = parseInt(btn.getAttribute('data-page'), 10);
+        if (page && page !== currentPage) {
+          currentPage = page;
+          renderCurrencies();
+        }
+      });
+    });
   }
 
   function updateStats(currencies) {
