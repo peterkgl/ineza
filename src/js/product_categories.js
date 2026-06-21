@@ -1,11 +1,11 @@
 document.addEventListener('DOMContentLoaded', function () {
-  var productForm = document.getElementById('productForm');
-  var productsList = document.getElementById('productsList');
+  var categoryForm = document.getElementById('categoryForm');
+  var categoriesList = document.getElementById('categoriesList');
   var alertPlaceholder = document.getElementById('alertPlaceholder');
   var formAlertPlaceholder = document.getElementById('formAlertPlaceholder');
   var formTitle = document.getElementById('formTitle');
-  var productIdInput = document.getElementById('productIdInput');
-  var productTokenInput = document.getElementById('productToken');
+  var categoryIdInput = document.getElementById('categoryIdInput');
+  var categoryTokenInput = document.getElementById('categoryToken');
   var cancelBtn = document.getElementById('cancelBtn');
   var saveBtn = document.getElementById('saveBtn');
   var refreshBtn = document.getElementById('refreshBtn');
@@ -16,45 +16,27 @@ document.addEventListener('DOMContentLoaded', function () {
   var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   
   var activeDeleteId = null;
-  var allProducts = [];
+  var allCategories = [];
   var searchInput = document.getElementById('searchInput');
 
   var currentPage = 1;
   var itemsPerPage = 25;
-  var tableContainer = document.getElementById('productsTable').parentElement;
+  var tableContainer = document.getElementById('categoriesTable').parentElement;
   var paginationContainer = document.createElement('div');
   paginationContainer.className = 'table-pagination';
   tableContainer.parentNode.insertBefore(paginationContainer, tableContainer.nextSibling);
 
-  function getFilteredProducts() {
+  function getFilteredCategories() {
     var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    if (!query) return allProducts;
-    return allProducts.filter(function (p) {
-      var codeVal = (p.code || '').toLowerCase();
-      var nameVal = (p.name || '').toLowerCase();
-      var fullNameVal = (p.full_name || '').toLowerCase();
-      var unitVal = (p.unit_of_measure || '').toLowerCase();
-      var invCode = (p.inventory_code || '').toLowerCase();
-      var invName = (p.inventory_name || '').toLowerCase();
-      var salCode = (p.sales_code || '').toLowerCase();
-      var salName = (p.sales_name || '').toLowerCase();
-      var cogsCode = (p.cogs_code || '').toLowerCase();
-      var cogsName = (p.cogs_name || '').toLowerCase();
-      var catCode = (p.category_code || '').toLowerCase();
-      var catName = (p.category_name || '').toLowerCase();
-      var statusVal = (p.is_active === 1 ? 'active' : 'inactive').toLowerCase();
+    if (!query) return allCategories;
+    return allCategories.filter(function (c) {
+      var codeVal = (c.category_code || '').toLowerCase();
+      var nameVal = (c.category_name || '').toLowerCase();
+      var descVal = (c.description || '').toLowerCase();
+      var statusVal = (c.is_active === 1 ? 'active' : 'inactive').toLowerCase();
       return codeVal.indexOf(query) !== -1 ||
              nameVal.indexOf(query) !== -1 ||
-             fullNameVal.indexOf(query) !== -1 ||
-             unitVal.indexOf(query) !== -1 ||
-             invCode.indexOf(query) !== -1 ||
-             invName.indexOf(query) !== -1 ||
-             salCode.indexOf(query) !== -1 ||
-             salName.indexOf(query) !== -1 ||
-             cogsCode.indexOf(query) !== -1 ||
-             cogsName.indexOf(query) !== -1 ||
-             catCode.indexOf(query) !== -1 ||
-             catName.indexOf(query) !== -1 ||
+             descVal.indexOf(query) !== -1 ||
              statusVal.indexOf(query) !== -1;
     });
   }
@@ -62,19 +44,19 @@ document.addEventListener('DOMContentLoaded', function () {
   if (searchInput) {
     searchInput.addEventListener('input', function () {
       currentPage = 1;
-      renderProducts();
+      renderCategories();
     });
   }
 
-  function fetchProducts() {
-    fetch('products_api.php?action=list')
+  function fetchCategories() {
+    fetch('categories_api.php?action=list')
       .then(function (response) {
         return response.json();
       })
       .then(function (result) {
         if (result.success) {
-          allProducts = result.data;
-          renderProducts();
+          allCategories = result.data;
+          renderCategories();
           updateStats(result.data);
           if (result.token) {
             updateToken(result.token);
@@ -84,13 +66,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       })
       .catch(function (error) {
-        console.error('Error fetching products:', error);
-        showAlert(alertPlaceholder, 'error', 'An error occurred while loading products.');
+        console.error('Error fetching categories:', error);
+        showAlert(alertPlaceholder, 'error', 'An error occurred while loading product categories.');
       });
   }
 
-  function renderProducts() {
-    var filtered = getFilteredProducts();
+  function renderCategories() {
+    var filtered = getFilteredCategories();
     var totalItems = filtered.length;
     var totalPages = Math.ceil(totalItems / itemsPerPage);
     
@@ -99,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     if (totalItems === 0) {
-      productsList.innerHTML = '<tr><td colspan="10" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching products found.' : 'No products configured yet.') + '</td></tr>';
+      categoriesList.innerHTML = '<tr><td colspan="6" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching categories found.' : 'No categories configured yet.') + '</td></tr>';
       renderPagination(totalItems, totalPages);
       return;
     }
@@ -109,39 +91,28 @@ document.addEventListener('DOMContentLoaded', function () {
     var paginated = filtered.slice(startIndex, endIndex);
 
     var html = '';
-    paginated.forEach(function (p, index) {
+    paginated.forEach(function (c, index) {
       var globalIndex = startIndex + index + 1;
-      var codeVal = escapeHtml(p.code);
-      var nameVal = escapeHtml(p.name);
-      var fullNameVal = p.full_name ? escapeHtml(p.full_name) : '—';
-      var unitVal = escapeHtml(p.unit_of_measure);
+      var codeVal = escapeHtml(c.category_code);
+      var nameVal = escapeHtml(c.category_name);
+      var descVal = c.description ? escapeHtml(c.description) : '—';
       
-      var statusLabel = p.is_active === 1
+      var statusLabel = c.is_active === 1
         ? '<span class="status-pill pill-green">Active</span>'
         : '<span class="status-pill pill-red">Inactive</span>';
-
-      var invVal = p.inventory_code ? '<span class="parent-type-badge">[' + escapeHtml(p.inventory_code) + '] ' + escapeHtml(p.inventory_name) + '</span>' : '—';
-      var salVal = p.sales_code ? '<span class="parent-type-badge">[' + escapeHtml(p.sales_code) + '] ' + escapeHtml(p.sales_name) + '</span>' : '—';
-      var cogsVal = p.cogs_code ? '<span class="parent-type-badge">[' + escapeHtml(p.cogs_code) + '] ' + escapeHtml(p.cogs_name) + '</span>' : '—';
-      var catVal = p.category_code ? '<span class="parent-type-badge">[' + escapeHtml(p.category_code) + '] ' + escapeHtml(p.category_name) + '</span>' : '—';
 
       html += '<tr>' +
         '<td>' + globalIndex + '</td>' +
         '<td><span class="code-badge">' + codeVal + '</span></td>' +
         '<td><strong>' + nameVal + '</strong></td>' +
-        '<td>' + catVal + '</td>' +
-        '<td>' + fullNameVal + '</td>' +
-        '<td>' + unitVal + '</td>' +
-        '<td>' + invVal + '</td>' +
-        '<td>' + salVal + '</td>' +
-        '<td>' + cogsVal + '</td>' +
+        '<td>' + descVal + '</td>' +
         '<td>' + statusLabel + '</td>' +
         '<td style="text-align: right;">' +
           '<div class="action-buttons" style="justify-content: flex-end;">' +
-            '<button class="btn-icon-only edit" title="Edit Product" data-id="' + p.id + '">' +
+            '<button class="btn-icon-only edit" title="Edit Category" data-id="' + c.id + '">' +
               '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
             '</button>' +
-            '<button class="btn-icon-only delete" title="Delete Product" data-id="' + p.id + '">' +
+            '<button class="btn-icon-only delete" title="Delete Category" data-id="' + c.id + '">' +
               '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' +
             '</button>' +
           '</div>' +
@@ -149,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
       '</tr>';
     });
 
-    productsList.innerHTML = html;
+    categoriesList.innerHTML = html;
     attachRowEventListeners(paginated);
     renderPagination(totalItems, totalPages);
   }
@@ -167,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var infoHtml = 'Showing ' + startIndex + ' to ' + endIndex + ' of ' + totalItems + ' entries';
     
     var buttonsHtml = '';
-    
     buttonsHtml += '<button class="pagination-btn" ' + (currentPage === 1 ? 'disabled' : '') + ' data-page="' + (currentPage - 1) + '">&laquo; Prev</button>';
 
     var startPage = Math.max(1, currentPage - 2);
@@ -206,54 +176,46 @@ document.addEventListener('DOMContentLoaded', function () {
         var page = parseInt(btn.getAttribute('data-page'), 10);
         if (page && page !== currentPage) {
           currentPage = page;
-          renderProducts();
+          renderCategories();
         }
       });
     });
   }
 
-  function updateStats(products) {
-    var total = products.length;
+  function updateStats(categories) {
+    var total = categories.length;
     var active = 0;
     var inactive = 0;
-    var uniqueUnits = {};
 
-    products.forEach(function (p) {
-      if (p.is_active === 1) {
+    categories.forEach(function (c) {
+      if (c.is_active === 1) {
         active++;
       } else {
         inactive++;
       }
-      
-      if (p.unit_of_measure && p.unit_of_measure.trim() !== '') {
-        uniqueUnits[p.unit_of_measure.trim().toLowerCase()] = true;
-      }
     });
-
-    var unitsCount = Object.keys(uniqueUnits).length;
 
     document.getElementById('stat-total').textContent = total;
     document.getElementById('stat-active').textContent = active;
     document.getElementById('stat-inactive').textContent = inactive;
-    document.getElementById('stat-base').textContent = unitsCount;
   }
 
   function updateToken(token) {
-    if (productTokenInput) {
-      productTokenInput.value = token;
+    if (categoryTokenInput) {
+      categoryTokenInput.value = token;
     }
   }
 
-  function attachRowEventListeners(products) {
+  function attachRowEventListeners(categories) {
     var editButtons = document.querySelectorAll('.action-buttons .edit');
     var deleteButtons = document.querySelectorAll('.action-buttons .delete');
 
     editButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = parseInt(btn.getAttribute('data-id'), 10);
-        var p = products.find(function (x) { return x.id === id; });
-        if (p) {
-          setEditMode(p);
+        var c = categories.find(function (x) { return x.id === id; });
+        if (c) {
+          setEditMode(c);
         }
       });
     });
@@ -261,37 +223,31 @@ document.addEventListener('DOMContentLoaded', function () {
     deleteButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = parseInt(btn.getAttribute('data-id'), 10);
-        var p = products.find(function (x) { return x.id === id; });
-        if (p) {
+        var c = categories.find(function (x) { return x.id === id; });
+        if (c) {
           activeDeleteId = id;
-          confirmBody.textContent = 'Are you sure you want to delete the product configuration "' + p.name + ' (' + p.code + ')"? This will fail if elements are configured under this product.';
+          confirmBody.textContent = 'Are you sure you want to delete the product category "' + c.category_name + ' (' + c.category_code + ')"? This will fail if products are configured under this category.';
           confirmOverlay.style.display = 'flex';
         }
       });
     });
   }
 
-  function setEditMode(p) {
-    if (!productForm) return;
+  function setEditMode(c) {
+    if (!categoryForm) return;
     
-    productIdInput.value = p.id;
-    var codeInput = document.getElementById('productCode');
-    codeInput.value = p.code;
+    categoryIdInput.value = c.id;
+    var codeInput = document.getElementById('categoryCode');
+    codeInput.value = c.category_code;
     codeInput.setAttribute('readonly', 'true');
     codeInput.style.opacity = '0.7';
 
-    document.getElementById('productName').value = p.name;
-    document.getElementById('productFullName').value = p.full_name || '';
-    document.getElementById('productUnit').value = p.unit_of_measure;
-    document.getElementById('productDescription').value = p.description || '';
-    document.getElementById('inventoryAccount').value = p.inventory_account_id || '';
-    document.getElementById('salesAccount').value = p.sales_account_id || '';
-    document.getElementById('cogsAccount').value = p.cogs_account_id || '';
-    document.getElementById('productCategory').value = p.category_id || '';
-    document.getElementById('productActive').checked = p.is_active === 1;
+    document.getElementById('categoryName').value = c.category_name;
+    document.getElementById('categoryDescription').value = c.description || '';
+    document.getElementById('categoryActive').checked = c.is_active === 1;
 
-    formTitle.textContent = 'Edit Product: ' + p.code;
-    saveBtn.textContent = 'Update Product';
+    formTitle.textContent = 'Edit Category: ' + c.category_code;
+    saveBtn.textContent = 'Update Category';
     cancelBtn.style.display = 'inline-block';
     
     if (window.innerWidth <= 992) {
@@ -300,45 +256,33 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function resetForm() {
-    if (!productForm) return;
-    productForm.reset();
-    productIdInput.value = '';
+    if (!categoryForm) return;
+    categoryForm.reset();
+    categoryIdInput.value = '';
     
-    var codeInput = document.getElementById('productCode');
+    var codeInput = document.getElementById('categoryCode');
     codeInput.removeAttribute('readonly');
     codeInput.style.opacity = '1';
-    
-    document.getElementById('productUnit').value = 'kg';
-    document.getElementById('inventoryAccount').value = '';
-    document.getElementById('salesAccount').value = '';
-    document.getElementById('cogsAccount').value = '';
-    document.getElementById('productCategory').value = '';
 
-    formTitle.textContent = 'Add New Product';
-    saveBtn.textContent = 'Save Product';
+    formTitle.textContent = 'Add New Category';
+    saveBtn.textContent = 'Save Category';
     cancelBtn.style.display = 'none';
     formAlertPlaceholder.innerHTML = '';
   }
 
-  if (productForm) {
-    productForm.addEventListener('submit', function (e) {
+  if (categoryForm) {
+    categoryForm.addEventListener('submit', function (e) {
       e.preventDefault();
 
-      var id = productIdInput.value;
-      var code = document.getElementById('productCode').value.trim();
-      var name = document.getElementById('productName').value.trim();
-      var fullName = document.getElementById('productFullName').value.trim();
-      var unit = document.getElementById('productUnit').value.trim();
-      var description = document.getElementById('productDescription').value.trim();
-      var inventoryAccountId = document.getElementById('inventoryAccount').value;
-      var salesAccountId = document.getElementById('salesAccount').value;
-      var cogsAccountId = document.getElementById('cogsAccount').value;
-      var categoryId = document.getElementById('productCategory').value;
-      var active = document.getElementById('productActive').checked ? '1' : '0';
-      var token = productTokenInput.value;
+      var id = categoryIdInput.value;
+      var code = document.getElementById('categoryCode').value.trim();
+      var name = document.getElementById('categoryName').value.trim();
+      var description = document.getElementById('categoryDescription').value.trim();
+      var active = document.getElementById('categoryActive').checked ? '1' : '0';
+      var token = categoryTokenInput.value;
 
-      if (!code || !name || !unit) {
-        showAlert(formAlertPlaceholder, 'error', 'Product code, name, and unit of measure are required.');
+      if (!code || !name) {
+        showAlert(formAlertPlaceholder, 'error', 'Category code and name are required.');
         return;
       }
 
@@ -346,22 +290,16 @@ document.addEventListener('DOMContentLoaded', function () {
       
       var formData = new URLSearchParams();
       if (id) formData.append('id', id);
-      formData.append('code', code);
-      formData.append('name', name);
-      formData.append('full_name', fullName);
-      formData.append('unit_of_measure', unit);
+      formData.append('category_code', code);
+      formData.append('category_name', name);
       formData.append('description', description);
-      formData.append('inventory_account_id', inventoryAccountId);
-      formData.append('sales_account_id', salesAccountId);
-      formData.append('cogs_account_id', cogsAccountId);
-      formData.append('category_id', categoryId);
       formData.append('is_active', active);
       formData.append('token', token);
 
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
 
-      fetch('products_api.php?action=' + action, {
+      fetch('categories_api.php?action=' + action, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
@@ -373,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .then(function (result) {
         saveBtn.disabled = false;
-        saveBtn.textContent = id ? 'Update Product' : 'Save Product';
+        saveBtn.textContent = id ? 'Update Category' : 'Save Category';
 
         if (result.token) {
           updateToken(result.token);
@@ -382,16 +320,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (result.success) {
           showAlert(alertPlaceholder, 'success', result.message);
           resetForm();
-          fetchProducts();
+          fetchCategories();
         } else {
           showAlert(formAlertPlaceholder, 'error', result.message);
         }
       })
       .catch(function (error) {
-        console.error('Error saving product:', error);
+        console.error('Error saving category:', error);
         saveBtn.disabled = false;
-        saveBtn.textContent = id ? 'Update Product' : 'Save Product';
-        showAlert(formAlertPlaceholder, 'error', 'An error occurred while saving the product.');
+        saveBtn.textContent = id ? 'Update Category' : 'Save Category';
+        showAlert(formAlertPlaceholder, 'error', 'An error occurred while saving the category.');
       });
     });
   }
@@ -404,14 +342,14 @@ document.addEventListener('DOMContentLoaded', function () {
   confirmDeleteBtn.addEventListener('click', function () {
     if (!activeDeleteId) return;
 
-    var token = productTokenInput.value;
+    var token = categoryTokenInput.value;
     var formData = new URLSearchParams();
     formData.append('id', activeDeleteId);
     formData.append('token', token);
 
     confirmOverlay.style.display = 'none';
     
-    fetch('products_api.php?action=delete', {
+    fetch('categories_api.php?action=delete', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -429,15 +367,15 @@ document.addEventListener('DOMContentLoaded', function () {
       if (result.success) {
         showAlert(alertPlaceholder, 'success', result.message);
         resetForm();
-        fetchProducts();
+        fetchCategories();
       } else {
         showAlert(alertPlaceholder, 'error', result.message);
       }
       activeDeleteId = null;
     })
     .catch(function (error) {
-      console.error('Error deleting product:', error);
-      showAlert(alertPlaceholder, 'error', 'An error occurred while deleting the product.');
+      console.error('Error deleting category:', error);
+      showAlert(alertPlaceholder, 'error', 'An error occurred while deleting the category.');
       activeDeleteId = null;
     });
   });
@@ -448,8 +386,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (refreshBtn) {
     refreshBtn.addEventListener('click', function () {
-      fetchProducts();
-      showAlert(alertPlaceholder, 'success', 'Products list reloaded.');
+      fetchCategories();
+      showAlert(alertPlaceholder, 'success', 'Product categories list reloaded.');
     });
   }
 
@@ -477,5 +415,5 @@ document.addEventListener('DOMContentLoaded', function () {
       .replace(/'/g, '&#039;');
   }
 
-  fetchProducts();
+  fetchCategories();
 });

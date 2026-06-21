@@ -20,6 +20,7 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
 // Check permissions
 $showSuppliers = hasPermission($conn, $sidebarUserId, 'view_suppliers');
 $showProducts = hasPermission($conn, $sidebarUserId, 'view_products');
+$showProductCategories = hasPermission($conn, $sidebarUserId, 'view_product_categories');
 $showProductElements = hasPermission($conn, $sidebarUserId, 'view_product_elements');
 $showCurrencies = hasPermission($conn, $sidebarUserId, 'view_currencies');
 $showAccountTypes = hasPermission($conn, $sidebarUserId, 'view_account_types');
@@ -59,9 +60,15 @@ $showAuditLogs = hasPermission($conn, $sidebarUserId, 'view_audit_logs');
     </a>
   <?php endif; ?>
 
-  <?php if ($showProducts || $showProductElements): ?>
+  <?php if ($showProducts || $showProductElements || $showProductCategories): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Products &amp; Stock</div>
+    <?php if ($showProductCategories): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'product_categories') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>product_categories/index" id="nav-product-categories">
+        <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        Product Categories
+      </a>
+    <?php endif; ?>
     <?php if ($showProducts): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'products') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>products/index" id="nav-products">
         <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>

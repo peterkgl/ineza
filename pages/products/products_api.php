@@ -44,11 +44,13 @@ switch ($action) {
         $query = "SELECT p.*, 
                          inv.account_code as inventory_code, inv.account_name as inventory_name,
                          sal.account_code as sales_code, sal.account_name as sales_name,
-                         cogs.account_code as cogs_code, cogs.account_name as cogs_name
+                         cogs.account_code as cogs_code, cogs.account_name as cogs_name,
+                         pc.category_code, pc.category_name
                   FROM products p
                   LEFT JOIN accounts inv ON p.inventory_account_id = inv.id
                   LEFT JOIN accounts sal ON p.sales_account_id = sal.id
                   LEFT JOIN accounts cogs ON p.cogs_account_id = cogs.id
+                  LEFT JOIN product_categories pc ON p.category_id = pc.id
                   ORDER BY p.code ASC";
         $result = mysqli_query($conn, $query);
         $products = [];
@@ -71,6 +73,9 @@ switch ($action) {
                     'cogs_account_id' => $row['cogs_account_id'] !== null ? (int)$row['cogs_account_id'] : null,
                     'cogs_code' => $row['cogs_code'],
                     'cogs_name' => $row['cogs_name'],
+                    'category_id' => $row['category_id'] !== null ? (int)$row['category_id'] : null,
+                    'category_code' => $row['category_code'],
+                    'category_name' => $row['category_name'],
                     'is_active' => (int)$row['is_active'],
                     'created_at' => $row['created_at'],
                     'updated_at' => $row['updated_at']
@@ -97,6 +102,7 @@ switch ($action) {
         $inventory_account_id = isset($_POST['inventory_account_id']) && $_POST['inventory_account_id'] !== '' ? (int)$_POST['inventory_account_id'] : null;
         $sales_account_id = isset($_POST['sales_account_id']) && $_POST['sales_account_id'] !== '' ? (int)$_POST['sales_account_id'] : null;
         $cogs_account_id = isset($_POST['cogs_account_id']) && $_POST['cogs_account_id'] !== '' ? (int)$_POST['cogs_account_id'] : null;
+        $category_id = isset($_POST['category_id']) && $_POST['category_id'] !== '' ? (int)$_POST['category_id'] : null;
 
         if (empty($code) || empty($name)) {
             sendResponse(false, 'Product code and name are required.');
@@ -119,9 +125,10 @@ switch ($action) {
             $invVal = $inventory_account_id !== null ? $inventory_account_id : "NULL";
             $salVal = $sales_account_id !== null ? $sales_account_id : "NULL";
             $cogsVal = $cogs_account_id !== null ? $cogs_account_id : "NULL";
+            $catVal = $category_id !== null ? $category_id : "NULL";
 
-            $insertProduct = "INSERT INTO products (code, name, full_name, unit_of_measure, description, inventory_account_id, sales_account_id, cogs_account_id, is_active, created_by) 
-                              VALUES ('$codeEsc', '$nameEsc', '$fullNameEsc', '$unitEsc', '$descEsc', $invVal, $salVal, $cogsVal, $is_active, $userId)";
+            $insertProduct = "INSERT INTO products (code, name, full_name, unit_of_measure, description, inventory_account_id, sales_account_id, cogs_account_id, is_active, created_by, category_id) 
+                              VALUES ('$codeEsc', '$nameEsc', '$fullNameEsc', '$unitEsc', '$descEsc', $invVal, $salVal, $cogsVal, $is_active, $userId, $catVal)";
             
             if (mysqli_query($conn, $insertProduct)) {
                 $newId = mysqli_insert_id($conn);
@@ -135,6 +142,7 @@ switch ($action) {
                     'inventory_account_id' => $inventory_account_id,
                     'sales_account_id' => $sales_account_id,
                     'cogs_account_id' => $cogs_account_id,
+                    'category_id' => $category_id,
                     'is_active' => $is_active
                 ];
 
@@ -167,6 +175,7 @@ switch ($action) {
         $inventory_account_id = isset($_POST['inventory_account_id']) && $_POST['inventory_account_id'] !== '' ? (int)$_POST['inventory_account_id'] : null;
         $sales_account_id = isset($_POST['sales_account_id']) && $_POST['sales_account_id'] !== '' ? (int)$_POST['sales_account_id'] : null;
         $cogs_account_id = isset($_POST['cogs_account_id']) && $_POST['cogs_account_id'] !== '' ? (int)$_POST['cogs_account_id'] : null;
+        $category_id = isset($_POST['category_id']) && $_POST['category_id'] !== '' ? (int)$_POST['category_id'] : null;
 
         if ($id <= 0 || empty($code) || empty($name)) {
             sendResponse(false, 'Valid ID, product code, and name are required.');
@@ -196,6 +205,7 @@ switch ($action) {
             $invVal = $inventory_account_id !== null ? $inventory_account_id : "NULL";
             $salVal = $sales_account_id !== null ? $sales_account_id : "NULL";
             $cogsVal = $cogs_account_id !== null ? $cogs_account_id : "NULL";
+            $catVal = $category_id !== null ? $category_id : "NULL";
 
             $updateProduct = "UPDATE products SET 
                                 code = '$codeEsc', 
@@ -206,6 +216,7 @@ switch ($action) {
                                 inventory_account_id = $invVal,
                                 sales_account_id = $salVal,
                                 cogs_account_id = $cogsVal,
+                                category_id = $catVal,
                                 is_active = $is_active, 
                                 updated_by = $userId, 
                                 updated_at = CURRENT_TIMESTAMP 
@@ -222,6 +233,7 @@ switch ($action) {
                     'inventory_account_id' => $inventory_account_id,
                     'sales_account_id' => $sales_account_id,
                     'cogs_account_id' => $cogs_account_id,
+                    'category_id' => $category_id,
                     'is_active' => $is_active
                 ];
 

@@ -27,6 +27,16 @@ if ($accountsResult) {
         $accountOptionsHtml .= "<option value='{$row['id']}'>[" . htmlspecialchars($row['account_code']) . "] " . htmlspecialchars($row['account_name']) . "</option>";
     }
 }
+
+// Load all active categories for dropdown options
+$categoriesQuery = "SELECT id, category_code, category_name FROM product_categories WHERE is_active = 1 ORDER BY category_name ASC";
+$categoriesResult = mysqli_query($conn, $categoriesQuery);
+$categoryOptionsHtml = "<option value=''>-- Select Category --</option>";
+if ($categoriesResult) {
+    while ($row = mysqli_fetch_assoc($categoriesResult)) {
+        $categoryOptionsHtml .= "<option value='{$row['id']}'>[" . htmlspecialchars($row['category_code']) . "] " . htmlspecialchars($row['category_name']) . "</option>";
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -138,6 +148,7 @@ if ($accountsResult) {
                 <th style="width: 50px;">#</th>
                 <th>Code</th>
                 <th>Name</th>
+                <th>Category</th>
                 <th>Mineral Designation</th>
                 <th>Unit</th>
                 <th>Inventory A/C</th>
@@ -149,7 +160,7 @@ if ($accountsResult) {
             </thead>
             <tbody id="productsList">
               <tr>
-                <td colspan="10" class="table-empty">Loading mining products...</td>
+                <td colspan="11" class="table-empty">Loading mining products...</td>
               </tr>
             </tbody>
           </table>
@@ -181,6 +192,13 @@ if ($accountsResult) {
           <div class="form-group">
             <label for="productFullName">Chemical / Mineral Full Designation</label>
             <input type="text" id="productFullName" name="full_name" class="form-control" placeholder="e.g. Cassiterite SnO2">
+          </div>
+
+          <div class="form-group">
+            <label for="productCategory">Product Category</label>
+            <select id="productCategory" name="category_id" class="form-control">
+              <?php echo $categoryOptionsHtml; ?>
+            </select>
           </div>
 
           <div class="form-group">

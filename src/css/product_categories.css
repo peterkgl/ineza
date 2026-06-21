@@ -1,11 +1,11 @@
-.products-grid {
+.categories-grid {
   display: grid;
   grid-template-columns: 1fr 360px;
   gap: 16px;
 }
 
 @media (max-width: 992px) {
-  .products-grid {
+  .categories-grid {
     grid-template-columns: 1fr;
   }
 }
