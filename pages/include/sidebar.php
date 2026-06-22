@@ -30,6 +30,7 @@ $showRoles = hasPermission($conn, $sidebarUserId, 'view_roles');
 $showPermissions = hasPermission($conn, $sidebarUserId, 'view_permissions');
 $showAuditLogs = hasPermission($conn, $sidebarUserId, 'view_audit_logs');
 $showWarehouses = hasPermission($conn, $sidebarUserId, 'view_warehouses');
+$showLots = hasPermission($conn, $sidebarUserId, 'view_lots');
 ?>
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -61,7 +62,7 @@ $showWarehouses = hasPermission($conn, $sidebarUserId, 'view_warehouses');
     </a>
   <?php endif; ?>
 
-  <?php if ($showProducts || $showProductElements || $showProductCategories || $showWarehouses): ?>
+  <?php if ($showProducts || $showProductElements || $showProductCategories || $showWarehouses || $showLots): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Products &amp; Stock</div>
     <?php if ($showProductCategories): ?>
@@ -75,6 +76,12 @@ $showWarehouses = hasPermission($conn, $sidebarUserId, 'view_warehouses');
         <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         Products
         <span class="nav-badge green">Active</span>
+      </a>
+    <?php endif; ?>
+    <?php if ($showLots): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'lots') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>lots/index" id="nav-lots">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Lots
       </a>
     <?php endif; ?>
     <?php if ($showWarehouses): ?>

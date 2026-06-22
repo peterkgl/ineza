@@ -794,6 +794,9 @@ CREATE TABLE `lots` (
   `currency_id` bigint(20) DEFAULT NULL,
   `exchange_rate` decimal(18,6) DEFAULT NULL,
   `status` enum('OPEN','CLOSED') DEFAULT 'OPEN',
+  `closing_date` date DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `created_by` bigint(20) UNSIGNED DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `warehouse_id` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -1730,7 +1733,8 @@ ALTER TABLE `login`
 -- Constraints for table `lots`
 --
 ALTER TABLE `lots`
-  ADD CONSTRAINT `lots_ibfk_1` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`);
+  ADD CONSTRAINT `lots_ibfk_1` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`),
+  ADD CONSTRAINT `fk_lots_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `products`
