@@ -48,7 +48,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchRoles() {
+    if (isFirstLoad && window.initialRolesData) {
+      isFirstLoad = false;
+      allRoles = window.initialRolesData;
+      renderRoles();
+      updateStats(allRoles);
+      return;
+    }
+    isFirstLoad = false;
     fetch('role_api.php?action=list')
       .then(function (response) {
         return response.json();

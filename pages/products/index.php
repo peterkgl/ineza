@@ -141,7 +141,7 @@ if ($categoriesResult) {
         
         <div id="alertPlaceholder"></div>
 
-        <div style="overflow-x: auto;">
+        <div class="table-container">
           <table class="data-table" id="productsTable">
             <thead>
               <tr>
@@ -159,12 +159,86 @@ if ($categoriesResult) {
               </tr>
             </thead>
             <tbody id="productsList">
-              <tr>
-                <td colspan="11" class="table-empty">Loading mining products...</td>
-              </tr>
+              <?php
+              $query = "SELECT p.*, 
+                               inv.account_code as inventory_code, inv.account_name as inventory_name,
+                               sal.account_code as sales_code, sal.account_name as sales_name,
+                               cogs.account_code as cogs_code, cogs.account_name as cogs_name,
+                               pc.category_code, pc.category_name
+                        FROM products p
+                        LEFT JOIN accounts inv ON p.inventory_account_id = inv.id
+                        LEFT JOIN accounts sal ON p.sales_account_id = sal.id
+                        LEFT JOIN accounts cogs ON p.cogs_account_id = cogs.id
+                        LEFT JOIN product_categories pc ON p.category_id = pc.id
+                        ORDER BY p.code ASC";
+              $result = mysqli_query($conn, $query);
+              $productsData = [];
+              $rowNum = 1;
+              if ($result && mysqli_num_rows($result) > 0) {
+                  while ($row = mysqli_fetch_assoc($result)) {
+                      $productsData[] = [
+                          'id' => (int)$row['id'],
+                          'code' => $row['code'],
+                          'name' => $row['name'],
+                          'full_name' => $row['full_name'],
+                          'unit_of_measure' => $row['unit_of_measure'],
+                          'description' => $row['description'],
+                          'inventory_account_id' => $row['inventory_account_id'] !== null ? (int)$row['inventory_account_id'] : null,
+                          'inventory_code' => $row['inventory_code'],
+                          'inventory_name' => $row['inventory_name'],
+                          'sales_account_id' => $row['sales_account_id'] !== null ? (int)$row['sales_account_id'] : null,
+                          'sales_code' => $row['sales_code'],
+                          'sales_name' => $row['sales_name'],
+                          'cogs_account_id' => $row['cogs_account_id'] !== null ? (int)$row['cogs_account_id'] : null,
+                          'cogs_code' => $row['cogs_code'],
+                          'cogs_name' => $row['cogs_name'],
+                          'category_id' => $row['category_id'] !== null ? (int)$row['category_id'] : null,
+                          'category_code' => $row['category_code'],
+                          'category_name' => $row['category_name'],
+                          'is_active' => (int)$row['is_active']
+                      ];
+                      
+                      $statusBadge = $row['is_active'] == 1 
+                          ? '<span class="status-pill pill-green">Active</span>' 
+                          : '<span class="status-pill pill-red">Inactive</span>';
+                      
+                      $actions = '<div class="action-buttons" style="justify-content: flex-end;">';
+                      if ($canEdit) {
+                          $actions .= '<button class="btn-icon-only edit" data-id="' . $row['id'] . '" title="Edit">';
+                          $actions .= '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+                          $actions .= '</button>';
+                      }
+                      if ($canDelete) {
+                          $actions .= '<button class="btn-icon-only delete" data-id="' . $row['id'] . '" title="Delete">';
+                          $actions .= '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+                          $actions .= '</button>';
+                      }
+                      $actions .= '</div>';
+                      
+                      echo '<tr>';
+                      echo '<td>' . $rowNum++ . '</td>';
+                      echo '<td class="td-bold">' . htmlspecialchars($row['code']) . '</td>';
+                      echo '<td class="td-name">' . htmlspecialchars($row['name']) . '</td>';
+                      echo '<td>' . ($row['category_name'] ? '<span class="parent-type-badge">' . htmlspecialchars($row['category_name']) . '</span>' : '—') . '</td>';
+                      echo '<td>' . ($row['full_name'] ? htmlspecialchars($row['full_name']) : '—') . '</td>';
+                      echo '<td><span class="code-badge">' . htmlspecialchars($row['unit_of_measure']) . '</span></td>';
+                      echo '<td>' . ($row['inventory_name'] ? '[' . htmlspecialchars($row['inventory_code']) . '] ' . htmlspecialchars($row['inventory_name']) : '—') . '</td>';
+                      echo '<td>' . ($row['sales_name'] ? '[' . htmlspecialchars($row['sales_code']) . '] ' . htmlspecialchars($row['sales_name']) : '—') . '</td>';
+                      echo '<td>' . ($row['cogs_name'] ? '[' . htmlspecialchars($row['cogs_code']) . '] ' . htmlspecialchars($row['cogs_name']) : '—') . '</td>';
+                      echo '<td>' . $statusBadge . '</td>';
+                      echo '<td style="text-align: right;">' . $actions . '</td>';
+                      echo '</tr>';
+                  }
+              } else {
+                  echo '<tr><td colspan="11" class="table-empty">No products found.</td></tr>';
+              }
+              ?>
             </tbody>
           </table>
         </div>
+        <script>
+          window.initialProductsData = <?php echo json_encode($productsData); ?>;
+        </script>
       </div>
 
       <div class="card" id="formCard">

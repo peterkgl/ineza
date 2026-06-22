@@ -118,7 +118,8 @@
               <button class="btn-sm">Export CSV</button>
             </div>
           </div>
-          <table class="data-table">
+          <div class="table-container">
+            <table class="data-table">
             <thead>
               <tr>
                 <th style="width: 50px;">#</th>
@@ -224,6 +225,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 

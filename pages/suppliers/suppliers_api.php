@@ -41,7 +41,13 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to view suppliers.');
         }
 
-        $query = "SELECT * FROM suppliers ORDER BY name ASC";
+        $query = "SELECT s.*,
+                         a.account_code, a.account_name,
+                         c.code as currency_code, c.name as currency_name
+                  FROM suppliers s
+                  LEFT JOIN accounts a ON s.payables_account_id = a.id
+                  LEFT JOIN currencies c ON s.currency_id = c.id
+                  ORDER BY s.name ASC";
         $result = mysqli_query($conn, $query);
         $suppliers = [];
 
@@ -56,6 +62,12 @@ switch ($action) {
                     'phone' => $row['phone'],
                     'email' => $row['email'],
                     'address' => $row['address'],
+                    'payables_account_id' => $row['payables_account_id'] !== null ? (int)$row['payables_account_id'] : null,
+                    'account_code' => $row['account_code'],
+                    'account_name' => $row['account_name'],
+                    'currency_id' => $row['currency_id'] !== null ? (int)$row['currency_id'] : null,
+                    'currency_code' => $row['currency_code'],
+                    'currency_name' => $row['currency_name'],
                     'region' => $row['region'],
                     'is_active' => (int)$row['is_active'],
                     'notes' => $row['notes'],
@@ -82,6 +94,8 @@ switch ($action) {
         $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
         $email = isset($_POST['email']) ? trim($_POST['email']) : '';
         $address = isset($_POST['address']) ? trim($_POST['address']) : '';
+        $payables_account_id = isset($_POST['payables_account_id']) && $_POST['payables_account_id'] !== '' ? (int)$_POST['payables_account_id'] : null;
+        $currency_id = isset($_POST['currency_id']) && $_POST['currency_id'] !== '' ? (int)$_POST['currency_id'] : null;
         $region = isset($_POST['region']) ? trim($_POST['region']) : '';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
@@ -92,6 +106,22 @@ switch ($action) {
 
         if (!in_array($supplier_type, ['individual', 'cooperative', 'company'])) {
             sendResponse(false, 'Invalid supplier type.');
+        }
+
+        if ($payables_account_id !== null) {
+            $chkAccount = mysqli_query($conn, "SELECT id FROM accounts WHERE id = $payables_account_id LIMIT 1");
+            if (!$chkAccount || mysqli_num_rows($chkAccount) === 0) {
+                sendResponse(false, 'Selected payables account does not exist.');
+            }
+        }
+
+        if ($currency_id === null) {
+            sendResponse(false, 'Currency is required.');
+        }
+
+        $chkCurrency = mysqli_query($conn, "SELECT id FROM currencies WHERE id = $currency_id LIMIT 1");
+        if (!$chkCurrency || mysqli_num_rows($chkCurrency) === 0) {
+            sendResponse(false, 'Selected currency does not exist.');
         }
 
         $nameEsc = mysqli_real_escape_string($conn, $name);
@@ -111,8 +141,11 @@ switch ($action) {
             $regionEsc = mysqli_real_escape_string($conn, $region);
             $notesEsc = mysqli_real_escape_string($conn, $notes);
 
-            $insertQuery = "INSERT INTO suppliers (supplier_type, name, nif, vat_reg_no, phone, email, address, region, notes, is_active, created_by) 
-                            VALUES ('$supplier_type', '$nameEsc', '$nifEsc', '$vatEsc', '$phoneEsc', '$emailEsc', '$addressEsc', '$regionEsc', '$notesEsc', $is_active, $userId)";
+            $parentVal = $payables_account_id !== null ? $payables_account_id : "NULL";
+            $currVal = $currency_id !== null ? $currency_id : "NULL";
+
+            $insertQuery = "INSERT INTO suppliers (supplier_type, name, nif, vat_reg_no, phone, email, address, payables_account_id, currency_id, region, notes, is_active, created_by) 
+                            VALUES ('$supplier_type', '$nameEsc', '$nifEsc', '$vatEsc', '$phoneEsc', '$emailEsc', '$addressEsc', $parentVal, $currVal, '$regionEsc', '$notesEsc', $is_active, $userId)";
             
             if (mysqli_query($conn, $insertQuery)) {
                 $newId = mysqli_insert_id($conn);
@@ -125,6 +158,8 @@ switch ($action) {
                     'phone' => $phone,
                     'email' => $email,
                     'address' => $address,
+                    'payables_account_id' => $payables_account_id,
+                    'currency_id' => $currency_id,
                     'region' => $region,
                     'is_active' => $is_active,
                     'notes' => $notes
@@ -157,6 +192,8 @@ switch ($action) {
         $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
         $email = isset($_POST['email']) ? trim($_POST['email']) : '';
         $address = isset($_POST['address']) ? trim($_POST['address']) : '';
+        $payables_account_id = isset($_POST['payables_account_id']) && $_POST['payables_account_id'] !== '' ? (int)$_POST['payables_account_id'] : null;
+        $currency_id = isset($_POST['currency_id']) && $_POST['currency_id'] !== '' ? (int)$_POST['currency_id'] : null;
         $region = isset($_POST['region']) ? trim($_POST['region']) : '';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
@@ -167,6 +204,22 @@ switch ($action) {
 
         if (!in_array($supplier_type, ['individual', 'cooperative', 'company'])) {
             sendResponse(false, 'Invalid supplier type.');
+        }
+
+        if ($payables_account_id !== null) {
+            $chkAccount = mysqli_query($conn, "SELECT id FROM accounts WHERE id = $payables_account_id LIMIT 1");
+            if (!$chkAccount || mysqli_num_rows($chkAccount) === 0) {
+                sendResponse(false, 'Selected payables account does not exist.');
+            }
+        }
+
+        if ($currency_id === null) {
+            sendResponse(false, 'Currency is required.');
+        }
+
+        $chkCurrency = mysqli_query($conn, "SELECT id FROM currencies WHERE id = $currency_id LIMIT 1");
+        if (!$chkCurrency || mysqli_num_rows($chkCurrency) === 0) {
+            sendResponse(false, 'Selected currency does not exist.');
         }
 
         $fetchQuery = "SELECT * FROM suppliers WHERE id = $id LIMIT 1";
@@ -193,6 +246,9 @@ switch ($action) {
             $regionEsc = mysqli_real_escape_string($conn, $region);
             $notesEsc = mysqli_real_escape_string($conn, $notes);
 
+            $parentVal = $payables_account_id !== null ? $payables_account_id : "NULL";
+            $currVal = $currency_id !== null ? $currency_id : "NULL";
+
             $updateQuery = "UPDATE suppliers SET 
                                 supplier_type = '$supplier_type', 
                                 name = '$nameEsc', 
@@ -201,6 +257,8 @@ switch ($action) {
                                 phone = '$phoneEsc', 
                                 email = '$emailEsc', 
                                 address = '$addressEsc', 
+                                payables_account_id = $parentVal,
+                                currency_id = $currVal,
                                 region = '$regionEsc', 
                                 notes = '$notesEsc', 
                                 is_active = $is_active, 
@@ -218,6 +276,8 @@ switch ($action) {
                     'phone' => $phone,
                     'email' => $email,
                     'address' => $address,
+                    'payables_account_id' => $payables_account_id,
+                    'currency_id' => $currency_id,
                     'region' => $region,
                     'is_active' => $is_active,
                     'notes' => $notes
@@ -255,14 +315,50 @@ switch ($action) {
         $oldValues = mysqli_fetch_assoc($fetchResult);
         $name = $oldValues['name'];
 
-        $chkAdvances = mysqli_query($conn, "SELECT COUNT(*) as count FROM supplier_advances WHERE supplier_id = $id");
-        $advancesCount = 0;
-        if ($chkAdvances) {
-            $advancesCount = (int)mysqli_fetch_assoc($chkAdvances)['count'];
+        // Check for dependencies in other tables to maintain database integrity
+        $dependencies = [];
+
+        // Check supplier_advances if table exists
+        $tableCheck = mysqli_query($conn, "SHOW TABLES LIKE 'supplier_advances'");
+        if ($tableCheck && mysqli_num_rows($tableCheck) > 0) {
+            $chkAdvances = mysqli_query($conn, "SELECT COUNT(*) as count FROM supplier_advances WHERE supplier_id = $id");
+            if ($chkAdvances) {
+                $count = (int)mysqli_fetch_assoc($chkAdvances)['count'];
+                if ($count > 0) {
+                    $dependencies[] = "$count supplier advance record(s)";
+                }
+            }
         }
 
-        if ($advancesCount > 0) {
-            sendResponse(false, 'This supplier cannot be deleted because they currently have ' . $advancesCount . ' supplier advance record(s) configured.');
+        // Check purchases
+        $chkPurchases = mysqli_query($conn, "SELECT COUNT(*) as count FROM purchases WHERE supplier_id = $id");
+        if ($chkPurchases) {
+            $count = (int)mysqli_fetch_assoc($chkPurchases)['count'];
+            if ($count > 0) {
+                $dependencies[] = "$count purchase record(s)";
+            }
+        }
+
+        // Check lots
+        $chkLots = mysqli_query($conn, "SELECT COUNT(*) as count FROM lots WHERE supplier_id = $id");
+        if ($chkLots) {
+            $count = (int)mysqli_fetch_assoc($chkLots)['count'];
+            if ($count > 0) {
+                $dependencies[] = "$count lot record(s)";
+            }
+        }
+
+        // Check supplier_payments
+        $chkPayments = mysqli_query($conn, "SELECT COUNT(*) as count FROM supplier_payments WHERE supplier_id = $id");
+        if ($chkPayments) {
+            $count = (int)mysqli_fetch_assoc($chkPayments)['count'];
+            if ($count > 0) {
+                $dependencies[] = "$count payment record(s)";
+            }
+        }
+
+        if (!empty($dependencies)) {
+            sendResponse(false, 'This supplier cannot be deleted because they currently have ' . implode(', ', $dependencies) . ' configured.');
         }
 
         mysqli_begin_transaction($conn);

@@ -16,7 +16,17 @@ document.addEventListener('DOMContentLoaded', function () {
   var searchTimeout = null;
   var loadedLogs = [];
 
+  var isFirstLoad = true;
   function fetchLogs() {
+    if (isFirstLoad && window.initialAuditLogsData) {
+      isFirstLoad = false;
+      loadedLogs = window.initialAuditLogsData.data;
+      renderLogs(loadedLogs);
+      renderPagination(window.initialAuditLogsData.pagination);
+      updateStats(window.initialAuditLogsData.stats);
+      return;
+    }
+    isFirstLoad = false;
     var url = 'audit_api.php?action=list&page=' + currentPage + '&limit=' + currentLimit;
     if (currentSearch !== '') {
       url += '&search=' + encodeURIComponent(currentSearch);

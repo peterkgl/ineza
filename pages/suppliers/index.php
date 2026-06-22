@@ -17,6 +17,76 @@ if (empty($_SESSION['suppliers_token'])) {
 $canCreate = hasPermission($conn, $userId, 'create_supplier');
 $canEdit = hasPermission($conn, $userId, 'edit_supplier');
 $canDelete = hasPermission($conn, $userId, 'delete_supplier');
+
+// Fetch accounts for dropdown
+$accountsList = [];
+$accResult = mysqli_query($conn, "SELECT id, account_code, account_name FROM accounts WHERE is_active = 1 ORDER BY account_code ASC");
+if ($accResult) {
+    while ($row = mysqli_fetch_assoc($accResult)) {
+        $accountsList[] = $row;
+    }
+}
+
+// Fetch currencies for dropdown
+$currenciesList = [];
+$curResult = mysqli_query($conn, "SELECT id, code, name FROM currencies WHERE is_active = 1 ORDER BY code ASC");
+if ($curResult) {
+    while ($row = mysqli_fetch_assoc($curResult)) {
+        $currenciesList[] = $row;
+    }
+}
+
+// Fetch suppliers with JOINs
+$query = "SELECT s.*, 
+                 a.account_code, a.account_name,
+                 c.code as currency_code, c.name as currency_name
+          FROM suppliers s
+          LEFT JOIN accounts a ON s.payables_account_id = a.id
+          LEFT JOIN currencies c ON s.currency_id = c.id
+          ORDER BY s.name ASC";
+$result = mysqli_query($conn, $query);
+$suppliersData = [];
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $suppliersData[] = [
+            'id' => (int)$row['id'],
+            'supplier_type' => $row['supplier_type'],
+            'name' => $row['name'],
+            'nif' => $row['nif'],
+            'vat_reg_no' => $row['vat_reg_no'],
+            'phone' => $row['phone'],
+            'email' => $row['email'],
+            'address' => $row['address'],
+            'payables_account_id' => $row['payables_account_id'] !== null ? (int)$row['payables_account_id'] : null,
+            'account_code' => $row['account_code'],
+            'account_name' => $row['account_name'],
+            'currency_id' => $row['currency_id'] !== null ? (int)$row['currency_id'] : null,
+            'currency_code' => $row['currency_code'],
+            'currency_name' => $row['currency_name'],
+            'region' => $row['region'],
+            'is_active' => (int)$row['is_active'],
+            'notes' => $row['notes'],
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at']
+        ];
+    }
+}
+
+// Calculate stats
+$totalSuppliers = count($suppliersData);
+$activeSuppliers = 0;
+$inactiveSuppliers = 0;
+$coopsCount = 0;
+foreach ($suppliersData as $s) {
+    if ($s['is_active'] === 1) {
+        $activeSuppliers++;
+    } else {
+        $inactiveSuppliers++;
+    }
+    if ($s['supplier_type'] === 'cooperative') {
+        $coopsCount++;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -73,7 +143,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_supplier');
           </div>
           <span class="stat-trend trend-blue">Total</span>
         </div>
-        <div class="stat-val" id="stat-total">0</div>
+        <div class="stat-val" id="stat-total"><?php echo $totalSuppliers; ?></div>
         <div class="stat-label">Registered Suppliers</div>
       </div>
 
@@ -84,7 +154,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_supplier');
           </div>
           <span class="stat-trend trend-up">Active</span>
         </div>
-        <div class="stat-val" id="stat-active">0</div>
+        <div class="stat-val" id="stat-active"><?php echo $activeSuppliers; ?></div>
         <div class="stat-label">Active Suppliers</div>
       </div>
 
@@ -95,7 +165,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_supplier');
           </div>
           <span class="stat-trend trend-down">Suspended</span>
         </div>
-        <div class="stat-val" id="stat-inactive">0</div>
+        <div class="stat-val" id="stat-inactive"><?php echo $inactiveSuppliers; ?></div>
         <div class="stat-label">Inactive Suppliers</div>
       </div>
 
@@ -106,7 +176,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_supplier');
           </div>
           <span class="stat-trend trend-warn">Coops</span>
         </div>
-        <div class="stat-val" id="stat-coops">0</div>
+        <div class="stat-val" id="stat-coops"><?php echo $coopsCount; ?></div>
         <div class="stat-label">Mining Cooperatives</div>
       </div>
     </div>
@@ -121,7 +191,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_supplier');
         
         <div id="alertPlaceholder"></div>
 
-        <div style="overflow-x: auto;">
+        <div class="table-container">
           <table class="data-table" id="suppliersTable">
             <thead>
               <tr>
@@ -130,15 +200,56 @@ $canDelete = hasPermission($conn, $userId, 'delete_supplier');
                 <th>Type</th>
                 <th>TIN (NIF)</th>
                 <th>Phone</th>
+                <th>Payables Account</th>
+                <th>Currency</th>
                 <th>Region</th>
                 <th>Status</th>
                 <th style="width: 80px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="suppliersList">
-              <tr>
-                <td colspan="8" class="table-empty">Loading suppliers database...</td>
-              </tr>
+              <?php if (empty($suppliersData)): ?>
+                <tr>
+                  <td colspan="10" class="table-empty">No suppliers configured yet.</td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($suppliersData as $index => $s): ?>
+                  <?php
+                    $globalIndex = $index + 1;
+                    $nameVal = htmlspecialchars($s['name']);
+                    $typeVal = htmlspecialchars(ucfirst($s['supplier_type']));
+                    $nifVal = $s['nif'] ? htmlspecialchars($s['nif']) : '—';
+                    $phoneVal = $s['phone'] ? htmlspecialchars($s['phone']) : '—';
+                    $payablesVal = $s['account_code'] ? htmlspecialchars($s['account_code']) . ' - ' . htmlspecialchars($s['account_name']) : '—';
+                    $currencyVal = $s['currency_code'] ? htmlspecialchars($s['currency_code']) : '—';
+                    $regionVal = $s['region'] ? htmlspecialchars($s['region']) : '—';
+                    $statusLabel = $s['is_active'] === 1
+                      ? '<span class="status-pill pill-green">Active</span>'
+                      : '<span class="status-pill pill-red">Inactive</span>';
+                  ?>
+                  <tr>
+                    <td><?php echo $globalIndex; ?></td>
+                    <td><strong><?php echo $nameVal; ?></strong></td>
+                    <td><span class="code-badge"><?php echo $typeVal; ?></span></td>
+                    <td><?php echo $nifVal; ?></td>
+                    <td><?php echo $phoneVal; ?></td>
+                    <td><?php echo $payablesVal; ?></td>
+                    <td><?php echo $currencyVal; ?></td>
+                    <td><?php echo $regionVal; ?></td>
+                    <td><?php echo $statusLabel; ?></td>
+                    <td style="text-align: right;">
+                      <div class="action-buttons" style="justify-content: flex-end;">
+                        <button class="btn-icon-only edit" title="Edit Supplier" data-id="<?php echo $s['id']; ?>">
+                          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="btn-icon-only delete" title="Delete Supplier" data-id="<?php echo $s['id']; ?>">
+                          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
             </tbody>
           </table>
         </div>
@@ -196,6 +307,26 @@ $canDelete = hasPermission($conn, $userId, 'delete_supplier');
           </div>
 
           <div class="form-group">
+            <label for="supplierPayablesAccount">Payables Account</label>
+            <select id="supplierPayablesAccount" name="payables_account_id" class="form-control">
+              <option value="">(Select Payables Account)</option>
+              <?php foreach ($accountsList as $acc): ?>
+                <option value="<?php echo $acc['id']; ?>"><?php echo htmlspecialchars($acc['account_code']) . ' - ' . htmlspecialchars($acc['account_name']); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="supplierCurrency">Currency</label>
+            <select id="supplierCurrency" name="currency_id" class="form-control" required>
+              <option value="">(Select Currency)</option>
+              <?php foreach ($currenciesList as $cur): ?>
+                <option value="<?php echo $cur['id']; ?>"><?php echo htmlspecialchars($cur['code']) . ' - ' . htmlspecialchars($cur['name']); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label for="supplierRegion">Mining Region / Zone</label>
             <input type="text" id="supplierRegion" name="region" class="form-control" placeholder="e.g. Southern Province, Rutsiro">
           </div>
@@ -246,6 +377,11 @@ $canDelete = hasPermission($conn, $userId, 'delete_supplier');
   </div>
 </div>
 
+<script>
+  window.initialSuppliersData = <?php echo json_encode($suppliersData); ?>;
+  window.accountsList = <?php echo json_encode($accountsList); ?>;
+  window.currenciesList = <?php echo json_encode($currenciesList); ?>;
+</script>
 <script src="../../src/js/navbar.js"></script>
 <script src="../../src/js/sidebar.js"></script>
 <script src="../../src/js/suppliers.js"></script>

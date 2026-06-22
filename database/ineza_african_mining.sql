@@ -1146,6 +1146,27 @@ CREATE TABLE `supplier_payment_allocations` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `supplier_advances`
+--
+
+CREATE TABLE `supplier_advances` (
+  `id` bigint(20) NOT NULL,
+  `supplier_id` bigint(20) UNSIGNED NOT NULL,
+  `currency_id` tinyint(3) UNSIGNED NOT NULL,
+  `amount` decimal(18,2) NOT NULL,
+  `exchange_rate` decimal(18,6) DEFAULT 1.000000,
+  `advance_date` date NOT NULL,
+  `purpose` varchar(255) DEFAULT NULL,
+  `status` enum('PAID','RECONCILED','CANCELLED') DEFAULT 'PAID',
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `created_by` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -1432,6 +1453,14 @@ ALTER TABLE `supplier_payment_allocations`
   ADD KEY `purchase_id` (`purchase_id`);
 
 --
+-- Indexes for table `supplier_advances`
+--
+ALTER TABLE `supplier_advances`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `supplier_id` (`supplier_id`),
+  ADD KEY `currency_id` (`currency_id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -1637,6 +1666,12 @@ ALTER TABLE `supplier_payment_allocations`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `supplier_advances`
+--
+ALTER TABLE `supplier_advances`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
@@ -1725,6 +1760,13 @@ ALTER TABLE `role_permissions`
 ALTER TABLE `supplier_payment_allocations`
   ADD CONSTRAINT `supplier_payment_allocations_ibfk_1` FOREIGN KEY (`supplier_payment_id`) REFERENCES `supplier_payments` (`id`),
   ADD CONSTRAINT `supplier_payment_allocations_ibfk_2` FOREIGN KEY (`purchase_id`) REFERENCES `purchases` (`id`);
+
+--
+-- Constraints for table `supplier_advances`
+--
+ALTER TABLE `supplier_advances`
+  ADD CONSTRAINT `fk_sa_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_sa_currency` FOREIGN KEY (`currency_id`) REFERENCES `currencies` (`id`);
 
 --
 -- Constraints for table `user_roles`

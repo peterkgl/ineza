@@ -251,11 +251,41 @@ switch ($action) {
             sendResponse(false, "Cannot delete currency '$code' because it is referenced in exchange rates.");
         }
 
-        $saQuery = "SELECT COUNT(*) as count FROM supplier_advances WHERE currency_id = $id";
-        $saResult = mysqli_query($conn, $saQuery);
-        $saCount = mysqli_fetch_assoc($saResult)['count'] ?? 0;
-        if ($saCount > 0) {
-            sendResponse(false, "Cannot delete currency '$code' because it is referenced in supplier advances.");
+        // Check if referenced in suppliers
+        $supQuery = "SELECT COUNT(*) as count FROM suppliers WHERE currency_id = $id";
+        $supResult = mysqli_query($conn, $supQuery);
+        $supCount = $supResult ? (mysqli_fetch_assoc($supResult)['count'] ?? 0) : 0;
+        if ($supCount > 0) {
+            sendResponse(false, "Cannot delete currency '$code' because it is referenced in suppliers.");
+        }
+
+        // Check if referenced in supplier advances
+        $tableCheck = mysqli_query($conn, "SHOW TABLES LIKE 'supplier_advances'");
+        if ($tableCheck && mysqli_num_rows($tableCheck) > 0) {
+            $saQuery = "SELECT COUNT(*) as count FROM supplier_advances WHERE currency_id = $id";
+            $saResult = mysqli_query($conn, $saQuery);
+            if ($saResult) {
+                $saCount = mysqli_fetch_assoc($saResult)['count'] ?? 0;
+                if ($saCount > 0) {
+                    sendResponse(false, "Cannot delete currency '$code' because it is referenced in supplier advances.");
+                }
+            }
+        }
+
+        // Check if referenced in purchases
+        $purQuery = "SELECT COUNT(*) as count FROM purchases WHERE currency_id = $id";
+        $purResult = mysqli_query($conn, $purQuery);
+        $purCount = $purResult ? (mysqli_fetch_assoc($purResult)['count'] ?? 0) : 0;
+        if ($purCount > 0) {
+            sendResponse(false, "Cannot delete currency '$code' because it is referenced in purchases.");
+        }
+
+        // Check if referenced in supplier payments
+        $spQuery = "SELECT COUNT(*) as count FROM supplier_payments WHERE currency_id = $id";
+        $spResult = mysqli_query($conn, $spQuery);
+        $spCount = $spResult ? (mysqli_fetch_assoc($spResult)['count'] ?? 0) : 0;
+        if ($spCount > 0) {
+            sendResponse(false, "Cannot delete currency '$code' because it is referenced in supplier payments.");
         }
 
         mysqli_begin_transaction($conn);

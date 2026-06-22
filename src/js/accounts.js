@@ -44,13 +44,11 @@ document.addEventListener('DOMContentLoaded', function () {
       var nameVal = (a.account_name || '').toLowerCase();
       var typeVal = (a.account_type_name + ' (' + a.account_type_code + ')').toLowerCase();
       var opBal = String(a.opening_balance || '').toLowerCase();
-      var curBal = String(a.current_balance || '').toLowerCase();
       var statusVal = (a.is_active === 1 ? 'active' : 'inactive').toLowerCase();
       return codeVal.indexOf(query) !== -1 ||
              nameVal.indexOf(query) !== -1 ||
              typeVal.indexOf(query) !== -1 ||
              opBal.indexOf(query) !== -1 ||
-             curBal.indexOf(query) !== -1 ||
              statusVal.indexOf(query) !== -1;
     });
   }
@@ -62,7 +60,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchAccounts() {
+    if (isFirstLoad && window.initialAccountsData) {
+      isFirstLoad = false;
+      allAccounts = window.initialAccountsData;
+      renderAccounts();
+      updateStats(allAccounts);
+      return;
+    }
+    isFirstLoad = false;
     fetch('accounts_api.php?action=list')
       .then(function (response) {
         return response.json();
@@ -101,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     if (totalItems === 0) {
-      accountsList.innerHTML = '<tr><td colspan="8" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching accounts found.' : 'No accounts registered yet.') + '</td></tr>';
+      accountsList.innerHTML = '<tr><td colspan="7" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching accounts found.' : 'No accounts registered yet.') + '</td></tr>';
       renderPagination(totalItems, totalPages);
       return;
     }
@@ -123,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function () {
         '<td class="td-name" style="font-weight:500;">' + escapeHtml(a.account_name) + '</td>' +
         '<td><span class="parent-type-badge">' + escapeHtml(a.account_type_name) + ' (' + escapeHtml(a.account_type_code) + ')</span></td>' +
         '<td style="text-align: right; font-family:monospace;">' + formatMoney(a.opening_balance) + '</td>' +
-        '<td style="text-align: right; font-family:monospace; font-weight:600;">' + formatMoney(a.current_balance) + '</td>' +
         '<td>' + activeLabel + '</td>' +
         '<td style="text-align: right;">' +
           '<div class="action-buttons" style="justify-content: flex-end;">' +
@@ -206,8 +212,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var active = accounts.filter(function (a) { return a.is_active === 1; }).length;
     var inactive = total - active;
     
-    // Sum balances. We assume a normal sum for display (in real finance assets are positive, liabilities negative, but here we just sum them)
-    var balanceSum = accounts.reduce(function (sum, a) { return sum + a.current_balance; }, 0);
+    // Sum balances based on opening balance since current_balance is removed
+    var balanceSum = accounts.reduce(function (sum, a) { return sum + (a.opening_balance || 0); }, 0);
 
     document.getElementById('stat-total').textContent = total;
     document.getElementById('stat-active').textContent = active;

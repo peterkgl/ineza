@@ -73,6 +73,45 @@ if ($typeResult) {
         $typeOptionsHtml .= "<option value='{$row['id']}' {$dataAttrs}>" . htmlspecialchars($row['name']) . " (" . htmlspecialchars($row['code']) . ")</option>";
     }
 }
+
+// Fetch Accounts Data for Server-Side Rendering
+$accountsQuery = "SELECT a.*, t.name as account_type_name, t.code as account_type_code
+                  FROM accounts a 
+                  JOIN account_types t ON a.account_type_id = t.id 
+                  ORDER BY a.account_code ASC";
+$accountsResult = mysqli_query($conn, $accountsQuery);
+$initialAccountsData = [];
+$totalAccounts = 0;
+$activeAccounts = 0;
+$inactiveAccounts = 0;
+$openingBalanceSum = 0.0;
+
+if ($accountsResult) {
+    while ($row = mysqli_fetch_assoc($accountsResult)) {
+        $openingBalance = (float)$row['opening_balance'];
+        $initialAccountsData[] = [
+            'id' => (int)$row['id'],
+            'account_type_id' => (int)$row['account_type_id'],
+            'account_type_name' => $row['account_type_name'],
+            'account_type_code' => $row['account_type_code'],
+            'account_code' => $row['account_code'],
+            'account_name' => $row['account_name'],
+            'opening_balance' => $openingBalance,
+            'is_active' => (int)$row['is_active'],
+            'description' => $row['description'],
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at']
+        ];
+        
+        if ((int)$row['is_active'] === 1) {
+            $activeAccounts++;
+        } else {
+            $inactiveAccounts++;
+        }
+        $openingBalanceSum += $openingBalance;
+    }
+}
+$totalAccounts = count($initialAccountsData);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -129,7 +168,7 @@ if ($typeResult) {
           </div>
           <span class="stat-trend trend-blue">Total</span>
         </div>
-        <div class="stat-val" id="stat-total">0</div>
+        <div class="stat-val" id="stat-total"><?php echo $totalAccounts; ?></div>
         <div class="stat-label">Total Accounts</div>
       </div>
 
@@ -140,7 +179,7 @@ if ($typeResult) {
           </div>
           <span class="stat-trend trend-up">Active</span>
         </div>
-        <div class="stat-val" id="stat-active">0</div>
+        <div class="stat-val" id="stat-active"><?php echo $activeAccounts; ?></div>
         <div class="stat-label">Active Accounts</div>
       </div>
 
@@ -151,8 +190,8 @@ if ($typeResult) {
           </div>
           <span class="stat-trend trend-warn">Balance</span>
         </div>
-        <div class="stat-val" id="stat-balance">0.00</div>
-        <div class="stat-label">Total Current Balance</div>
+        <div class="stat-val" id="stat-balance"><?php echo number_format($openingBalanceSum, 2); ?></div>
+        <div class="stat-label">Total Opening Balance</div>
       </div>
 
       <div class="stat-card" id="card-inactive-accounts">
@@ -162,7 +201,7 @@ if ($typeResult) {
           </div>
           <span class="stat-trend trend-down">Inactive</span>
         </div>
-        <div class="stat-val" id="stat-inactive">0</div>
+        <div class="stat-val" id="stat-inactive"><?php echo $inactiveAccounts; ?></div>
         <div class="stat-label">Inactive Accounts</div>
       </div>
     </div>
@@ -177,7 +216,7 @@ if ($typeResult) {
         
         <div id="alertPlaceholder"></div>
 
-        <div style="overflow-x: auto;">
+        <div class="table-container">
           <table class="data-table" id="accountsTable">
             <thead>
               <tr>
@@ -186,18 +225,52 @@ if ($typeResult) {
                 <th>Name</th>
                 <th>Type</th>
                 <th style="text-align: right;">Opening Balance</th>
-                <th style="text-align: right;">Current Balance</th>
                 <th>Status</th>
                 <th style="width: 80px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="accountsList">
-              <tr>
-                <td colspan="8" class="table-empty">Loading financial accounts...</td>
-              </tr>
+              <?php
+              $rowNum = 1;
+              if (!empty($initialAccountsData)) {
+                  foreach ($initialAccountsData as $acc) {
+                      $statusBadge = $acc['is_active'] == 1 
+                          ? '<span class="status-pill pill-green">Active</span>' 
+                          : '<span class="status-pill pill-red">Inactive</span>';
+
+                      $actions = '<div class="action-buttons" style="justify-content: flex-end;">';
+                      if ($canEdit) {
+                          $actions .= '<button class="btn-icon-only edit" data-id="' . $acc['id'] . '" title="Edit">';
+                          $actions .= '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+                          $actions .= '</button>';
+                      }
+                      if ($canDelete) {
+                          $actions .= '<button class="btn-icon-only delete" data-id="' . $acc['id'] . '" title="Delete">';
+                          $actions .= '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+                          $actions .= '</button>';
+                      }
+                      $actions .= '</div>';
+
+                      echo '<tr>';
+                      echo '<td>' . $rowNum++ . '</td>';
+                      echo '<td><span class="code-badge" style="font-weight:600; font-family:monospace;">' . htmlspecialchars($acc['account_code']) . '</span></td>';
+                      echo '<td class="td-name" style="font-weight:500;">' . htmlspecialchars($acc['account_name']) . '</td>';
+                      echo '<td><span class="parent-type-badge">' . htmlspecialchars($acc['account_type_name']) . ' (' . htmlspecialchars($acc['account_type_code']) . ')</span></td>';
+                      echo '<td style="text-align: right; font-family:monospace;">' . number_format($acc['opening_balance'], 2) . '</td>';
+                      echo '<td>' . $statusBadge . '</td>';
+                      echo '<td style="text-align: right;">' . $actions . '</td>';
+                      echo '</tr>';
+                  }
+              } else {
+                  echo '<tr><td colspan="7" class="table-empty">No financial accounts found.</td></tr>';
+              }
+              ?>
             </tbody>
           </table>
         </div>
+        <script>
+          window.initialAccountsData = <?php echo json_encode($initialAccountsData); ?>;
+        </script>
       </div>
 
       <div class="card" id="formCard">

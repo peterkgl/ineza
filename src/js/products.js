@@ -66,7 +66,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchProducts() {
+    if (isFirstLoad && window.initialProductsData) {
+      isFirstLoad = false;
+      allProducts = window.initialProductsData;
+      renderProducts();
+      updateStats(allProducts);
+      return;
+    }
+    isFirstLoad = false;
     fetch('products_api.php?action=list')
       .then(function (response) {
         return response.json();

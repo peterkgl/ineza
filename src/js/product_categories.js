@@ -48,7 +48,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchCategories() {
+    if (isFirstLoad && window.initialCategoriesData) {
+      isFirstLoad = false;
+      allCategories = window.initialCategoriesData;
+      renderCategories();
+      updateStats(allCategories);
+      return;
+    }
+    isFirstLoad = false;
     fetch('categories_api.php?action=list')
       .then(function (response) {
         return response.json();

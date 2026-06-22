@@ -50,7 +50,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchElements() {
+    if (isFirstLoad && window.initialElementsData) {
+      isFirstLoad = false;
+      allElements = window.initialElementsData;
+      renderElements();
+      updateStats(allElements);
+      return;
+    }
+    isFirstLoad = false;
     fetch('elements_api.php?action=list')
       .then(function (response) {
         return response.json();

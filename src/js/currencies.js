@@ -50,7 +50,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchCurrencies() {
+    if (isFirstLoad && window.initialCurrenciesData) {
+      isFirstLoad = false;
+      allCurrencies = window.initialCurrenciesData;
+      renderCurrencies();
+      updateStats(allCurrencies);
+      return;
+    }
+    isFirstLoad = false;
     fetch('currencies_api.php?action=list')
       .then(function (response) {
         return response.json();

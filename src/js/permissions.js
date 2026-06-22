@@ -48,7 +48,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchPermissions() {
+    if (isFirstLoad && window.initialPermissionsData) {
+      isFirstLoad = false;
+      allPermissions = window.initialPermissionsData;
+      renderPermissions();
+      updateStats(allPermissions);
+      return;
+    }
+    isFirstLoad = false;
     fetch('permissions_api.php?action=list')
       .then(function (response) {
         return response.json();

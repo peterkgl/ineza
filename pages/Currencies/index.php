@@ -121,7 +121,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_currency');
         
         <div id="alertPlaceholder"></div>
 
-        <div style="overflow-x: auto;">
+        <div class="table-container">
           <table class="data-table" id="currenciesTable">
             <thead>
               <tr>
@@ -135,12 +135,63 @@ $canDelete = hasPermission($conn, $userId, 'delete_currency');
               </tr>
             </thead>
             <tbody id="currenciesList">
-              <tr>
-                <td colspan="7" class="table-empty">Loading currencies...</td>
-              </tr>
+              <?php
+              $query = "SELECT * FROM currencies ORDER BY code ASC";
+              $result = mysqli_query($conn, $query);
+              $currenciesData = [];
+              $rowNum = 1;
+              if ($result && mysqli_num_rows($result) > 0) {
+                  while ($row = mysqli_fetch_assoc($result)) {
+                      $currenciesData[] = [
+                          'id' => (int)$row['id'],
+                          'code' => $row['code'],
+                          'name' => $row['name'],
+                          'symbol' => $row['symbol'],
+                          'is_base_currency' => (int)$row['is_base_currency'],
+                          'is_active' => (int)$row['is_active']
+                      ];
+
+                      $baseBadge = $row['is_base_currency'] == 1 
+                          ? '<span class="status-pill pill-blue">Yes</span>' 
+                          : '<span class="status-pill pill-red">No</span>';
+
+                      $statusBadge = $row['is_active'] == 1 
+                          ? '<span class="status-pill pill-green">Active</span>' 
+                          : '<span class="status-pill pill-red">Inactive</span>';
+
+                      $actions = '<div class="action-buttons" style="justify-content: flex-end;">';
+                      if ($canEdit) {
+                          $actions .= '<button class="btn-icon-only edit" data-id="' . $row['id'] . '" title="Edit">';
+                          $actions .= '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+                          $actions .= '</button>';
+                      }
+                      if ($canDelete) {
+                          $actions .= '<button class="btn-icon-only delete" data-id="' . $row['id'] . '" title="Delete">';
+                          $actions .= '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+                          $actions .= '</button>';
+                      }
+                      $actions .= '</div>';
+
+                      echo '<tr>';
+                      echo '<td>' . $rowNum++ . '</td>';
+                      echo '<td class="td-bold">' . htmlspecialchars($row['code']) . '</td>';
+                      echo '<td class="td-name">' . htmlspecialchars($row['name']) . '</td>';
+                      echo '<td style="font-family:monospace; font-weight:600;">' . htmlspecialchars($row['symbol']) . '</td>';
+                      echo '<td>' . $baseBadge . '</td>';
+                      echo '<td>' . $statusBadge . '</td>';
+                      echo '<td style="text-align: right;">' . $actions . '</td>';
+                      echo '</tr>';
+                  }
+              } else {
+                  echo '<tr><td colspan="7" class="table-empty">No currencies registered yet.</td></tr>';
+              }
+              ?>
             </tbody>
           </table>
         </div>
+        <script>
+          window.initialCurrenciesData = <?php echo json_encode($currenciesData); ?>;
+        </script>
       </div>
 
       <div class="card" id="formCard">

@@ -26,6 +26,59 @@ if ($permsResult) {
         $allPermissions[] = $row;
     }
 }
+
+// Fetch Roles
+$query = "SELECT r.id, r.name, r.description, r.created_at, GROUP_CONCAT(DISTINCT rp.permission_id) as permission_ids, COUNT(DISTINCT ur.user_id) as user_count
+          FROM roles r
+          LEFT JOIN role_permissions rp ON r.id = rp.role_id
+          LEFT JOIN user_roles ur ON r.id = ur.role_id
+          GROUP BY r.id
+          ORDER BY r.name ASC";
+$result = mysqli_query($conn, $query);
+$rolesData = [];
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $permIds = [];
+        if ($row['permission_ids'] !== null && $row['permission_ids'] !== '') {
+            $permIds = array_map('intval', explode(',', $row['permission_ids']));
+        }
+        $rolesData[] = [
+            'id' => (int)$row['id'],
+            'name' => $row['name'],
+            'description' => $row['description'],
+            'created_at' => $row['created_at'],
+            'permission_ids' => $permIds,
+            'user_count' => (int)$row['user_count']
+        ];
+    }
+}
+
+// Calculate stats
+$totalRoles = count($rolesData);
+$activeRolesCount = 0;
+foreach ($rolesData as $r) {
+    if ($r['user_count'] > 0) {
+        $activeRolesCount++;
+    }
+}
+
+// Get seeded permissions count
+$permsCountQuery = "SELECT COUNT(*) as cnt FROM permissions";
+$permsCountRes = mysqli_query($conn, $permsCountQuery);
+$totalPermissionsCount = 0;
+if ($permsCountRes) {
+    $row = mysqli_fetch_assoc($permsCountRes);
+    $totalPermissionsCount = (int)$row['cnt'];
+}
+
+// Max permissions in a single role
+$maxPermissionsInRole = 0;
+foreach ($rolesData as $r) {
+    $count = count($r['permission_ids']);
+    if ($count > $maxPermissionsInRole) {
+        $maxPermissionsInRole = $count;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -82,7 +135,7 @@ if ($permsResult) {
           </div>
           <span class="stat-trend trend-blue">Total</span>
         </div>
-        <div class="stat-val" id="stat-total">0</div>
+        <div class="stat-val" id="stat-total"><?php echo $totalRoles; ?></div>
         <div class="stat-label">Defined Roles</div>
       </div>
 
@@ -93,7 +146,7 @@ if ($permsResult) {
           </div>
           <span class="stat-trend trend-up">Usage</span>
         </div>
-        <div class="stat-val" id="stat-active">0</div>
+        <div class="stat-val" id="stat-active"><?php echo $activeRolesCount; ?></div>
         <div class="stat-label">Active Assigned Roles</div>
       </div>
 
@@ -104,7 +157,7 @@ if ($permsResult) {
           </div>
           <span class="stat-trend trend-down">System</span>
         </div>
-        <div class="stat-val" id="stat-inactive">0</div>
+        <div class="stat-val" id="stat-inactive"><?php echo $totalPermissionsCount; ?></div>
         <div class="stat-label">Seeded Permissions</div>
       </div>
 
@@ -115,7 +168,7 @@ if ($permsResult) {
           </div>
           <span class="stat-trend trend-warn">Capacity</span>
         </div>
-        <div class="stat-val" id="stat-base">0</div>
+        <div class="stat-val" id="stat-base"><?php echo $maxPermissionsInRole; ?></div>
         <div class="stat-label">Max Permissions in Role</div>
       </div>
     </div>
@@ -130,7 +183,7 @@ if ($permsResult) {
         
         <div id="alertPlaceholder"></div>
 
-        <div style="overflow-x: auto;">
+        <div class="table-container">
           <table class="data-table" id="rolesTable">
             <thead>
               <tr>
@@ -143,9 +196,45 @@ if ($permsResult) {
               </tr>
             </thead>
             <tbody id="rolesList">
-              <tr>
-                <td colspan="6" class="table-empty">Loading security roles...</td>
-              </tr>
+              <?php if (empty($rolesData)): ?>
+                <tr>
+                  <td colspan="6" class="table-empty">No roles defined yet.</td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($rolesData as $index => $r): ?>
+                  <?php
+                    $globalIndex = $index + 1;
+                    $nameVal = htmlspecialchars($r['name']);
+                    $descVal = $r['description'] ? htmlspecialchars($r['description']) : '—';
+                    $createdVal = htmlspecialchars(explode(' ', $r['created_at'])[0]);
+                    $permCount = count($r['permission_ids']);
+                    $permBadgeClass = $permCount > 0 ? 'pill-green' : '';
+                    $permBadge = '<span class="status-pill ' . $permBadgeClass . '">' . $permCount . ' Privileges</span>';
+
+                    $deleteBtn = '';
+                    if (strtolower($r['name']) !== 'admin') {
+                        $deleteBtn = '<button class="btn-icon-only delete" title="Delete Role" data-id="' . $r['id'] . '">' .
+                          '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' .
+                        '</button>';
+                    }
+                  ?>
+                  <tr>
+                    <td><?php echo $globalIndex; ?></td>
+                    <td><strong><?php echo $nameVal; ?></strong></td>
+                    <td><?php echo $descVal; ?></td>
+                    <td><?php echo $permBadge; ?></td>
+                    <td><?php echo $createdVal; ?></td>
+                    <td style="text-align: right;">
+                      <div class="action-buttons" style="justify-content: flex-end;">
+                        <button class="btn-icon-only edit" title="Edit Role" data-id="<?php echo $r['id']; ?>">
+                          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <?php echo $deleteBtn; ?>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
             </tbody>
           </table>
         </div>
@@ -221,6 +310,9 @@ if ($permsResult) {
   </div>
 </div>
 
+<script>
+  window.initialRolesData = <?php echo json_encode($rolesData); ?>;
+</script>
 <script src="../../src/js/navbar.js"></script>
 <script src="../../src/js/sidebar.js"></script>
 <script src="../../src/js/role.js"></script>

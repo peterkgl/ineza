@@ -53,7 +53,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchUsers() {
+    if (isFirstLoad && window.initialUsersData) {
+      isFirstLoad = false;
+      allUsers = window.initialUsersData;
+      renderUsers();
+      updateStats(allUsers);
+      return;
+    }
+    isFirstLoad = false;
     fetch('users_api.php?action=list')
       .then(function (response) {
         return response.json();

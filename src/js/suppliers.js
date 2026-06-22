@@ -36,12 +36,16 @@ document.addEventListener('DOMContentLoaded', function () {
       var phoneVal = (s.phone || '').toLowerCase();
       var regionVal = (s.region || '').toLowerCase();
       var statusVal = (s.is_active === 1 ? 'active' : 'inactive').toLowerCase();
+      var accountDisplay = s.account_code ? (s.account_code + ' - ' + (s.account_name || '')).toLowerCase() : '';
+      var currencyDisplay = (s.currency_code || '').toLowerCase();
       return nameVal.indexOf(query) !== -1 ||
              typeVal.indexOf(query) !== -1 ||
              nifVal.indexOf(query) !== -1 ||
              phoneVal.indexOf(query) !== -1 ||
              regionVal.indexOf(query) !== -1 ||
-             statusVal.indexOf(query) !== -1;
+             statusVal.indexOf(query) !== -1 ||
+             accountDisplay.indexOf(query) !== -1 ||
+             currencyDisplay.indexOf(query) !== -1;
     });
   }
 
@@ -52,7 +56,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchSuppliers() {
+    if (isFirstLoad && window.initialSuppliersData) {
+      isFirstLoad = false;
+      allSuppliers = window.initialSuppliersData;
+      renderSuppliers();
+      updateStats(allSuppliers);
+      return;
+    }
+    isFirstLoad = false;
     fetch('suppliers_api.php?action=list')
       .then(function (response) {
         return response.json();
@@ -85,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     if (totalItems === 0) {
-      suppliersList.innerHTML = '<tr><td colspan="8" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching suppliers found.' : 'No suppliers configured yet.') + '</td></tr>';
+      suppliersList.innerHTML = '<tr><td colspan="10" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching suppliers found.' : 'No suppliers configured yet.') + '</td></tr>';
       renderPagination(totalItems, totalPages);
       return;
     }
@@ -99,9 +112,15 @@ document.addEventListener('DOMContentLoaded', function () {
       var globalIndex = startIndex + index + 1;
       var nameVal = escapeHtml(s.name);
       var typeVal = escapeHtml(s.supplier_type.charAt(0).toUpperCase() + s.supplier_type.slice(1));
-      var nifVal = s.nif ? escapeHtml(s.nif) : '—';
-      var phoneVal = s.phone ? escapeHtml(s.phone) : '—';
-      var regionVal = s.region ? escapeHtml(s.region) : '—';
+      var nifVal = s.nif ? escapeHtml(s.nif) : '\u2014';
+      var phoneVal = s.phone ? escapeHtml(s.phone) : '\u2014';
+      var accountVal = s.account_code
+        ? '<span class="code-badge">' + escapeHtml(s.account_code) + ' - ' + escapeHtml(s.account_name) + '</span>'
+        : '\u2014';
+      var currencyVal = s.currency_code
+        ? '<span class="code-badge">' + escapeHtml(s.currency_code) + '</span>'
+        : '\u2014';
+      var regionVal = s.region ? escapeHtml(s.region) : '\u2014';
       
       var statusLabel = s.is_active === 1
         ? '<span class="status-pill pill-green">Active</span>'
@@ -113,6 +132,8 @@ document.addEventListener('DOMContentLoaded', function () {
         '<td><span class="code-badge">' + typeVal + '</span></td>' +
         '<td>' + nifVal + '</td>' +
         '<td>' + phoneVal + '</td>' +
+        '<td>' + accountVal + '</td>' +
+        '<td>' + currencyVal + '</td>' +
         '<td>' + regionVal + '</td>' +
         '<td>' + statusLabel + '</td>' +
         '<td style="text-align: right;">' +
@@ -258,6 +279,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('supplierPhone').value = s.phone || '';
     document.getElementById('supplierEmail').value = s.email || '';
     document.getElementById('supplierAddress').value = s.address || '';
+    document.getElementById('supplierPayablesAccount').value = s.payables_account_id || '';
+    document.getElementById('supplierCurrency').value = s.currency_id || '';
     document.getElementById('supplierRegion').value = s.region || '';
     document.getElementById('supplierNotes').value = s.notes || '';
     document.getElementById('supplierActive').checked = s.is_active === 1;
@@ -277,6 +300,8 @@ document.addEventListener('DOMContentLoaded', function () {
     supplierIdInput.value = '';
     
     document.getElementById('supplierType').value = 'individual';
+    document.getElementById('supplierPayablesAccount').value = '';
+    document.getElementById('supplierCurrency').value = '';
     document.getElementById('supplierActive').checked = true;
 
     formTitle.textContent = 'Add New Supplier';
@@ -297,6 +322,8 @@ document.addEventListener('DOMContentLoaded', function () {
       var phone = document.getElementById('supplierPhone').value.trim();
       var email = document.getElementById('supplierEmail').value.trim();
       var address = document.getElementById('supplierAddress').value.trim();
+      var payablesAccountId = document.getElementById('supplierPayablesAccount').value;
+      var currencyId = document.getElementById('supplierCurrency').value;
       var region = document.getElementById('supplierRegion').value.trim();
       var notes = document.getElementById('supplierNotes').value.trim();
       var active = document.getElementById('supplierActive').checked ? '1' : '0';
@@ -304,6 +331,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (!name) {
         showAlert(formAlertPlaceholder, 'error', 'Supplier name is required.');
+        return;
+      }
+
+      if (!currencyId) {
+        showAlert(formAlertPlaceholder, 'error', 'Supplier currency is required.');
         return;
       }
 
@@ -318,6 +350,8 @@ document.addEventListener('DOMContentLoaded', function () {
       formData.append('phone', phone);
       formData.append('email', email);
       formData.append('address', address);
+      formData.append('payables_account_id', payablesAccountId);
+      formData.append('currency_id', currencyId);
       formData.append('region', region);
       formData.append('notes', notes);
       formData.append('is_active', active);

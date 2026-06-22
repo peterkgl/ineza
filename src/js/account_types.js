@@ -55,7 +55,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var isFirstLoad = true;
   function fetchAccountTypes() {
+    if (isFirstLoad && window.initialAccountTypesData) {
+      isFirstLoad = false;
+      allTypes = window.initialAccountTypesData;
+      renderAccountTypes();
+      populateParentDropdown(allTypes);
+      return;
+    }
+    isFirstLoad = false;
     fetch('account_types_api.php?action=list')
       .then(function (response) {
         return response.json();

@@ -9,6 +9,74 @@ if (!hasPermission($conn, $userId, 'view_audit_logs')) {
     header("Location: ../dashboard");
     exit();
 }
+
+// Fetch initial logs
+$limit = 25;
+$page = 1;
+$offset = 0;
+
+$countQuery = "SELECT COUNT(*) as count FROM audit_log";
+$countResult = mysqli_query($conn, $countQuery);
+$totalRecords = 0;
+if ($countResult) {
+    $totalRecords = (int)mysqli_fetch_assoc($countResult)['count'];
+}
+$totalPages = ceil($totalRecords / $limit);
+if ($totalPages < 1) $totalPages = 1;
+
+$query = "SELECT * FROM audit_log ORDER BY performed_at DESC, id DESC LIMIT $limit OFFSET $offset";
+$result = mysqli_query($conn, $query);
+$logsData = [];
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $logsData[] = [
+            'id' => (int)$row['id'],
+            'user_full_name' => $row['user_full_name'],
+            'action' => $row['action'],
+            'target_table' => $row['target_table'],
+            'target_name' => $row['target_name'],
+            'target_description' => $row['target_description'],
+            'old_values' => $row['old_values'] ? json_decode($row['old_values'], true) : null,
+            'new_values' => $row['new_values'] ? json_decode($row['new_values'], true) : null,
+            'ip_address' => $row['ip_address'],
+            'user_agent' => $row['user_agent'],
+            'session_id' => $row['session_id'],
+            'notes' => $row['notes'],
+            'performed_at' => $row['performed_at']
+        ];
+    }
+}
+
+$statsQuery = "SELECT 
+                COUNT(*) as total, 
+                SUM(CASE WHEN action = 'CREATE' THEN 1 ELSE 0 END) as creates, 
+                SUM(CASE WHEN action = 'UPDATE' THEN 1 ELSE 0 END) as updates, 
+                SUM(CASE WHEN action = 'DELETE' THEN 1 ELSE 0 END) as deletes 
+               FROM audit_log";
+$statsResult = mysqli_query($conn, $statsQuery);
+$statsData = ['total' => 0, 'creates' => 0, 'updates' => 0, 'deletes' => 0];
+if ($statsResult) {
+    $row = mysqli_fetch_assoc($statsResult);
+    $statsData = [
+        'total' => (int)$row['total'],
+        'creates' => (int)$row['creates'],
+        'updates' => (int)$row['updates'],
+        'deletes' => (int)$row['deletes']
+    ];
+}
+
+$paginationData = [
+    'page' => $page,
+    'limit' => $limit,
+    'total_records' => $totalRecords,
+    'total_pages' => $totalPages
+];
+
+$initialAuditLogsData = [
+    'data' => $logsData,
+    'pagination' => $paginationData,
+    'stats' => $statsData
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,7 +127,7 @@ if (!hasPermission($conn, $userId, 'view_audit_logs')) {
           </div>
           <span class="stat-trend trend-blue">Total</span>
         </div>
-        <div class="stat-val" id="stat-total">0</div>
+        <div class="stat-val" id="stat-total"><?php echo $statsData['total']; ?></div>
         <div class="stat-label">Total Logs Recorded</div>
       </div>
 
@@ -70,7 +138,7 @@ if (!hasPermission($conn, $userId, 'view_audit_logs')) {
           </div>
           <span class="stat-trend trend-up">Creates</span>
         </div>
-        <div class="stat-val" id="stat-creates">0</div>
+        <div class="stat-val" id="stat-creates"><?php echo $statsData['creates']; ?></div>
         <div class="stat-label">Create Mutations</div>
       </div>
 
@@ -81,7 +149,7 @@ if (!hasPermission($conn, $userId, 'view_audit_logs')) {
           </div>
           <span class="stat-trend trend-blue">Updates</span>
         </div>
-        <div class="stat-val" id="stat-updates">0</div>
+        <div class="stat-val" id="stat-updates"><?php echo $statsData['updates']; ?></div>
         <div class="stat-label">Update Mutations</div>
       </div>
 
@@ -92,7 +160,7 @@ if (!hasPermission($conn, $userId, 'view_audit_logs')) {
           </div>
           <span class="stat-trend trend-down">Deletes</span>
         </div>
-        <div class="stat-val" id="stat-deletes">0</div>
+        <div class="stat-val" id="stat-deletes"><?php echo $statsData['deletes']; ?></div>
         <div class="stat-label">Delete Mutations</div>
       </div>
     </div>
@@ -116,7 +184,7 @@ if (!hasPermission($conn, $userId, 'view_audit_logs')) {
 
       <div id="alertPlaceholder"></div>
 
-      <div style="overflow-x: auto;">
+      <div class="table-container">
         <table class="data-table" id="auditTable">
           <thead>
             <tr>
@@ -131,15 +199,55 @@ if (!hasPermission($conn, $userId, 'view_audit_logs')) {
             </tr>
           </thead>
           <tbody id="auditList">
-            <tr>
-              <td colspan="8" class="table-empty">Loading audit logs history trail...</td>
-            </tr>
+            <?php if (empty($logsData)): ?>
+              <tr>
+                <td colspan="8" class="table-empty">No matching log entries found.</td>
+              </tr>
+            <?php else: ?>
+              <?php foreach ($logsData as $index => $log): ?>
+                <?php
+                  $timeVal = htmlspecialchars($log['performed_at']);
+                  $userVal = htmlspecialchars($log['user_full_name']);
+                  $act = strtoupper($log['action']);
+                  $badgeClass = 'badge-view';
+                  if ($act === 'CREATE') $badgeClass = 'badge-create';
+                  else if ($act === 'UPDATE') $badgeClass = 'badge-update';
+                  else if ($act === 'DELETE') $badgeClass = 'badge-delete';
+                  else if ($act === 'LOGIN') $badgeClass = 'badge-login';
+                  else if ($act === 'LOGOUT') $badgeClass = 'badge-logout';
+
+                  $actBadge = '<span class="badge-action ' . $badgeClass . '">' . htmlspecialchars($log['action']) . '</span>';
+                  $tableVal = $log['target_table'] ? htmlspecialchars($log['target_table']) : '—';
+                  $nameVal = $log['target_name'] ? htmlspecialchars($log['target_name']) : '—';
+                  $descVal = $log['target_description'] ? htmlspecialchars($log['target_description']) : '—';
+                  $globalIndex = $index + 1;
+                ?>
+                <tr>
+                  <td><?php echo $globalIndex; ?></td>
+                  <td style="font-family:monospace; font-size:11.5px;"><?php echo $timeVal; ?></td>
+                  <td><?php echo $userVal; ?></td>
+                  <td><?php echo $actBadge; ?></td>
+                  <td><span class="code-badge"><?php echo $tableVal; ?></span></td>
+                  <td><?php echo $nameVal; ?></td>
+                  <td><?php echo $descVal; ?></td>
+                  <td style="text-align: right;">
+                    <button class="btn-icon-only view-details-btn" title="View Payload Details" data-id="<?php echo $log['id']; ?>">
+                      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endif; ?>
           </tbody>
         </table>
       </div>
 
       <div class="pagination-footer">
-        <div class="pagination-info" id="paginationInfo">Showing 0 to 0 of 0 entries</div>
+        <?php
+          $startVal = $totalRecords > 0 ? 1 : 0;
+          $endVal = min($limit, $totalRecords);
+        ?>
+        <div class="pagination-info" id="paginationInfo">Showing <?php echo $startVal; ?> to <?php echo $endVal; ?> of <?php echo $totalRecords; ?> entries</div>
         <div class="pagination-nav" id="paginationNav"></div>
       </div>
     </div>
@@ -162,6 +270,9 @@ if (!hasPermission($conn, $userId, 'view_audit_logs')) {
   </div>
 </div>
 
+<script>
+  window.initialAuditLogsData = <?php echo json_encode($initialAuditLogsData); ?>;
+</script>
 <script src="../../src/js/navbar.js"></script>
 <script src="../../src/js/sidebar.js"></script>
 <script src="../../src/js/audit_logs.js"></script>

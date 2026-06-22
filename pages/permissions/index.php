@@ -17,6 +17,48 @@ if (empty($_SESSION['permissions_token'])) {
 $canCreate = hasPermission($conn, $userId, 'create_permission');
 $canEdit = hasPermission($conn, $userId, 'edit_permission');
 $canDelete = hasPermission($conn, $userId, 'delete_permission');
+
+$coreCodes = [
+    'view_permissions', 'create_permission', 'edit_permission', 'delete_permission',
+    'view_roles', 'create_role', 'edit_role', 'delete_role',
+    'view_users', 'create_user', 'edit_user', 'delete_user',
+    'view_currencies', 'create_currency', 'edit_currency', 'delete_currency',
+    'view_exchange_rates', 'create_exchange_rate', 'edit_exchange_rate', 'delete_exchange_rate'
+];
+
+$query = "SELECT p.id, p.permition_name, p.permition_code, p.created_at, COUNT(DISTINCT rp.role_id) as role_count
+          FROM permissions p
+          LEFT JOIN role_permissions rp ON p.id = rp.permission_id
+          GROUP BY p.id
+          ORDER BY p.permition_name ASC";
+$result = mysqli_query($conn, $query);
+$permissionsData = [];
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $permissionsData[] = [
+            'id' => (int)$row['id'],
+            'name' => $row['permition_name'],
+            'code' => $row['permition_code'],
+            'created_at' => $row['created_at'],
+            'role_count' => (int)$row['role_count'],
+            'is_core' => in_array($row['permition_code'], $coreCodes)
+        ];
+    }
+}
+$totalPermissions = count($permissionsData);
+$mappedPermissions = 0;
+$unmappedPermissions = 0;
+$corePermissions = 0;
+foreach ($permissionsData as $p) {
+    if ($p['role_count'] > 0) {
+        $mappedPermissions++;
+    } else {
+        $unmappedPermissions++;
+    }
+    if ($p['is_core']) {
+        $corePermissions++;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -73,7 +115,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
           </div>
           <span class="stat-trend trend-blue">Total</span>
         </div>
-        <div class="stat-val" id="stat-total">0</div>
+        <div class="stat-val" id="stat-total"><?php echo $totalPermissions; ?></div>
         <div class="stat-label">Defined Permissions</div>
       </div>
 
@@ -84,7 +126,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
           </div>
           <span class="stat-trend trend-up">Mapped</span>
         </div>
-        <div class="stat-val" id="stat-active">0</div>
+        <div class="stat-val" id="stat-active"><?php echo $mappedPermissions; ?></div>
         <div class="stat-label">Mapped Permissions</div>
       </div>
 
@@ -95,7 +137,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
           </div>
           <span class="stat-trend trend-down">Unused</span>
         </div>
-        <div class="stat-val" id="stat-inactive">0</div>
+        <div class="stat-val" id="stat-inactive"><?php echo $unmappedPermissions; ?></div>
         <div class="stat-label">Unmapped Permissions</div>
       </div>
 
@@ -106,7 +148,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
           </div>
           <span class="stat-trend trend-warn">Core</span>
         </div>
-        <div class="stat-val" id="stat-base">0</div>
+        <div class="stat-val" id="stat-base"><?php echo $corePermissions; ?></div>
         <div class="stat-label">Protected Core Settings</div>
       </div>
     </div>
@@ -121,7 +163,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
         
         <div id="alertPlaceholder"></div>
 
-        <div style="overflow-x: auto;">
+        <div class="table-container">
           <table class="data-table" id="permissionsTable">
             <thead>
               <tr>
@@ -134,9 +176,46 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
               </tr>
             </thead>
             <tbody id="permissionsList">
-              <tr>
-                <td colspan="6" class="table-empty">Loading system permissions...</td>
-              </tr>
+              <?php if (empty($permissionsData)): ?>
+                <tr>
+                  <td colspan="6" class="table-empty">No permissions defined yet.</td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($permissionsData as $index => $p): ?>
+                  <?php
+                    $globalIndex = $index + 1;
+                    $nameVal = htmlspecialchars($p['name']);
+                    $codeVal = htmlspecialchars($p['code']);
+                    $createdVal = htmlspecialchars(explode(' ', $p['created_at'])[0]);
+                    $roleBadgeClass = $p['role_count'] > 0 ? 'pill-green' : '';
+                    $roleBadge = '<span class="status-pill ' . $roleBadgeClass . '">' . $p['role_count'] . ' Roles</span>';
+
+                    $actionsHtml = '';
+                    if (!$p['is_core']) {
+                        $actionsHtml = '<button class="btn-icon-only edit" title="Edit Permission" data-id="' . $p['id'] . '">' .
+                            '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' .
+                          '</button>' .
+                          '<button class="btn-icon-only delete" title="Delete Permission" data-id="' . $p['id'] . '">' .
+                            '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' .
+                          '</button>';
+                    } else {
+                        $actionsHtml = '<span title="Core Permission System Lock" style="color:var(--text3); cursor:not-allowed; display:inline-flex; align-items:center; gap:4px; font-size:11px;"><svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> System</span>';
+                    }
+                  ?>
+                  <tr>
+                    <td><?php echo $globalIndex; ?></td>
+                    <td><strong><?php echo $nameVal; ?></strong></td>
+                    <td><span class="code-badge"><?php echo $codeVal; ?></span></td>
+                    <td><?php echo $roleBadge; ?></td>
+                    <td><?php echo $createdVal; ?></td>
+                    <td style="text-align: right;">
+                      <div class="action-buttons" style="justify-content: flex-end; align-items:center; min-height:26px;">
+                        <?php echo $actionsHtml; ?>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
             </tbody>
           </table>
         </div>
@@ -198,6 +277,9 @@ $canDelete = hasPermission($conn, $userId, 'delete_permission');
   </div>
 </div>
 
+<script>
+  window.initialPermissionsData = <?php echo json_encode($permissionsData); ?>;
+</script>
 <script src="../../src/js/navbar.js"></script>
 <script src="../../src/js/sidebar.js"></script>
 <script src="../../src/js/permissions.js"></script>
