@@ -58,7 +58,7 @@ function getOptionRange($conn, $typeId, &$cache = []) {
     return null;
 }
 
-$typeQuery = "SELECT id, code, name FROM account_types ORDER BY code ASC";
+$typeQuery = "SELECT id, code, name FROM account_types WHERE id > 0 ORDER BY code ASC";
 $typeResult = mysqli_query($conn, $typeQuery);
 $typeOptionsHtml = "";
 $cache = [];

@@ -108,14 +108,21 @@ switch ($action) {
             }
         }
 
-        // Loop to find the next unused code globally in the accounts table
+        // Loop to find the next unused code globally in both accounts and account_types tables
         $nextCode = null;
         $found = false;
         $attempts = 0;
         while (!$found && $attempts < 100) {
-            $checkQ = "SELECT id FROM accounts WHERE account_code = '$candidate' LIMIT 1";
-            $checkR = mysqli_query($conn, $checkQ);
-            if ($checkR && mysqli_num_rows($checkR) > 0) {
+            $checkAccountsQ = "SELECT id FROM accounts WHERE account_code = '$candidate' LIMIT 1";
+            $checkAccountsR = mysqli_query($conn, $checkAccountsQ);
+            
+            $checkTypesQ = "SELECT id FROM account_types WHERE code = '$candidate' LIMIT 1";
+            $checkTypesR = mysqli_query($conn, $checkTypesQ);
+            
+            $accountExists = ($checkAccountsR && mysqli_num_rows($checkAccountsR) > 0);
+            $typeExists = ($checkTypesR && mysqli_num_rows($checkTypesR) > 0);
+            
+            if ($accountExists || $typeExists) {
                 $candidate += 10;
                 $attempts++;
             } else {
@@ -196,11 +203,16 @@ switch ($action) {
         $account_name_esc = mysqli_real_escape_string($conn, $account_name);
         $description_esc = $description !== null ? "'" . mysqli_real_escape_string($conn, $description) . "'" : "NULL";
 
-        // Validate code uniqueness
-        $checkQuery = "SELECT id FROM accounts WHERE account_code = '$account_code_esc' LIMIT 1";
-        $checkResult = mysqli_query($conn, $checkQuery);
-        if ($checkResult && mysqli_num_rows($checkResult) > 0) {
-            sendResponse(false, "An account with code '$account_code' already exists.");
+        // Validate code uniqueness in both accounts and account_types tables
+        $checkAccountsQuery = "SELECT id FROM accounts WHERE account_code = '$account_code_esc' LIMIT 1";
+        $checkAccountsResult = mysqli_query($conn, $checkAccountsQuery);
+        
+        $checkTypesQuery = "SELECT id FROM account_types WHERE code = '$account_code_esc' LIMIT 1";
+        $checkTypesResult = mysqli_query($conn, $checkTypesQuery);
+        
+        if (($checkAccountsResult && mysqli_num_rows($checkAccountsResult) > 0) || 
+            ($checkTypesResult && mysqli_num_rows($checkTypesResult) > 0)) {
+            sendResponse(false, "An account or account type with code '$account_code' already exists.");
         }
 
         // Validate range based on selected account type's root parent
@@ -275,11 +287,16 @@ switch ($action) {
         $account_name_esc = mysqli_real_escape_string($conn, $account_name);
         $description_esc = $description !== null ? "'" . mysqli_real_escape_string($conn, $description) . "'" : "NULL";
 
-        // Validate code uniqueness
-        $checkQuery = "SELECT id FROM accounts WHERE account_code = '$account_code_esc' AND id != $id LIMIT 1";
-        $checkResult = mysqli_query($conn, $checkQuery);
-        if ($checkResult && mysqli_num_rows($checkResult) > 0) {
-            sendResponse(false, "Another account with code '$account_code' already exists.");
+        // Validate code uniqueness in both accounts and account_types tables
+        $checkAccountsQuery = "SELECT id FROM accounts WHERE account_code = '$account_code_esc' AND id != $id LIMIT 1";
+        $checkAccountsResult = mysqli_query($conn, $checkAccountsQuery);
+        
+        $checkTypesQuery = "SELECT id FROM account_types WHERE code = '$account_code_esc' LIMIT 1";
+        $checkTypesResult = mysqli_query($conn, $checkTypesQuery);
+        
+        if (($checkAccountsResult && mysqli_num_rows($checkAccountsResult) > 0) || 
+            ($checkTypesResult && mysqli_num_rows($checkTypesResult) > 0)) {
+            sendResponse(false, "Another account or account type with code '$account_code' already exists.");
         }
 
         // Validate range based on selected account type's root parent
