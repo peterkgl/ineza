@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 22, 2026 at 12:20 AM
+-- Generation Time: Jun 24, 2026 at 05:11 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -32,87 +32,11 @@ CREATE TABLE `accounts` (
   `account_type_id` int(11) NOT NULL,
   `account_code` varchar(20) NOT NULL,
   `account_name` varchar(255) NOT NULL,
-  `opening_balance` decimal(18,2) DEFAULT 0.00,
   `is_active` tinyint(1) DEFAULT 1,
   `description` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `accounts`
---
-
-INSERT INTO `accounts` (`id`, `account_type_id`, `account_code`, `account_name`, `opening_balance`, `is_active`, `description`, `created_at`, `updated_at`) VALUES
-(1, 1, '1100', 'EQUITY - INEZA AFRICAN MINING USD', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(2, 1, '1110', 'EQUITY - INEZA AFRICAN MINING RWF', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(3, 1, '1120', 'BK - INEZA AFRICAN MINING', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(4, 1, '1130', 'Petty Cash Fund - INEZA', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(5, 1, '1140', 'Funds to Sites - Rubaya', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(6, 1, '1150', 'Accounts Receivables', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(7, 1, '1160', 'Advances - Employees', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(8, 1, '1170', 'Advances - Suppliers', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(9, 1, '1180', 'Advances - Cooperatives', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(10, 1, '1190', 'Advances - Others', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(11, 1, '1200', 'Prepayments', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(12, 1, '1210', 'Prepaid Rent', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(13, 1, '1220', 'Rental Deposits', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(14, 1, '1230', 'Stocks - Tin', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(15, 1, '1240', 'Stocks - Coltan', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(16, 1, '1250', 'Stocks - Others', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(17, 1, '1260', 'Due from EQUITY - INEZA AFRICAN MINING USD', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(18, 1, '1270', 'Due from EQUITY - INEZA AFRICAN MINING RWF', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(19, 1, '1280', 'Due from EQUITY - INEZA AFRICAN MINING EURO', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(20, 1, '1290', 'Land & Buildings - @ Cost', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(21, 1, '1300', 'Motor Vehicles - @ Cost', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(22, 1, '1310', 'Computer Equipment - @ Cost', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(23, 1, '1320', 'Office Equipment - @ Cost', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(24, 1, '1330', 'Furniture & Fittings - @ Cost', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(25, 1, '1340', 'Mineral Processing Equipment - @ Cost', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(26, 1, '1350', 'Goodwill / Intangible Assets', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(27, 1, '1360', 'Investments', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(28, 2, '2100', 'Accounts Payable', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(29, 2, '2110', 'Accounts Payable - Others', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(30, 2, '2120', 'Accrued Liabilities', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(31, 2, '2130', 'Advances from METALEKSPO SIA', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(32, 2, '2140', 'Advances from Star Metal Company', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(33, 2, '2150', 'Salaries Payable', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(34, 2, '2160', 'Consultancy Fee Payable', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(35, 2, '2170', 'Rent Payable', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(36, 2, '2180', 'Commission Payable', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(37, 2, '2190', 'Payroll Tax Payable', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(38, 2, '2200', 'Income Tax Payable', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(39, 2, '2210', 'Long Term Liabilities', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(40, 2, '2220', 'Loans Payable', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(41, 2, '2230', 'Due to EQUITY - INEZA AFRICAN MINING USD', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(42, 2, '2240', 'Due to EQUITY - INEZA AFRICAN MINING RWF', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(43, 2, '2250', 'Due to EQUITY - INEZA AFRICAN MINING EURO', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(44, 3, '3100', 'Common Shares', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(45, 3, '3110', 'Members Equity', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(46, 3, '3120', 'Retained Income / Accumulated Loss', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(47, 3, '3130', 'Prior Period Adjustment', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(48, 4, '4100', 'Sales', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(49, 5, '5100', 'Minerals Costs', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(50, 5, '5110', 'Export Costs', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(51, 5, '5120', 'Export Packaging', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(52, 5, '5130', 'Export Taxes', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(53, 5, '5140', 'Minerals Transport, Taxes & Tags', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(54, 5, '5150', 'Travel & Transport', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(55, 5, '5160', 'Salaries & Wages', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(56, 5, '5170', 'Sample Costs', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(57, 5, '5180', 'Cooperative Fees', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(58, 6, '6100', 'Advertising & Promotions', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(59, 6, '6110', 'Amortization', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(60, 6, '6120', 'Bad Debts', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(61, 6, '6130', 'Bank Charges', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(62, 6, '6140', 'Cleaning & Hygiene', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(63, 6, '6150', 'Computer Supplies & Others', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(64, 6, '6160', 'Consulting Fees', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(65, 6, '6170', 'Courier & Postage', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(66, 6, '6180', 'Commission Fees', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(67, 6, '6190', 'Custom Duties & Taxes', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(68, 6, '6200', 'Depreciation', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26'),
-(69, 6, '6210', 'Donations', 0.00, 1, NULL, '2026-06-19 16:59:26', '2026-06-19 16:59:26');
 
 -- --------------------------------------------------------
 
@@ -136,12 +60,13 @@ CREATE TABLE `account_types` (
 --
 
 INSERT INTO `account_types` (`id`, `code`, `name`, `parent_id`, `is_editable`, `is_deletable`, `created_at`, `updated_at`) VALUES
-(1, '1000', 'Assets', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
-(2, '2000', 'Liabilities', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
-(3, '3000', 'Equity', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
-(4, '4000', 'Revenue', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
-(5, '5000', 'Cost of Sales', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41'),
-(6, '6000', 'Operating Expenses', NULL, 0, 0, '2026-06-19 16:58:41', '2026-06-19 16:58:41');
+(-6, '6000', 'Operating Expenses', NULL, 0, 0, '2026-06-24 02:50:00', '2026-06-24 02:50:00'),
+(-5, '5000', 'Cost of Sales', NULL, 0, 0, '2026-06-24 02:50:00', '2026-06-24 02:50:00'),
+(-4, '4000', 'Revenue', NULL, 0, 0, '2026-06-24 02:50:00', '2026-06-24 02:50:00'),
+(-3, '3000', 'Equity', NULL, 0, 0, '2026-06-24 02:50:00', '2026-06-24 02:50:00'),
+(-2, '2000', 'Liabilities', NULL, 0, 0, '2026-06-24 02:50:00', '2026-06-24 02:50:00'),
+(-1, '1000', 'Assets', NULL, 0, 0, '2026-06-24 02:50:00', '2026-06-24 02:50:00'),
+(3, '2001', 'Accounts Payable', -2, 1, 1, '2026-06-24 02:53:18', '2026-06-24 02:53:18');
 
 -- --------------------------------------------------------
 
@@ -532,7 +457,173 @@ INSERT INTO `audit_log` (`id`, `user_full_name`, `action`, `target_table`, `targ
 (343, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nj3cn7mka30mb2qfht20ault9g', NULL, '2026-06-20 16:21:09'),
 (344, 'Super Admin', 'VIEW', 'product_elements', 'Product Elements List', 'User viewed the product elements list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nj3cn7mka30mb2qfht20ault9g', NULL, '2026-06-20 16:42:29'),
 (345, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nj3cn7mka30mb2qfht20ault9g', NULL, '2026-06-20 21:21:56'),
-(346, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'fp5og6mdubatjpk4rqpajv66i6', NULL, '2026-06-21 13:34:46');
+(346, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'fp5og6mdubatjpk4rqpajv66i6', NULL, '2026-06-21 13:34:46'),
+(347, 'Super Admin', 'VIEW', 'product_elements', 'Product Elements List', 'User viewed the product elements list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '2lbb2dl7vhkv0uef5gscmjnojp', NULL, '2026-06-21 22:44:56'),
+(348, 'Test Admin', 'CREATE', 'product_categories', 'T_CAT', 'Created product category: Test Category', NULL, '{\"id\":1,\"category_code\":\"T_CAT\",\"category_name\":\"Test Category\",\"description\":\"Integration test category\",\"is_active\":1}', '', '', 's90haj6iklo2vc8po0toib2g3o', NULL, '2026-06-21 22:57:15'),
+(349, 'Test Admin', 'CREATE', 'product_categories', 'T_CAT', 'Created product category: Test Category', NULL, '{\"id\":2,\"category_code\":\"T_CAT\",\"category_name\":\"Test Category\",\"description\":\"Integration test category\",\"is_active\":1}', '', '', 'bt02sies2ovrnkcvtpeu7ai87r', NULL, '2026-06-21 22:59:08'),
+(350, 'Test Admin', 'VIEW', 'product_categories', 'Product Categories List', 'User viewed the product categories list', NULL, NULL, '', '', 'jg5a4863iqugrffgbhdgk72rep', NULL, '2026-06-21 22:59:08'),
+(351, 'Test Admin', 'CREATE', 'products', 'T_PRD', 'Created product: Test Product', NULL, '{\"id\":5,\"code\":\"T_PRD\",\"name\":\"Test Product\",\"full_name\":\"Test Product Designation\",\"unit_of_measure\":\"kg\",\"description\":\"Product integration test\",\"inventory_account_id\":null,\"sales_account_id\":null,\"cogs_account_id\":null,\"category_id\":2,\"is_active\":1}', '', '', 'tb200gpi90k3htdvuj2ingr0o7', NULL, '2026-06-21 22:59:08'),
+(352, 'Test Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '', '', 'a39rbk0k3ol9fgov5ltd17co2s', NULL, '2026-06-21 22:59:08'),
+(353, 'Test Admin', 'DELETE', 'products', 'T_PRD', 'Deleted product: Test Product', '{\"id\":\"5\",\"code\":\"T_PRD\",\"name\":\"Test Product\",\"full_name\":\"Test Product Designation\",\"unit_of_measure\":\"kg\",\"description\":\"Product integration test\",\"inventory_account_id\":null,\"sales_account_id\":null,\"cogs_account_id\":null,\"is_active\":\"1\",\"created_at\":\"2026-06-22 00:59:08\",\"created_by\":\"2\",\"updated_at\":\"2026-06-22 00:59:08\",\"updated_by\":null,\"category_id\":\"2\"}', NULL, '', '', 'acao9snduhk8a1scuksjolfiks', NULL, '2026-06-21 22:59:09'),
+(354, 'Test Admin', 'DELETE', 'product_categories', 'T_CAT', 'Deleted product category: Test Category', '{\"id\":\"2\",\"category_code\":\"T_CAT\",\"category_name\":\"Test Category\",\"description\":\"Integration test category\",\"is_active\":\"1\",\"created_at\":\"2026-06-22 00:59:08\"}', NULL, '', '', 'mgg8evprj6nq6cou66g6pot29r', NULL, '2026-06-21 22:59:09'),
+(355, 'Super Admin', 'VIEW', 'product_elements', 'Product Elements List', 'User viewed the product elements list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '2lbb2dl7vhkv0uef5gscmjnojp', NULL, '2026-06-21 23:00:00'),
+(356, 'Super Admin', 'VIEW', 'product_categories', 'Product Categories List', 'User viewed the product categories list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '2lbb2dl7vhkv0uef5gscmjnojp', NULL, '2026-06-21 23:00:03'),
+(357, 'Super Admin', 'VIEW', 'users', 'Users List', 'User viewed the users list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '2lbb2dl7vhkv0uef5gscmjnojp', NULL, '2026-06-21 23:00:14'),
+(358, 'Super Admin', 'VIEW', 'roles', 'Roles List', 'User viewed the roles list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '2lbb2dl7vhkv0uef5gscmjnojp', NULL, '2026-06-21 23:00:18'),
+(359, 'Super Admin', 'UPDATE', 'roles', 'view only', 'Updated role: view only', '{\"id\":\"3\",\"name\":\"view only\",\"description\":\"to viewing all details only\",\"created_at\":\"2026-06-20 17:25:53\",\"permission_ids\":\"19,31,35\"}', '{\"id\":3,\"name\":\"view only\",\"description\":\"to viewing all details only\",\"permissions\":[31,35,40,19]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '2lbb2dl7vhkv0uef5gscmjnojp', NULL, '2026-06-21 23:00:43'),
+(360, 'Super Admin', 'VIEW', 'roles', 'Roles List', 'User viewed the roles list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '2lbb2dl7vhkv0uef5gscmjnojp', NULL, '2026-06-21 23:00:43'),
+(361, 'Super Admin', 'VIEW', 'users', 'Users List', 'User viewed the users list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '2lbb2dl7vhkv0uef5gscmjnojp', NULL, '2026-06-21 23:01:07'),
+(362, 'eugene ndayishimiye', 'VIEW', 'product_categories', 'Product Categories List', 'User viewed the product categories list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'uhf2qa3v5qcrlfo9iufsmak526', NULL, '2026-06-21 23:01:30'),
+(363, 'Super Admin', 'VIEW', 'product_categories', 'Product Categories List', 'User viewed the product categories list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:01:58'),
+(364, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:01:59'),
+(365, 'Super Admin', 'VIEW', 'product_elements', 'Product Elements List', 'User viewed the product elements list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:02:01'),
+(366, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:02:05'),
+(367, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:02:06'),
+(368, 'Super Admin', 'VIEW', 'product_categories', 'Product Categories List', 'User viewed the product categories list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:02:08'),
+(369, 'Super Admin', 'CREATE', 'product_categories', '001', 'Created product category: Mineral', NULL, '{\"id\":3,\"category_code\":\"001\",\"category_name\":\"Mineral\",\"description\":\"\",\"is_active\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:02:41'),
+(370, 'Super Admin', 'VIEW', 'product_categories', 'Product Categories List', 'User viewed the product categories list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:02:41'),
+(371, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:02:43'),
+(372, 'Super Admin', 'CREATE', 'products', 'SN', 'Created product: Tin', NULL, '{\"id\":6,\"code\":\"SN\",\"name\":\"Tin\",\"full_name\":\"Sn02\",\"unit_of_measure\":\"kg\",\"description\":\"\",\"inventory_account_id\":9,\"sales_account_id\":14,\"cogs_account_id\":16,\"category_id\":3,\"is_active\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:03:21'),
+(373, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:03:21'),
+(374, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'nngc7msff0njo3e3ep1t3ptipu', NULL, '2026-06-21 23:16:05'),
+(375, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:16:47'),
+(376, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:19:37'),
+(377, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:19:38'),
+(378, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:21:06'),
+(379, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:21:07'),
+(380, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:21:08'),
+(381, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:21:08'),
+(382, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:21:08'),
+(383, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:26:39'),
+(384, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:26:40'),
+(385, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '7pg3cls8d7qujcc16qhrfdvld2', NULL, '2026-06-21 23:26:41'),
+(386, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'lo7vfo8jj2ss4ve1q4e2hsj3kt', NULL, '2026-06-21 23:26:55'),
+(387, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'lo7vfo8jj2ss4ve1q4e2hsj3kt', NULL, '2026-06-21 23:27:18'),
+(388, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'lo7vfo8jj2ss4ve1q4e2hsj3kt', NULL, '2026-06-21 23:33:23'),
+(389, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'lo7vfo8jj2ss4ve1q4e2hsj3kt', NULL, '2026-06-21 23:33:23'),
+(390, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:33:57'),
+(391, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:35'),
+(392, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:37'),
+(393, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:39'),
+(394, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:41'),
+(395, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:45'),
+(396, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:48'),
+(397, 'Super Admin', 'VIEW', 'users', 'Users List', 'User viewed the users list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:51'),
+(398, 'Super Admin', 'VIEW', 'roles', 'Roles List', 'User viewed the roles list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:52'),
+(399, 'Super Admin', 'VIEW', 'permissions', 'Permissions List', 'User viewed the permissions list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:54'),
+(400, 'Super Admin', 'VIEW', 'currencies', 'Currencies List', 'User viewed the currencies list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:57'),
+(401, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:41:58'),
+(402, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:43:21'),
+(403, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '738msttoonanpb47due24c9auv', NULL, '2026-06-21 23:44:25'),
+(404, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:44:43'),
+(405, 'Super Admin', 'VIEW', 'warehouses', 'Warehouses List', 'User viewed the warehouses list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:44:49'),
+(406, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:47:44'),
+(407, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:48:04'),
+(408, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:51:38'),
+(409, 'Super Admin', 'VIEW', 'warehouses', 'Warehouses List', 'User viewed the warehouses list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:54:52'),
+(410, 'Super Admin', 'VIEW', 'product_elements', 'Product Elements List', 'User viewed the product elements list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:54:53'),
+(411, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:54:55'),
+(412, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:54:56'),
+(413, 'Super Admin', 'VIEW', 'users', 'Users List', 'User viewed the users list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:54:58'),
+(414, 'Super Admin', 'VIEW', 'roles', 'Roles List', 'User viewed the roles list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:55:01'),
+(415, 'Super Admin', 'VIEW', 'permissions', 'Permissions List', 'User viewed the permissions list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:55:06'),
+(416, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:55:32'),
+(417, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:02'),
+(418, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:15'),
+(419, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:16'),
+(420, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:18'),
+(421, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:19'),
+(422, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:20'),
+(423, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:21'),
+(424, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:21'),
+(425, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:22'),
+(426, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:24'),
+(427, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:25'),
+(428, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:25'),
+(429, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:26'),
+(430, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:26'),
+(431, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:27'),
+(432, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:27'),
+(433, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:27'),
+(434, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:27'),
+(435, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:30'),
+(436, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:32'),
+(437, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:33'),
+(438, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:54'),
+(439, 'Super Admin', 'VIEW', 'warehouses', 'Warehouses List', 'User viewed the warehouses list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:56:54'),
+(440, 'Super Admin', 'CREATE', 'warehouses', 'KIGALI', 'Created warehouse: Kicukiro', NULL, '{\"id\":1,\"warehouse_code\":\"KIGALI\",\"warehouse_name\":\"Kicukiro\",\"address\":\"KK05\",\"is_active\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:57:14'),
+(441, 'Super Admin', 'VIEW', 'warehouses', 'Warehouses List', 'User viewed the warehouses list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:57:14'),
+(442, 'Super Admin', 'VIEW', 'audit_log', 'Audit Logs List', 'User viewed the system audit logs list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:57:45'),
+(443, 'Super Admin', 'VIEW', 'warehouses', 'Warehouses List', 'User viewed the warehouses list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:58:24'),
+(444, 'Super Admin', 'DELETE', 'warehouses', 'KIGALI', 'Deleted warehouse: Kicukiro', '{\"id\":\"1\",\"warehouse_code\":\"KIGALI\",\"warehouse_name\":\"Kicukiro\",\"address\":\"KK05\",\"is_active\":\"1\",\"created_at\":\"2026-06-22 01:57:14\",\"created_by\":\"2\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:58:29'),
+(445, 'Super Admin', 'VIEW', 'warehouses', 'Warehouses List', 'User viewed the warehouses list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:58:29'),
+(446, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:58:39'),
+(447, 'Super Admin', 'VIEW', 'product_categories', 'Product Categories List', 'User viewed the product categories list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:58:40'),
+(448, 'Super Admin', 'VIEW', 'product_elements', 'Product Elements List', 'User viewed the product elements list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:58:42'),
+(449, 'Super Admin', 'VIEW', 'warehouses', 'Warehouses List', 'User viewed the warehouses list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:58:43'),
+(450, 'Super Admin', 'VIEW', 'currencies', 'Currencies List', 'User viewed the currencies list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-21 23:58:44'),
+(451, 'Super Admin', 'VIEW', 'currencies', 'Currencies List', 'User viewed the currencies list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-22 00:00:42'),
+(452, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-22 00:00:45'),
+(453, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-22 00:03:19'),
+(454, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'n0ht82d18729lioqop7kbobsue', NULL, '2026-06-22 00:03:27'),
+(455, 'Super Admin', 'DELETE', 'products', 'SN', 'Deleted product: Tin', '{\"id\":\"6\",\"code\":\"SN\",\"name\":\"Tin\",\"full_name\":\"Sn02\",\"unit_of_measure\":\"kg\",\"description\":\"\",\"inventory_account_id\":\"9\",\"sales_account_id\":\"14\",\"cogs_account_id\":\"16\",\"is_active\":\"1\",\"created_at\":\"2026-06-22 01:03:21\",\"created_by\":\"2\",\"updated_at\":\"2026-06-22 01:03:21\",\"updated_by\":null,\"category_id\":\"3\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'pa8j7e6m7891qrd2gfp58uk4eu', NULL, '2026-06-22 00:22:27'),
+(456, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'pa8j7e6m7891qrd2gfp58uk4eu', NULL, '2026-06-22 00:22:27'),
+(457, 'Super Admin', 'DELETE', 'product_categories', '001', 'Deleted product category: Mineral', '{\"id\":\"3\",\"category_code\":\"001\",\"category_name\":\"Mineral\",\"description\":\"\",\"is_active\":\"1\",\"created_at\":\"2026-06-22 01:02:41\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'pa8j7e6m7891qrd2gfp58uk4eu', NULL, '2026-06-22 00:22:32'),
+(458, 'Super Admin', 'VIEW', 'product_categories', 'Product Categories List', 'User viewed the product categories list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'pa8j7e6m7891qrd2gfp58uk4eu', NULL, '2026-06-22 00:22:32'),
+(459, 'Super Admin', 'CREATE', 'suppliers', 'eugene', 'Created supplier: eugene (individual)', NULL, '{\"id\":2,\"supplier_type\":\"individual\",\"name\":\"eugene\",\"nif\":\"09987\",\"vat_reg_no\":\"VAT334\",\"phone\":\"0785750123\",\"email\":\"nendayishimye@gmail.com\",\"address\":\"Unnamed Road\",\"payables_account_id\":7,\"currency_id\":2,\"region\":\"\",\"is_active\":1,\"notes\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'pa8j7e6m7891qrd2gfp58uk4eu', NULL, '2026-06-22 00:44:45'),
+(460, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'pa8j7e6m7891qrd2gfp58uk4eu', NULL, '2026-06-22 00:44:45'),
+(461, 'Super Admin', 'DELETE', 'suppliers', 'eugene', 'Deleted supplier: eugene', '{\"id\":\"2\",\"supplier_type\":\"individual\",\"name\":\"eugene\",\"nif\":\"09987\",\"vat_reg_no\":\"VAT334\",\"phone\":\"0785750123\",\"email\":\"nendayishimye@gmail.com\",\"address\":\"Unnamed Road\",\"payables_account_id\":\"7\",\"currency_id\":\"2\",\"region\":\"\",\"is_active\":\"1\",\"notes\":\"\",\"created_at\":\"2026-06-22 02:44:45\",\"updated_at\":\"2026-06-22 02:44:45\",\"created_by\":\"2\",\"updated_by\":null}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 't8l6oakb89jcblmr9fm3roj26n', NULL, '2026-06-22 08:52:59');
+INSERT INTO `audit_log` (`id`, `user_full_name`, `action`, `target_table`, `target_name`, `target_description`, `old_values`, `new_values`, `ip_address`, `user_agent`, `session_id`, `notes`, `performed_at`) VALUES
+(462, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 't8l6oakb89jcblmr9fm3roj26n', NULL, '2026-06-22 08:52:59'),
+(463, 'Super Admin', 'CREATE', 'suppliers', 'eugene', 'Created supplier: eugene (cooperative)', NULL, '{\"id\":4,\"supplier_type\":\"cooperative\",\"name\":\"eugene\",\"nif\":\"09987\",\"vat_reg_no\":\"VAT334\",\"phone\":\"0785750123\",\"email\":\"nendayishimye@gmail.com\",\"address\":\"Unnamed Road\",\"payables_account_id\":4,\"currency_id\":1,\"region\":\"Rutsiro\",\"is_active\":1,\"notes\":\"done\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 't8l6oakb89jcblmr9fm3roj26n', NULL, '2026-06-22 08:53:34'),
+(464, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 't8l6oakb89jcblmr9fm3roj26n', NULL, '2026-06-22 08:53:34'),
+(465, 'Super Admin', 'DELETE', 'suppliers', 'eugene', 'Deleted supplier: eugene', '{\"id\":\"4\",\"supplier_type\":\"cooperative\",\"name\":\"eugene\",\"nif\":\"09987\",\"vat_reg_no\":\"VAT334\",\"phone\":\"0785750123\",\"email\":\"nendayishimye@gmail.com\",\"address\":\"Unnamed Road\",\"payables_account_id\":\"4\",\"currency_id\":\"1\",\"region\":\"Rutsiro\",\"is_active\":\"1\",\"notes\":\"done\",\"created_at\":\"2026-06-22 10:53:34\",\"updated_at\":\"2026-06-22 10:53:34\",\"created_by\":\"2\",\"updated_by\":null}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 't8l6oakb89jcblmr9fm3roj26n', NULL, '2026-06-22 08:54:09'),
+(466, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 't8l6oakb89jcblmr9fm3roj26n', NULL, '2026-06-22 08:54:09'),
+(467, 'Super Admin', 'UPDATE', 'roles', 'view only', 'Updated role: view only', '{\"id\":\"3\",\"name\":\"view only\",\"description\":\"to viewing all details only\",\"created_at\":\"2026-06-20 17:25:53\",\"permission_ids\":\"19,31,35,40\"}', '{\"id\":3,\"name\":\"view only\",\"description\":\"to viewing all details only\",\"permissions\":[31,35,40,19,27]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 't8l6oakb89jcblmr9fm3roj26n', NULL, '2026-06-22 08:59:07'),
+(468, 'Super Admin', 'VIEW', 'roles', 'Roles List', 'User viewed the roles list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 't8l6oakb89jcblmr9fm3roj26n', NULL, '2026-06-22 08:59:07'),
+(469, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '127.0.0.1', 'CLI-Test-Suite', 'ro1u505tn1g5i3lnaq7om21lcd', NULL, '2026-06-22 10:42:07'),
+(470, 'Super Admin', 'CREATE', 'warehouses', 'KIGALI', 'Created warehouse: Kicukiro', NULL, '{\"id\":2,\"warehouse_code\":\"KIGALI\",\"warehouse_name\":\"Kicukiro\",\"address\":\"KK05\",\"is_active\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 10:58:30'),
+(471, 'Super Admin', 'VIEW', 'warehouses', 'Warehouses List', 'User viewed the warehouses list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 10:58:30'),
+(472, 'Super Admin', 'CREATE', 'lots', 'LOT-TST-178212-20260622-001', 'Created lot: LOT-TST-178212-20260622-001', NULL, '{\"id\":1,\"lot_number\":\"LOT-TST-178212-20260622-001\",\"product_id\":7,\"status\":\"OPEN\",\"quantity_received\":100,\"remaining_quantity\":100}', '127.0.0.1', 'CLI-Test-Suite', 'cndq76t74e45p5hah1459injh9', NULL, '2026-06-22 11:13:53'),
+(473, 'Super Admin', 'UPDATE', 'lots', 'LOT-TST-178212-20260622-001', 'Closed lot: LOT-TST-178212-20260622-001', '{\"id\":\"1\",\"lot_number\":\"LOT-TST-178212-20260622-001\",\"product_id\":\"7\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"100.000\",\"remaining_quantity\":\"100.000\",\"unit_cost\":\"12.50\",\"currency_id\":\"2\",\"exchange_rate\":\"1.000000\",\"status\":\"OPEN\",\"closing_date\":null,\"description\":\"Test Lot 1 Description\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:13:53\",\"warehouse_id\":\"3\"}', '{\"id\":\"1\",\"lot_number\":\"LOT-TST-178212-20260622-001\",\"product_id\":\"7\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"100.000\",\"remaining_quantity\":\"100.000\",\"unit_cost\":\"12.50\",\"currency_id\":\"2\",\"exchange_rate\":\"1.000000\",\"status\":\"CLOSED\",\"closing_date\":\"2026-06-22\",\"description\":\"Test Lot 1 Description\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:13:53\",\"warehouse_id\":\"3\"}', '127.0.0.1', 'CLI-Test-Suite', 'q6150tnhp6b94mbdc8spoeac0a', NULL, '2026-06-22 11:13:53'),
+(474, 'Super Admin', 'CREATE', 'lots', 'LOT-TST-178212-20260622-002', 'Created lot: LOT-TST-178212-20260622-002', NULL, '{\"id\":2,\"lot_number\":\"LOT-TST-178212-20260622-002\",\"product_id\":7,\"status\":\"OPEN\",\"quantity_received\":45.5,\"remaining_quantity\":45.5}', '127.0.0.1', 'CLI-Test-Suite', 'hsiq32g3kn3tv1oni4f2m1i91t', NULL, '2026-06-22 11:13:54'),
+(475, 'Super Admin', 'UPDATE', 'lots', 'LOT-TST-178212-20260622-002', 'Closed lot: LOT-TST-178212-20260622-002', '{\"id\":\"2\",\"lot_number\":\"LOT-TST-178212-20260622-002\",\"product_id\":\"7\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"45.500\",\"remaining_quantity\":\"0.000\",\"unit_cost\":null,\"currency_id\":null,\"exchange_rate\":null,\"status\":\"OPEN\",\"closing_date\":null,\"description\":\"\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:13:54\",\"warehouse_id\":\"3\"}', '{\"id\":\"2\",\"lot_number\":\"LOT-TST-178212-20260622-002\",\"product_id\":\"7\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"45.500\",\"remaining_quantity\":\"0.000\",\"unit_cost\":null,\"currency_id\":null,\"exchange_rate\":null,\"status\":\"CLOSED\",\"closing_date\":\"2026-06-22\",\"description\":\"\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:13:54\",\"warehouse_id\":\"3\"}', '127.0.0.1', 'CLI-Test-Suite', 'd4j2a8ip25pan1752q7vr3fv3h', NULL, '2026-06-22 11:13:54'),
+(476, 'Super Admin', 'CREATE', 'lots', 'LOT-TST-178212-20260622-003', 'Created lot: LOT-TST-178212-20260622-003', NULL, '{\"id\":3,\"lot_number\":\"LOT-TST-178212-20260622-003\",\"product_id\":7,\"status\":\"OPEN\",\"quantity_received\":250,\"remaining_quantity\":250}', '127.0.0.1', 'CLI-Test-Suite', 'u72uvlag06274g9t2sfdatav5a', NULL, '2026-06-22 11:13:54'),
+(477, 'Super Admin', 'DELETE', 'lots', 'LOT-TST-178212-20260622-003', 'Deleted lot: LOT-TST-178212-20260622-003', '{\"id\":\"3\",\"lot_number\":\"LOT-TST-178212-20260622-003\",\"product_id\":\"7\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"250.000\",\"remaining_quantity\":\"250.000\",\"unit_cost\":null,\"currency_id\":null,\"exchange_rate\":null,\"status\":\"OPEN\",\"closing_date\":null,\"description\":\"\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:13:54\",\"warehouse_id\":\"3\"}', NULL, '127.0.0.1', 'CLI-Test-Suite', 'bj0fn24h4d1i45tdfdi54mrsn3', NULL, '2026-06-22 11:13:54'),
+(478, 'Super Admin', 'CREATE', 'lots', 'LOT-TST-178212-20260622-001', 'Created lot: LOT-TST-178212-20260622-001', NULL, '{\"id\":4,\"lot_number\":\"LOT-TST-178212-20260622-001\",\"product_id\":8,\"status\":\"OPEN\",\"quantity_received\":100,\"remaining_quantity\":100}', '127.0.0.1', 'CLI-Test-Suite', 'vdv0vol34n3i6gna5tc09jlfgl', NULL, '2026-06-22 11:15:53'),
+(479, 'Super Admin', 'UPDATE', 'lots', 'LOT-TST-178212-20260622-001', 'Closed lot: LOT-TST-178212-20260622-001', '{\"id\":\"4\",\"lot_number\":\"LOT-TST-178212-20260622-001\",\"product_id\":\"8\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"100.000\",\"remaining_quantity\":\"100.000\",\"unit_cost\":\"12.50\",\"currency_id\":\"2\",\"exchange_rate\":\"1.000000\",\"status\":\"OPEN\",\"closing_date\":null,\"description\":\"Test Lot 1 Description\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:15:53\",\"warehouse_id\":\"4\"}', '{\"id\":\"4\",\"lot_number\":\"LOT-TST-178212-20260622-001\",\"product_id\":\"8\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"100.000\",\"remaining_quantity\":\"100.000\",\"unit_cost\":\"12.50\",\"currency_id\":\"2\",\"exchange_rate\":\"1.000000\",\"status\":\"CLOSED\",\"closing_date\":\"2026-06-22\",\"description\":\"Test Lot 1 Description\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:15:53\",\"warehouse_id\":\"4\"}', '127.0.0.1', 'CLI-Test-Suite', '69u55o4ds1igov0rlqc3vbbe10', NULL, '2026-06-22 11:15:53'),
+(480, 'Super Admin', 'CREATE', 'lots', 'LOT-TST-178212-20260622-002', 'Created lot: LOT-TST-178212-20260622-002', NULL, '{\"id\":5,\"lot_number\":\"LOT-TST-178212-20260622-002\",\"product_id\":8,\"status\":\"OPEN\",\"quantity_received\":45.5,\"remaining_quantity\":45.5}', '127.0.0.1', 'CLI-Test-Suite', '2pjta99g72b0ikkt799d7hbhua', NULL, '2026-06-22 11:15:53'),
+(481, 'Super Admin', 'UPDATE', 'lots', 'LOT-TST-178212-20260622-002', 'Closed lot: LOT-TST-178212-20260622-002', '{\"id\":\"5\",\"lot_number\":\"LOT-TST-178212-20260622-002\",\"product_id\":\"8\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"45.500\",\"remaining_quantity\":\"0.000\",\"unit_cost\":null,\"currency_id\":null,\"exchange_rate\":null,\"status\":\"OPEN\",\"closing_date\":null,\"description\":\"\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:15:53\",\"warehouse_id\":\"4\"}', '{\"id\":\"5\",\"lot_number\":\"LOT-TST-178212-20260622-002\",\"product_id\":\"8\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"45.500\",\"remaining_quantity\":\"0.000\",\"unit_cost\":null,\"currency_id\":null,\"exchange_rate\":null,\"status\":\"CLOSED\",\"closing_date\":\"2026-06-22\",\"description\":\"\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:15:53\",\"warehouse_id\":\"4\"}', '127.0.0.1', 'CLI-Test-Suite', 'bhrdfgpi1ak27hv1csif8m8enh', NULL, '2026-06-22 11:15:54'),
+(482, 'Super Admin', 'CREATE', 'lots', 'LOT-TST-178212-20260622-003', 'Created lot: LOT-TST-178212-20260622-003', NULL, '{\"id\":6,\"lot_number\":\"LOT-TST-178212-20260622-003\",\"product_id\":8,\"status\":\"OPEN\",\"quantity_received\":250,\"remaining_quantity\":250}', '127.0.0.1', 'CLI-Test-Suite', '0gm2assgo6f4ra4c1lqq2v8e8q', NULL, '2026-06-22 11:15:54'),
+(483, 'Super Admin', 'DELETE', 'lots', 'LOT-TST-178212-20260622-003', 'Deleted lot: LOT-TST-178212-20260622-003', '{\"id\":\"6\",\"lot_number\":\"LOT-TST-178212-20260622-003\",\"product_id\":\"8\",\"supplier_id\":null,\"received_date\":\"2026-06-22\",\"quantity_received\":\"250.000\",\"remaining_quantity\":\"250.000\",\"unit_cost\":null,\"currency_id\":null,\"exchange_rate\":null,\"status\":\"OPEN\",\"closing_date\":null,\"description\":\"\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 13:15:54\",\"warehouse_id\":\"4\"}', NULL, '127.0.0.1', 'CLI-Test-Suite', 'gue43f2ijd06kpvlvs7oopi10g', NULL, '2026-06-22 11:15:54'),
+(484, 'Super Admin', 'CREATE', 'product_categories', '001', 'Created product category: Mineral', NULL, '{\"id\":4,\"category_code\":\"001\",\"category_name\":\"Mineral\",\"description\":\"to viewing all details only\",\"is_active\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:27:01'),
+(485, 'Super Admin', 'VIEW', 'product_categories', 'Product Categories List', 'User viewed the product categories list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:27:01'),
+(486, 'Super Admin', 'CREATE', 'products', 'SN', 'Created product: Tin', NULL, '{\"id\":9,\"code\":\"SN\",\"name\":\"Tin\",\"full_name\":\"Sn02\",\"unit_of_measure\":\"kg\",\"description\":\"to viewing all details only\",\"inventory_account_id\":14,\"sales_account_id\":10,\"cogs_account_id\":17,\"category_id\":4,\"is_active\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:27:34'),
+(487, 'Super Admin', 'VIEW', 'products', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:27:34'),
+(488, 'Super Admin', 'CREATE', 'suppliers', 'Eugene ndayishimiye', 'Created supplier: Eugene ndayishimiye (cooperative)', NULL, '{\"id\":5,\"supplier_type\":\"cooperative\",\"name\":\"Eugene ndayishimiye\",\"nif\":\"09987\",\"vat_reg_no\":\"VAT334\",\"phone\":\"+250785750117\",\"email\":\"nendayishimye@gmail.com\",\"address\":\"Unnamed Road\",\"payables_account_id\":2,\"currency_id\":2,\"region\":\"Rutsiro\",\"is_active\":1,\"notes\":\"done\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:27:56'),
+(489, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:27:56'),
+(490, 'Super Admin', 'CREATE', 'lots', 'LOT-SN-20260622-001', 'Created lot: LOT-SN-20260622-001', NULL, '{\"id\":7,\"lot_number\":\"LOT-SN-20260622-001\",\"product_id\":9,\"status\":\"OPEN\",\"quantity_received\":50,\"remaining_quantity\":50}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:42:31'),
+(491, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:42:31'),
+(492, 'Super Admin', 'UPDATE', 'currencies', 'USD', 'Updated currency: Us Dorall (USD)', '{\"id\":\"2\",\"code\":\"USD\",\"name\":\"Us Dorall\",\"symbol\":\"$\",\"is_base_currency\":\"0\",\"is_active\":\"1\",\"created_at\":\"2026-06-17 00:21:06\",\"created_by\":\"2\",\"updated_at\":\"2026-06-17 00:21:17\",\"updated_by\":null}', '{\"id\":2,\"code\":\"USD\",\"name\":\"Us Dorall\",\"symbol\":\"$\",\"is_base_currency\":1,\"is_active\":1,\"updated_by\":2}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:43:55'),
+(493, 'Super Admin', 'VIEW', 'currencies', 'Currencies List', 'User viewed the currencies list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:43:55'),
+(494, 'Super Admin', 'DELETE', 'lots', 'LOT-SN-20260622-001', 'Deleted lot: LOT-SN-20260622-001', '{\"id\":\"7\",\"lot_number\":\"LOT-SN-20260622-001\",\"product_id\":\"9\",\"supplier_id\":\"5\",\"received_date\":\"2026-06-22\",\"quantity_received\":\"50.000\",\"remaining_quantity\":\"50.000\",\"unit_cost\":\"1000.00\",\"currency_id\":\"1\",\"exchange_rate\":\"1.000000\",\"status\":\"OPEN\",\"closing_date\":null,\"description\":\"\",\"created_by\":\"2\",\"created_at\":\"2026-06-22 14:42:31\",\"warehouse_id\":\"2\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:44:41'),
+(495, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '1t97ijoloph0svs874a3pitahh', NULL, '2026-06-22 12:44:41'),
+(496, 'Super Admin', 'CREATE', 'account_types', '1100', 'Created new account type: prepeyment (1100)', NULL, '{\"id\":7,\"code\":\"1100\",\"name\":\"prepeyment\",\"parent_id\":1,\"is_editable\":1,\"is_deletable\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'g44jusja791go6jfmbhcup443s', NULL, '2026-06-22 20:39:42'),
+(497, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'g44jusja791go6jfmbhcup443s', NULL, '2026-06-22 20:39:42'),
+(498, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'fa959svbhu66t27qovn01lmkkh', NULL, '2026-06-23 19:30:02'),
+(499, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'ousb4uahrnd11chgmss58qquao', NULL, '2026-06-24 00:30:19'),
+(500, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'ousb4uahrnd11chgmss58qquao', NULL, '2026-06-24 00:30:20'),
+(501, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'ousb4uahrnd11chgmss58qquao', NULL, '2026-06-24 00:30:21'),
+(502, 'Super Admin', 'CREATE', 'account_types', '2001', 'Created new account type: Accounts Payable (2001)', NULL, '{\"id\":3,\"code\":\"2001\",\"name\":\"Accounts Payable\",\"parent_id\":-2,\"is_editable\":1,\"is_deletable\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:53:18'),
+(503, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:53:18'),
+(504, 'Super Admin', 'CREATE', 'account_types', '2002', 'Created new account type: Accounts Payable (2002)', NULL, '{\"id\":4,\"code\":\"2002\",\"name\":\"Accounts Payable\",\"parent_id\":-2,\"is_editable\":1,\"is_deletable\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:53:35'),
+(505, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:53:35'),
+(506, 'Super Admin', 'DELETE', 'account_types', '2002', 'Deleted account type: Accounts Payable (2002)', '{\"id\":\"4\",\"code\":\"2002\",\"name\":\"Accounts Payable\",\"parent_id\":\"-2\",\"is_editable\":\"1\",\"is_deletable\":\"1\",\"created_at\":\"2026-06-24 04:53:35\",\"updated_at\":\"2026-06-24 04:53:35\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:09'),
+(507, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:09'),
+(508, 'Super Admin', 'CREATE', 'account_types', '2002', 'Created new account type: Accounts Payables (2002)', NULL, '{\"id\":5,\"code\":\"2002\",\"name\":\"Accounts Payables\",\"parent_id\":-2,\"is_editable\":1,\"is_deletable\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:27'),
+(509, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:27'),
+(510, 'Super Admin', 'DELETE', 'account_types', '2002', 'Deleted account type: Accounts Payables (2002)', '{\"id\":\"5\",\"code\":\"2002\",\"name\":\"Accounts Payables\",\"parent_id\":\"-2\",\"is_editable\":\"1\",\"is_deletable\":\"1\",\"created_at\":\"2026-06-24 04:56:27\",\"updated_at\":\"2026-06-24 04:56:27\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:32'),
+(511, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:32');
 
 -- --------------------------------------------------------
 
@@ -558,8 +649,8 @@ CREATE TABLE `currencies` (
 --
 
 INSERT INTO `currencies` (`id`, `code`, `name`, `symbol`, `is_base_currency`, `is_active`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'RWF', 'RWANDAN FRANGS', 'Rwf', 1, 1, '2026-06-16 22:01:30', 2, '2026-06-16 22:21:17', 2),
-(2, 'USD', 'Us Dorall', '$', 0, 1, '2026-06-16 22:21:06', 2, '2026-06-16 22:21:17', NULL);
+(1, 'RWF', 'RWANDAN FRANGS', 'Rwf', 0, 1, '2026-06-16 22:01:30', 2, '2026-06-22 12:43:55', 2),
+(2, 'USD', 'Us Dorall', '$', 1, 1, '2026-06-16 22:21:06', 2, '2026-06-22 12:43:55', 2);
 
 -- --------------------------------------------------------
 
@@ -774,7 +865,30 @@ INSERT INTO `login` (`id`, `user_id`, `email`, `login_time`, `ip_address`, `stat
 (42, 2, 'admin@gmail.com', '2026-06-20 16:05:30', '::1', 'success'),
 (43, 5, 'eugene@gmail.com', '2026-06-20 16:17:17', '::1', 'success'),
 (44, 2, 'admin@gmail.com', '2026-06-20 16:17:50', '::1', 'success'),
-(45, 2, 'admin@gmail.com', '2026-06-21 13:34:43', '::1', 'success');
+(45, 2, 'admin@gmail.com', '2026-06-21 13:34:43', '::1', 'success'),
+(46, 2, 'admin@gmail.com', '2026-06-21 22:40:04', '::1', 'success'),
+(47, 5, 'eugene@gmail.com', '2026-06-21 23:01:26', '::1', 'success'),
+(48, 2, 'admin@gmail.com', '2026-06-21 23:01:42', '::1', 'success'),
+(49, 2, 'admin@gmail.com', '2026-06-21 23:16:33', '::1', 'success'),
+(50, 2, 'admin@gmail.com', '2026-06-21 23:26:50', '::1', 'success'),
+(51, 2, 'admin@gmail.com', '2026-06-21 23:33:53', '::1', 'success'),
+(52, 2, 'admin@gmail.com', '2026-06-21 23:44:34', '::1', 'success'),
+(53, 2, 'admin@gmail.com', '2026-06-22 00:05:49', '::1', 'success'),
+(54, 2, 'admin@gmail.com', '2026-06-22 00:12:11', '::1', 'success'),
+(55, 2, 'admin@gmail.com', '2026-06-22 08:26:55', '::1', 'success'),
+(56, 5, 'eugene@gmail.com', '2026-06-22 08:59:14', '::1', 'success'),
+(57, 5, 'eugene@gmail.com', '2026-06-22 08:59:53', '::1', 'success'),
+(58, 2, 'admin@gmail.com', '2026-06-22 09:00:03', '::1', 'success'),
+(59, 2, 'admin@gmail.com', '2026-06-22 13:03:42', '::1', 'success'),
+(60, 2, 'admin@gmail.com', '2026-06-22 20:33:57', '::1', 'success'),
+(61, 2, 'admin@gmail.com', '2026-06-23 13:51:23', '::1', 'success'),
+(62, 2, 'admin@gmail.com', '2026-06-23 13:55:33', '::1', 'success'),
+(63, 5, 'eugene@gmail.com', '2026-06-23 21:03:20', '::1', 'success'),
+(64, 2, 'admin@gmail.com', '2026-06-24 00:17:30', '::1', 'success'),
+(65, 2, 'admin@gmail.com', '2026-06-24 00:28:07', '::1', 'success'),
+(66, 2, 'admin@gmail.com', '2026-06-24 00:34:38', '::1', 'success'),
+(67, 2, 'admin@gmail.com', '2026-06-24 02:08:22', '::1', 'success'),
+(68, 2, 'admin@gmail.com', '2026-06-24 02:35:12', '::1', 'success');
 
 -- --------------------------------------------------------
 
@@ -851,7 +965,21 @@ INSERT INTO `permissions` (`id`, `permition_name`, `permition_code`, `created_at
 (35, 'View Accounts', 'view_accounts', '2026-06-19 14:00:21'),
 (36, 'Create Account', 'create_account', '2026-06-19 14:00:21'),
 (37, 'Edit Account', 'edit_account', '2026-06-19 14:00:21'),
-(38, 'Delete Account', 'delete_account', '2026-06-19 14:00:21');
+(38, 'Delete Account', 'delete_account', '2026-06-19 14:00:21'),
+(40, 'View Product Categories', 'view_product_categories', '2026-06-21 22:51:32'),
+(41, 'Create Product Category', 'create_product_category', '2026-06-21 22:51:32'),
+(42, 'Edit Product Category', 'edit_product_category', '2026-06-21 22:51:32'),
+(43, 'Delete Product Category', 'delete_product_category', '2026-06-21 22:51:32'),
+(44, 'View Warehouses', 'view_warehouses', '2026-06-21 23:39:27'),
+(45, 'Create Warehouse', 'create_warehouse', '2026-06-21 23:39:27'),
+(46, 'Edit Warehouse', 'edit_warehouse', '2026-06-21 23:39:27'),
+(47, 'Delete Warehouse', 'delete_warehouse', '2026-06-21 23:39:27'),
+(48, 'View Lots', 'view_lots', '2026-06-22 09:58:11'),
+(49, 'Create Lot', 'create_lot', '2026-06-22 09:58:11'),
+(50, 'Edit Lot', 'edit_lot', '2026-06-22 09:58:11'),
+(51, 'Delete Lot', 'delete_lot', '2026-06-22 09:58:11'),
+(52, 'Open Lot', 'open_lot', '2026-06-22 09:58:11'),
+(53, 'Close Lot', 'close_lot', '2026-06-22 09:58:11');
 
 -- --------------------------------------------------------
 
@@ -877,6 +1005,13 @@ CREATE TABLE `products` (
   `category_id` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `products`
+--
+
+INSERT INTO `products` (`id`, `code`, `name`, `full_name`, `unit_of_measure`, `description`, `inventory_account_id`, `sales_account_id`, `cogs_account_id`, `is_active`, `created_at`, `created_by`, `updated_at`, `updated_by`, `category_id`) VALUES
+(9, 'SN', 'Tin', 'Sn02', 'kg', 'to viewing all details only', 14, 10, 17, 1, '2026-06-22 12:27:34', 2, '2026-06-22 12:27:34', NULL, 4);
+
 -- --------------------------------------------------------
 
 --
@@ -891,6 +1026,13 @@ CREATE TABLE `product_categories` (
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `product_categories`
+--
+
+INSERT INTO `product_categories` (`id`, `category_code`, `category_name`, `description`, `is_active`, `created_at`) VALUES
+(4, '001', 'Mineral', 'to viewing all details only', 1, '2026-06-22 12:27:01');
 
 -- --------------------------------------------------------
 
@@ -989,12 +1131,20 @@ CREATE TABLE `role_permissions` (
 --
 
 INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
+(1, 48),
+(1, 49),
+(1, 50),
+(1, 51),
+(1, 52),
+(1, 53),
 (2, 7),
 (2, 10),
 (2, 11),
 (3, 19),
+(3, 27),
 (3, 31),
-(3, 35);
+(3, 35),
+(3, 40);
 
 -- --------------------------------------------------------
 
@@ -1098,19 +1248,43 @@ CREATE TABLE `suppliers` (
   `supplier_type` enum('individual','cooperative','company') DEFAULT 'individual',
   `name` varchar(200) NOT NULL,
   `nif` varchar(50) DEFAULT NULL COMMENT 'Tax Identification Number',
-  `vat_reg_no` varchar(50) DEFAULT NULL,
   `phone` varchar(30) DEFAULT NULL,
   `email` varchar(150) DEFAULT NULL,
   `address` text DEFAULT NULL,
-  `payables_account_id` bigint(20) DEFAULT NULL,
-  `currency_id` bigint(20) NOT NULL,
-  `region` varchar(100) DEFAULT NULL COMMENT 'e.g. Rubaya, Ngororero',
   `is_active` tinyint(1) DEFAULT 1,
   `notes` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `created_by` int(11) NOT NULL,
   `updated_by` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `suppliers`
+--
+
+INSERT INTO `suppliers` (`id`, `supplier_type`, `name`, `nif`, `phone`, `email`, `address`, `is_active`, `notes`, `created_at`, `updated_at`, `created_by`, `updated_by`) VALUES
+(5, 'cooperative', 'Eugene ndayishimiye', '09987', '+250785750117', 'nendayishimye@gmail.com', 'Unnamed Road', 1, 'done', '2026-06-22 12:27:56', '2026-06-22 12:27:56', 2, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `supplier_advances`
+--
+
+CREATE TABLE `supplier_advances` (
+  `id` bigint(20) NOT NULL,
+  `supplier_id` bigint(20) UNSIGNED NOT NULL,
+  `currency_id` tinyint(3) UNSIGNED NOT NULL,
+  `amount` decimal(18,2) NOT NULL,
+  `exchange_rate` decimal(18,6) DEFAULT 1.000000,
+  `advance_date` date NOT NULL,
+  `purpose` varchar(255) DEFAULT NULL,
+  `status` enum('PAID','RECONCILED','CANCELLED') DEFAULT 'PAID',
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `created_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -1144,27 +1318,6 @@ CREATE TABLE `supplier_payment_allocations` (
   `purchase_id` bigint(20) NOT NULL,
   `amount_allocated` decimal(18,2) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `supplier_advances`
---
-
-CREATE TABLE `supplier_advances` (
-  `id` bigint(20) NOT NULL,
-  `supplier_id` bigint(20) UNSIGNED NOT NULL,
-  `currency_id` tinyint(3) UNSIGNED NOT NULL,
-  `amount` decimal(18,2) NOT NULL,
-  `exchange_rate` decimal(18,6) DEFAULT 1.000000,
-  `advance_date` date NOT NULL,
-  `purpose` varchar(255) DEFAULT NULL,
-  `status` enum('PAID','RECONCILED','CANCELLED') DEFAULT 'PAID',
-  `notes` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `created_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -1228,6 +1381,13 @@ CREATE TABLE `warehouses` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `warehouses`
+--
+
+INSERT INTO `warehouses` (`id`, `warehouse_code`, `warehouse_name`, `address`, `is_active`, `created_at`, `created_by`) VALUES
+(2, 'KIGALI', 'Kicukiro', 'KK05', 1, '2026-06-22 10:58:30', 2);
 
 --
 -- Indexes for dumped tables
@@ -1342,7 +1502,8 @@ ALTER TABLE `login`
 ALTER TABLE `lots`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `lot_number` (`lot_number`),
-  ADD KEY `warehouse_id` (`warehouse_id`);
+  ADD KEY `warehouse_id` (`warehouse_id`),
+  ADD KEY `fk_lots_user` (`created_by`);
 
 --
 -- Indexes for table `permissions`
@@ -1442,6 +1603,14 @@ ALTER TABLE `suppliers`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `supplier_advances`
+--
+ALTER TABLE `supplier_advances`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `supplier_id` (`supplier_id`),
+  ADD KEY `currency_id` (`currency_id`);
+
+--
 -- Indexes for table `supplier_payments`
 --
 ALTER TABLE `supplier_payments`
@@ -1454,14 +1623,6 @@ ALTER TABLE `supplier_payment_allocations`
   ADD PRIMARY KEY (`id`),
   ADD KEY `supplier_payment_id` (`supplier_payment_id`),
   ADD KEY `purchase_id` (`purchase_id`);
-
---
--- Indexes for table `supplier_advances`
---
-ALTER TABLE `supplier_advances`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `supplier_id` (`supplier_id`),
-  ADD KEY `currency_id` (`currency_id`);
 
 --
 -- Indexes for table `users`
@@ -1492,13 +1653,13 @@ ALTER TABLE `warehouses`
 -- AUTO_INCREMENT for table `accounts`
 --
 ALTER TABLE `accounts`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `account_types`
 --
 ALTER TABLE `account_types`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `attachments`
@@ -1510,7 +1671,7 @@ ALTER TABLE `attachments`
 -- AUTO_INCREMENT for table `audit_log`
 --
 ALTER TABLE `audit_log`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=347;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=512;
 
 --
 -- AUTO_INCREMENT for table `currencies`
@@ -1570,31 +1731,31 @@ ALTER TABLE `journal_entry_lines`
 -- AUTO_INCREMENT for table `login`
 --
 ALTER TABLE `login`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT for table `lots`
 --
 ALTER TABLE `lots`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `product_categories`
 --
 ALTER TABLE `product_categories`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `product_elements`
@@ -1606,13 +1767,13 @@ ALTER TABLE `product_elements`
 -- AUTO_INCREMENT for table `purchases`
 --
 ALTER TABLE `purchases`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `purchase_items`
 --
 ALTER TABLE `purchase_items`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -1654,7 +1815,13 @@ ALTER TABLE `stock_movements`
 -- AUTO_INCREMENT for table `suppliers`
 --
 ALTER TABLE `suppliers`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT for table `supplier_advances`
+--
+ALTER TABLE `supplier_advances`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `supplier_payments`
@@ -1669,12 +1836,6 @@ ALTER TABLE `supplier_payment_allocations`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `supplier_advances`
---
-ALTER TABLE `supplier_advances`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
@@ -1684,7 +1845,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `warehouses`
 --
 ALTER TABLE `warehouses`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
@@ -1733,8 +1894,8 @@ ALTER TABLE `login`
 -- Constraints for table `lots`
 --
 ALTER TABLE `lots`
-  ADD CONSTRAINT `lots_ibfk_1` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`),
-  ADD CONSTRAINT `fk_lots_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+  ADD CONSTRAINT `fk_lots_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `lots_ibfk_1` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`);
 
 --
 -- Constraints for table `products`
@@ -1759,18 +1920,18 @@ ALTER TABLE `role_permissions`
   ADD CONSTRAINT `role_permissions_ibfk_2` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `supplier_advances`
+--
+ALTER TABLE `supplier_advances`
+  ADD CONSTRAINT `fk_sa_currency` FOREIGN KEY (`currency_id`) REFERENCES `currencies` (`id`),
+  ADD CONSTRAINT `fk_sa_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `supplier_payment_allocations`
 --
 ALTER TABLE `supplier_payment_allocations`
   ADD CONSTRAINT `supplier_payment_allocations_ibfk_1` FOREIGN KEY (`supplier_payment_id`) REFERENCES `supplier_payments` (`id`),
   ADD CONSTRAINT `supplier_payment_allocations_ibfk_2` FOREIGN KEY (`purchase_id`) REFERENCES `purchases` (`id`);
-
---
--- Constraints for table `supplier_advances`
---
-ALTER TABLE `supplier_advances`
-  ADD CONSTRAINT `fk_sa_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_sa_currency` FOREIGN KEY (`currency_id`) REFERENCES `currencies` (`id`);
 
 --
 -- Constraints for table `user_roles`

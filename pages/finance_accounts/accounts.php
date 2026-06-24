@@ -84,11 +84,9 @@ $initialAccountsData = [];
 $totalAccounts = 0;
 $activeAccounts = 0;
 $inactiveAccounts = 0;
-$openingBalanceSum = 0.0;
 
 if ($accountsResult) {
     while ($row = mysqli_fetch_assoc($accountsResult)) {
-        $openingBalance = (float)$row['opening_balance'];
         $initialAccountsData[] = [
             'id' => (int)$row['id'],
             'account_type_id' => (int)$row['account_type_id'],
@@ -96,7 +94,6 @@ if ($accountsResult) {
             'account_type_code' => $row['account_type_code'],
             'account_code' => $row['account_code'],
             'account_name' => $row['account_name'],
-            'opening_balance' => $openingBalance,
             'is_active' => (int)$row['is_active'],
             'description' => $row['description'],
             'created_at' => $row['created_at'],
@@ -108,7 +105,6 @@ if ($accountsResult) {
         } else {
             $inactiveAccounts++;
         }
-        $openingBalanceSum += $openingBalance;
     }
 }
 $totalAccounts = count($initialAccountsData);
@@ -183,17 +179,6 @@ $totalAccounts = count($initialAccountsData);
         <div class="stat-label">Active Accounts</div>
       </div>
 
-      <div class="stat-card" id="card-total-balance">
-        <div class="stat-top">
-          <div class="stat-icon" style="background:var(--amber-bg)">
-            <svg viewBox="0 0 24 24" style="stroke:var(--amber)"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <span class="stat-trend trend-warn">Balance</span>
-        </div>
-        <div class="stat-val" id="stat-balance"><?php echo number_format($openingBalanceSum, 2); ?></div>
-        <div class="stat-label">Total Opening Balance</div>
-      </div>
-
       <div class="stat-card" id="card-inactive-accounts">
         <div class="stat-top">
           <div class="stat-icon" style="background:var(--red-bg)">
@@ -224,7 +209,6 @@ $totalAccounts = count($initialAccountsData);
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
-                <th style="text-align: right;">Opening Balance</th>
                 <th>Status</th>
                 <th style="width: 80px; text-align: right;">Actions</th>
               </tr>
@@ -256,13 +240,12 @@ $totalAccounts = count($initialAccountsData);
                       echo '<td><span class="code-badge" style="font-weight:600; font-family:monospace;">' . htmlspecialchars($acc['account_code']) . '</span></td>';
                       echo '<td class="td-name" style="font-weight:500;">' . htmlspecialchars($acc['account_name']) . '</td>';
                       echo '<td><span class="parent-type-badge">' . htmlspecialchars($acc['account_type_name']) . ' (' . htmlspecialchars($acc['account_type_code']) . ')</span></td>';
-                      echo '<td style="text-align: right; font-family:monospace;">' . number_format($acc['opening_balance'], 2) . '</td>';
                       echo '<td>' . $statusBadge . '</td>';
                       echo '<td style="text-align: right;">' . $actions . '</td>';
                       echo '</tr>';
                   }
               } else {
-                  echo '<tr><td colspan="7" class="table-empty">No financial accounts found.</td></tr>';
+                  echo '<tr><td colspan="6" class="table-empty">No financial accounts found.</td></tr>';
               }
               ?>
             </tbody>
@@ -302,11 +285,6 @@ $totalAccounts = count($initialAccountsData);
           <div class="form-group">
             <label for="accountName">Account Name</label>
             <input type="text" id="accountName" name="account_name" class="form-control" placeholder="e.g. Cash on Hand, Accounts Payable" required>
-          </div>
-
-          <div class="form-group">
-            <label for="openingBalance">Opening Balance</label>
-            <input type="number" id="openingBalance" name="opening_balance" class="form-control" placeholder="0.00" step="0.01" min="0" value="0.00">
           </div>
 
           <div class="form-group">

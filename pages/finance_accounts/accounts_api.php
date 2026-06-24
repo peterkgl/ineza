@@ -156,8 +156,6 @@ switch ($action) {
 
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
-                $openingBalance = (float)$row['opening_balance'];
-
                 $accounts[] = [
                     'id' => (int)$row['id'],
                     'account_type_id' => (int)$row['account_type_id'],
@@ -165,7 +163,6 @@ switch ($action) {
                     'account_type_code' => $row['account_type_code'],
                     'account_code' => $row['account_code'],
                     'account_name' => $row['account_name'],
-                    'opening_balance' => $openingBalance,
                     'is_active' => (int)$row['is_active'],
                     'description' => $row['description'],
                     'created_at' => $row['created_at'],
@@ -188,7 +185,6 @@ switch ($action) {
         $account_type_id = isset($_POST['account_type_id']) ? (int)$_POST['account_type_id'] : 0;
         $account_code = isset($_POST['account_code']) ? trim($_POST['account_code']) : '';
         $account_name = isset($_POST['account_name']) ? trim($_POST['account_name']) : '';
-        $opening_balance = isset($_POST['opening_balance']) && $_POST['opening_balance'] !== '' ? (float)$_POST['opening_balance'] : 0.00;
         $description = isset($_POST['description']) ? trim($_POST['description']) : null;
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
 
@@ -221,8 +217,8 @@ switch ($action) {
         mysqli_begin_transaction($conn);
 
         try {
-            $insertQuery = "INSERT INTO accounts (account_type_id, account_code, account_name, opening_balance, is_active, description) 
-                            VALUES ($account_type_id, '$account_code_esc', '$account_name_esc', $opening_balance, $is_active, $description_esc)";
+            $insertQuery = "INSERT INTO accounts (account_type_id, account_code, account_name, is_active, description) 
+                            VALUES ($account_type_id, '$account_code_esc', '$account_name_esc', $is_active, $description_esc)";
             
             if (mysqli_query($conn, $insertQuery)) {
                 $newId = mysqli_insert_id($conn);
@@ -232,8 +228,6 @@ switch ($action) {
                     'account_type_id' => $account_type_id,
                     'account_code' => $account_code,
                     'account_name' => $account_name,
-                    'opening_balance' => $opening_balance,
-                    'current_balance' => $opening_balance,
                     'is_active' => $is_active,
                     'description' => $description
                 ];
@@ -263,7 +257,6 @@ switch ($action) {
         $account_type_id = isset($_POST['account_type_id']) ? (int)$_POST['account_type_id'] : 0;
         $account_code = isset($_POST['account_code']) ? trim($_POST['account_code']) : '';
         $account_name = isset($_POST['account_name']) ? trim($_POST['account_name']) : '';
-        $opening_balance = isset($_POST['opening_balance']) && $_POST['opening_balance'] !== '' ? (float)$_POST['opening_balance'] : 0.00;
         $description = isset($_POST['description']) ? trim($_POST['description']) : null;
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
 
@@ -307,41 +300,17 @@ switch ($action) {
                                 account_type_id = $account_type_id, 
                                 account_code = '$account_code_esc', 
                                 account_name = '$account_name_esc', 
-                                opening_balance = $opening_balance, 
                                 is_active = $is_active, 
                                 description = $description_esc, 
                                 updated_at = CURRENT_TIMESTAMP 
                             WHERE id = $id";
             
             if (mysqli_query($conn, $updateQuery)) {
-                $sumQuery = "SELECT 
-                                 COALESCE(SUM(jel.debit), 0) as total_debit,
-                                 COALESCE(SUM(jel.credit), 0) as total_credit
-                             FROM journal_entry_lines jel 
-                             JOIN journal_entries je ON jel.journal_entry_id = je.id 
-                             WHERE jel.account_id = $id AND je.statuss = 'POSTED'";
-                $sumRes = mysqli_query($conn, $sumQuery);
-                $totalDebit = 0;
-                $totalCredit = 0;
-                if ($sumRes && $sumRow = mysqli_fetch_assoc($sumRes)) {
-                    $totalDebit = (float)$sumRow['total_debit'];
-                    $totalCredit = (float)$sumRow['total_credit'];
-                }
-
-                $rootCode = (int)$range['root_code'];
-                if (($rootCode >= 1000 && $rootCode < 2000) || ($rootCode >= 5000 && $rootCode <= 6999)) {
-                    $currentBalance = $opening_balance + ($totalDebit - $totalCredit);
-                } else {
-                    $currentBalance = $opening_balance + ($totalCredit - $totalDebit);
-                }
-
                 $newValues = [
                     'id' => $id,
                     'account_type_id' => $account_type_id,
                     'account_code' => $account_code,
                     'account_name' => $account_name,
-                    'opening_balance' => $opening_balance,
-                    'current_balance' => $currentBalance,
                     'is_active' => $is_active,
                     'description' => $description
                 ];

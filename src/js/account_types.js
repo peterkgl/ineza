@@ -21,8 +21,6 @@ document.addEventListener('DOMContentLoaded', function () {
   var activeDeleteId = null;
   var allTypes = [];
   var searchInput = document.getElementById('searchInput');
-  var codeTimeout = null;
-  var isCodeValid = true;
 
   var currentPage = 1;
   var itemsPerPage = 25;
@@ -33,8 +31,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function getFilteredAccountTypes() {
     var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    if (!query) return allTypes;
-    return allTypes.filter(function (t) {
+    var filtered = allTypes.filter(function (t) {
+      // Exclude hard-coded groups from display
+      return !t.is_hardcoded;
+    });
+    
+    if (!query) return filtered;
+    
+    return filtered.filter(function (t) {
       var codeVal = (t.code || '').toLowerCase();
       var nameVal = (t.name || '').toLowerCase();
       var parentVal = t.parent_id 
@@ -97,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     if (totalItems === 0) {
-      accountTypesList.innerHTML = '<tr><td colspan="6" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching account types found.' : 'No account types configured yet.') + '</td></tr>';
+      accountTypesList.innerHTML = '<tr><td colspan="6" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching account types found.' : 'No account types registered yet.') + '</td></tr>';
       renderPagination(totalItems, totalPages);
       return;
     }
@@ -115,28 +119,30 @@ document.addEventListener('DOMContentLoaded', function () {
       
       var parentLabel = t.parent_id 
         ? '<span class="parent-type-badge">' + escapeHtml(t.parent_name) + ' (' + escapeHtml(t.parent_code) + ')</span>'
-        : '<em style="color:var(--text3); font-size:11.5px;">(Root Category)</em>';
+        : '<em style="color:var(--text3); font-size:11.5px;">—</em>';
 
       var editDisabled = t.is_editable === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : '';
       var deleteDisabled = t.is_deletable === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : '';
 
-      html += '<tr>' +
-        '<td>' + globalIndex + '</td>' +
-        '<td><span class="code-badge" style="font-weight:600; font-family:monospace;">' + escapeHtml(t.code) + '</span></td>' +
-        '<td class="td-name" style="font-weight:500;">' + escapeHtml(t.name) + '</td>' +
-        '<td>' + parentLabel + '</td>' +
-        '<td>' + systemLabel + '</td>' +
-        '<td style="text-align: right;">' +
-          '<div class="action-buttons" style="justify-content: flex-end;">' +
-            '<button class="btn-icon-only edit" title="Edit Category" data-id="' + t.id + '" ' + editDisabled + '>' +
-              '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
-            '</button>' +
-            '<button class="btn-icon-only delete" title="Delete Category" data-id="' + t.id + '" ' + deleteDisabled + '>' +
-              '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' +
-            '</button>' +
-          '</div>' +
-        '</td>' +
-      '</tr>';
+      html += '<tr>';
+      html += '<td>' + globalIndex + '</td>';
+      html += '<td><span class="code-badge" style="font-weight:600; font-family:monospace;">' + escapeHtml(t.code) + '</span></td>';
+      html += '<td class="td-name" style="font-weight:500;">' + escapeHtml(t.name) + '</td>';
+      html += '<td>' + parentLabel + '</td>';
+      html += '<td>' + systemLabel + '</td>';
+      html += '<td style="text-align: right;">';
+      html += '<div class="action-buttons" style="justify-content: flex-end;">';
+      if (!t.is_hardcoded) {
+        html += '<button class="btn-icon-only edit" title="Edit Category" data-id="' + t.id + '" ' + editDisabled + '>';
+        html += '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+        html += '</button>';
+        html += '<button class="btn-icon-only delete" title="Delete Category" data-id="' + t.id + '" ' + deleteDisabled + '>';
+        html += '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+        html += '</button>';
+      }
+      html += '</div>';
+      html += '</td>';
+      html += '</tr>';
     });
 
     accountTypesList.innerHTML = html;
@@ -169,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (startPage > 1) {
       buttonsHtml += '<button class="pagination-btn" data-page="1">1</button>';
       if (startPage > 2) {
-        buttonsHtml += '<span style="padding: 0 4px; color: var(--text3);">...</span>';
+        buttonsHtml += '<span style="padding: 0 4px; color:var(--text3);">...</span>';
       }
     }
 
@@ -179,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
-        buttonsHtml += '<span style="padding: 0 4px; color: var(--text3);">...</span>';
+        buttonsHtml += '<span style="padding: 0 4px; color:var(--text3);">...</span>';
       }
       buttonsHtml += '<button class="pagination-btn" data-page="' + totalPages + '">' + totalPages + '</button>';
     }
@@ -205,14 +211,13 @@ document.addEventListener('DOMContentLoaded', function () {
   function populateParentDropdown(types, excludeId) {
     if (!parentSelect) return;
     var currentSelected = parentSelect.value;
-    var html = '<option value="">(None — Root Category)</option>';
-    
-    types.forEach(function (t) {
-      if (excludeId && t.id === parseInt(excludeId, 10)) {
-        return; // skip self
-      }
-      html += '<option value="' + t.id + '">' + escapeHtml(t.name) + ' (' + escapeHtml(t.code) + ')</option>';
-    });
+    var html = '<option value="">Select a parent group</option>';
+    html += '<option value="-1">Assets</option>';
+    html += '<option value="-2">Liabilities</option>';
+    html += '<option value="-3">Equity</option>';
+    html += '<option value="-4">Revenue</option>';
+    html += '<option value="-5">Cost of Sales</option>';
+    html += '<option value="-6">Operating Expenses</option>';
     
     parentSelect.innerHTML = html;
     parentSelect.value = currentSelected;
@@ -264,8 +269,6 @@ document.addEventListener('DOMContentLoaded', function () {
     populateParentDropdown(allTypes, t.id);
     parentSelect.value = t.parent_id || '';
     
-    clearValidationState();
-
     formTitle.textContent = 'Edit Account Type: ' + t.code;
     saveBtn.textContent = 'Update Account Type';
     cancelBtn.style.display = 'inline-block';
@@ -281,75 +284,40 @@ document.addEventListener('DOMContentLoaded', function () {
     accountTypeIdInput.value = '';
     
     populateParentDropdown(allTypes);
-    clearValidationState();
-
+    
     formTitle.textContent = 'Add New Account Type';
     saveBtn.textContent = 'Save Account Type';
     cancelBtn.style.display = 'none';
     formAlertPlaceholder.innerHTML = '';
   }
 
-  // Live code uniqueness validation
-  if (codeInput) {
-    codeInput.addEventListener('input', function () {
-      clearTimeout(codeTimeout);
-      var code = codeInput.value.trim();
-      var id = accountTypeIdInput.value;
-      
-      if (!code) {
-        clearValidationState();
+  // Parent select change handler - generate next code
+  if (parentSelect) {
+    parentSelect.addEventListener('change', function () {
+      var selectedParentId = parentSelect.value;
+      if (!selectedParentId) {
+        codeInput.value = '';
         return;
       }
-
-      codeTimeout = setTimeout(function () {
-        fetch('account_types_api.php?action=check_code&code=' + encodeURIComponent(code) + '&id=' + id)
-          .then(function (response) { return response.json(); })
-          .then(function (res) {
-            var feedback = document.getElementById('codeValidationFeedback');
-            if (res.exists) {
-              isCodeValid = false;
-              codeInput.className = 'form-control is-invalid';
-              feedback.className = 'invalid-feedback';
-              feedback.textContent = 'This account type code is already in use.';
-              saveBtn.disabled = true;
-            } else {
-              isCodeValid = true;
-              codeInput.className = 'form-control is-valid';
-              feedback.className = 'valid-feedback';
-              feedback.textContent = 'Code is available.';
-              saveBtn.disabled = false;
-            }
-          })
-          .catch(function (err) {
-            console.error('Error checking code uniqueness:', err);
-          });
-      }, 350);
+      
+      fetch('account_types_api.php?action=get_next_code&parent_id=' + selectedParentId)
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+          if (result.success) {
+            codeInput.value = result.next_code;
+          } else {
+            showAlert(formAlertPlaceholder, 'error', result.message);
+          }
+        })
+        .catch(function(err) {
+          console.error('Error getting next code:', err);
+        });
     });
-  }
-
-  function clearValidationState() {
-    isCodeValid = true;
-    if (codeInput) {
-      codeInput.className = 'form-control';
-    }
-    var feedback = document.getElementById('codeValidationFeedback');
-    if (feedback) {
-      feedback.className = '';
-      feedback.textContent = '';
-    }
-    if (saveBtn) {
-      saveBtn.disabled = false;
-    }
   }
 
   if (accountTypeForm) {
     accountTypeForm.addEventListener('submit', function (e) {
       e.preventDefault();
-
-      if (!isCodeValid) {
-        showAlert(formAlertPlaceholder, 'error', 'Please resolve the invalid fields before saving.');
-        return;
-      }
 
       var id = accountTypeIdInput.value;
       var code = codeInput.value.trim();
@@ -357,6 +325,10 @@ document.addEventListener('DOMContentLoaded', function () {
       var parent_id = parentSelect.value;
       var token = accountTypeTokenInput.value;
 
+      if (!parent_id) {
+        showAlert(formAlertPlaceholder, 'error', 'Please select a parent group.');
+        return;
+      }
       if (!code || !name) {
         showAlert(formAlertPlaceholder, 'error', 'Code and Name are required fields.');
         return;

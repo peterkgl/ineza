@@ -144,7 +144,7 @@ foreach ($lotsData as $l) {
     <div class="page-header">
       <div>
         <h1 class="page-title">
-          <svg viewBox="0 0 24 24" style="width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
           Lots Module
         </h1>
         <div class="page-sub">Track stock lots, carryover balances, and purchase/sale transaction bounds</div>
@@ -190,6 +190,23 @@ foreach ($lotsData as $l) {
         </div>
         <div class="stat-val" id="stat-closed"><?php echo $closedLots; ?></div>
         <div class="stat-label">Archived / Closed Lots</div>
+      </div>
+
+      <div class="stat-card" id="card-total-stock">
+        <div class="stat-top">
+          <div class="stat-icon" style="background:var(--amber-bg)">
+            <svg viewBox="0 0 24 24" style="stroke:var(--amber)"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          </div>
+          <span class="stat-trend trend-warn">Stock</span>
+        </div>
+        <div class="stat-val" id="stat-total-stock"><?php 
+          $totalStock = 0;
+          foreach ($lotsData as $l) {
+            $totalStock += $l['remaining_quantity'];
+          }
+          echo number_format($totalStock, 1); 
+        ?></div>
+        <div class="stat-label">Total Stock (kg)</div>
       </div>
     </div>
 

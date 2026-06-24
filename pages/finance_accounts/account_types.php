@@ -17,6 +17,29 @@ if (empty($_SESSION['account_type_token'])) {
 $canCreate = hasPermission($conn, $userId, 'create_account_type');
 $canEdit = hasPermission($conn, $userId, 'edit_account_type');
 $canDelete = hasPermission($conn, $userId, 'delete_account_type');
+
+// Get all account types from database (including hard-coded groups)
+$query = "SELECT a.*, p.name as parent_name, p.code as parent_code 
+          FROM account_types a 
+          LEFT JOIN account_types p ON a.parent_id = p.id 
+          ORDER BY a.code ASC";
+$result = mysqli_query($conn, $query);
+$typesData = [];
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $typesData[] = [
+            'id' => (int)$row['id'],
+            'code' => $row['code'],
+            'name' => $row['name'],
+            'parent_id' => $row['parent_id'] !== null ? (int)$row['parent_id'] : null,
+            'parent_name' => $row['parent_name'],
+            'parent_code' => $row['parent_code'],
+            'is_editable' => (int)$row['is_editable'],
+            'is_deletable' => (int)$row['is_deletable'],
+            'is_hardcoded' => (int)$row['id'] < 0
+        ];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,7 +76,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_account_type');
       <div>
         <h1 class="page-title">
           <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          Account Categories &amp; Types
+          Account Categories & Types
         </h1>
         <div class="page-sub">Configure account groups, root categories, and organizational sub-types</div>
       </div>
@@ -89,33 +112,20 @@ $canDelete = hasPermission($conn, $userId, 'delete_account_type');
             </thead>
             <tbody id="accountTypesList">
               <?php
-              $query = "SELECT a.*, p.name as parent_name, p.code as parent_code 
-                        FROM account_types a 
-                        LEFT JOIN account_types p ON a.parent_id = p.id 
-                        ORDER BY a.code ASC";
-              $result = mysqli_query($conn, $query);
-              $typesData = [];
               $rowNum = 1;
-              if ($result && mysqli_num_rows($result) > 0) {
-                  while ($row = mysqli_fetch_assoc($result)) {
-                      $typesData[] = [
-                          'id' => (int)$row['id'],
-                          'code' => $row['code'],
-                          'name' => $row['name'],
-                          'parent_id' => $row['parent_id'] !== null ? (int)$row['parent_id'] : null,
-                          'parent_name' => $row['parent_name'],
-                          'parent_code' => $row['parent_code'],
-                          'is_editable' => (int)$row['is_editable'],
-                          'is_deletable' => (int)$row['is_deletable']
-                      ];
-
+              $filteredTypesData = array_filter($typesData, function($type) {
+                  return !$type['is_hardcoded'];
+              });
+              
+              if (!empty($filteredTypesData)) {
+                  foreach ($filteredTypesData as $row) {
                       $isSystem = ((int)$row['is_editable'] === 0 && (int)$row['is_deletable'] === 0);
                       $systemBadge = $isSystem 
                           ? '<span class="status-pill" style="background:var(--blue-bg); color:var(--blue)">System Lock</span>' 
                           : '<span class="status-pill" style="background:var(--bg); color:var(--text3)">User Defined</span>';
 
-                      $editDisabled = (int)$row['is_editable'] === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : '';
-                      $deleteDisabled = (int)$row['is_deletable'] === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : '';
+                      $editDisabled = ((int)$row['is_editable'] === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : '');
+                      $deleteDisabled = ((int)$row['is_deletable'] === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : '');
 
                       $actions = '<div class="action-buttons" style="justify-content: flex-end;">';
                       if ($canEdit) {
@@ -164,8 +174,23 @@ $canDelete = hasPermission($conn, $userId, 'delete_account_type');
           <input type="hidden" id="accountTypeToken" name="token" value="<?php echo htmlspecialchars($_SESSION['account_type_token']); ?>">
 
           <div class="form-group">
+            <label for="accountTypeParent">Parent Group</label>
+            <select id="accountTypeParent" name="parent_id" class="form-control" required>
+              <option value="">Select a parent group</option>
+              <?php
+              // Only show hard-coded groups in the parent selector
+              foreach ($typesData as $type) {
+                  if ($type['is_hardcoded']) {
+                      echo '<option value="' . $type['id'] . '">' . htmlspecialchars($type['name']) . '</option>';
+                  }
+              }
+              ?>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label for="accountTypeCode">Account Type Code</label>
-            <input type="text" id="accountTypeCode" name="code" class="form-control" placeholder="e.g. 1300, 6500" maxlength="10" required>
+            <input type="text" id="accountTypeCode" name="code" class="form-control" placeholder="e.g. 1300, 6500" maxlength="10" required readonly style="background:var(--card);">
             <div id="codeValidationFeedback"></div>
           </div>
 
@@ -174,22 +199,15 @@ $canDelete = hasPermission($conn, $userId, 'delete_account_type');
             <input type="text" id="accountTypeName" name="name" class="form-control" placeholder="e.g. Operating Expenses" required>
           </div>
 
-          <div class="form-group">
-            <label for="accountTypeParent">Parent Group</label>
-            <select id="accountTypeParent" name="parent_id" class="form-control">
-              <option value="">(None — Root Category)</option>
-            </select>
-          </div>
-
           <div style="display: flex; gap: 8px; margin-top: 20px;">
             <button type="submit" class="btn-sm btn-primary" style="flex: 1;" id="saveBtn">Save Account Type</button>
             <button type="button" class="btn-sm" style="flex: 1; display: none;" id="cancelBtn">Cancel</button>
           </div>
         </form>
         <?php else: ?>
-          <div style="color:var(--text3); font-size:12px; padding:20px 0; text-align:center;">
-            You do not have administrative permission to create or edit account types.
-          </div>
+        <div style="color:var(--text3); font-size:12px; padding:20px 0; text-align:center;">
+          You do not have administrative permission to create or edit account types.
+        </div>
         <?php endif; ?>
       </div>
 
@@ -210,7 +228,7 @@ $canDelete = hasPermission($conn, $userId, 'delete_account_type');
     </div>
     <div class="confirm-footer">
       <button class="btn-sm" id="confirmCancelBtn">Cancel</button>
-      <button class="btn-sm btn-primary" id="confirmDeleteBtn" style="background:var(--red); border-color:var(--red);">Delete</button>
+      <button class="btn-sm btn-primary" id="confirmDeleteBtn" style="background:var(--red); border-color:var(--red)">Delete</button>
     </div>
   </div>
 </div>

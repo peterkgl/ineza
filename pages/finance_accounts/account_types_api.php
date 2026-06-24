@@ -16,6 +16,16 @@ if (empty($_SESSION['account_type_token'])) {
     $_SESSION['account_type_token'] = bin2hex(random_bytes(32));
 }
 
+// Hard-coded account groups with their ranges
+$accountGroupRanges = [
+    -1 => ['range_start' => 1000, 'range_end' => 1999],
+    -2 => ['range_start' => 2000, 'range_end' => 2999],
+    -3 => ['range_start' => 3000, 'range_end' => 3999],
+    -4 => ['range_start' => 4000, 'range_end' => 4999],
+    -5 => ['range_start' => 5000, 'range_end' => 5999],
+    -6 => ['range_start' => 6000, 'range_end' => 6999]
+];
+
 function sendResponse($success, $message, $data = null) {
     echo json_encode([
         'success' => $success,
@@ -60,7 +70,8 @@ switch ($action) {
                     'is_editable' => (int)$row['is_editable'],
                     'is_deletable' => (int)$row['is_deletable'],
                     'created_at' => $row['created_at'],
-                    'updated_at' => $row['updated_at']
+                    'updated_at' => $row['updated_at'],
+                    'is_hardcoded' => (int)$row['id'] < 0
                 ];
             }
         }
@@ -76,6 +87,8 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to create an account type.');
         }
 
+        global $accountGroupRanges;
+
         $code = isset($_POST['code']) ? trim($_POST['code']) : '';
         $name = isset($_POST['name']) ? trim($_POST['name']) : '';
         $parent_id = isset($_POST['parent_id']) && $_POST['parent_id'] !== '' ? (int)$_POST['parent_id'] : null;
@@ -88,6 +101,18 @@ switch ($action) {
             sendResponse(false, 'Account type code cannot exceed 10 characters.');
         }
 
+        // Validate code is within the correct range for the selected parent group
+        if ($parent_id === null || !isset($accountGroupRanges[$parent_id])) {
+            sendResponse(false, 'Invalid parent group.');
+        }
+
+        $range = $accountGroupRanges[$parent_id];
+        $codeNum = (int)$code;
+
+        if ($codeNum < $range['range_start'] + 1 || $codeNum > $range['range_end']) {
+            sendResponse(false, "Code must be between " . ($range['range_start'] + 1) . " and " . $range['range_end'] . " for this group.");
+        }
+
         $codeEsc = mysqli_real_escape_string($conn, $code);
         $nameEsc = mysqli_real_escape_string($conn, $name);
 
@@ -98,23 +123,18 @@ switch ($action) {
             sendResponse(false, "An account type with code '$code' already exists.");
         }
 
-        // Validate parent_id if provided
-        if ($parent_id !== null) {
-            $pQuery = "SELECT id FROM account_types WHERE id = $parent_id LIMIT 1";
-            $pResult = mysqli_query($conn, $pQuery);
-            if (!$pResult || mysqli_num_rows($pResult) === 0) {
-                sendResponse(false, 'Selected parent account type does not exist.');
-            }
-            $parentVal = $parent_id;
-        } else {
-            $parentVal = "NULL";
+        // Check if name is unique
+        $checkNameQuery = "SELECT id FROM account_types WHERE name = '$nameEsc' LIMIT 1";
+        $checkNameResult = mysqli_query($conn, $checkNameQuery);
+        if ($checkNameResult && mysqli_num_rows($checkNameResult) > 0) {
+            sendResponse(false, "An account type with name '$name' already exists.");
         }
 
         mysqli_begin_transaction($conn);
 
         try {
             $insertQuery = "INSERT INTO account_types (code, name, parent_id, is_editable, is_deletable) 
-                            VALUES ('$codeEsc', '$nameEsc', $parentVal, 1, 1)";
+                            VALUES ('$codeEsc', '$nameEsc', $parent_id, 1, 1)";
             
             if (mysqli_query($conn, $insertQuery)) {
                 $newId = mysqli_insert_id($conn);
@@ -149,6 +169,8 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to edit account types.');
         }
 
+        global $accountGroupRanges;
+
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         $code = isset($_POST['code']) ? trim($_POST['code']) : '';
         $name = isset($_POST['name']) ? trim($_POST['name']) : '';
@@ -173,34 +195,43 @@ switch ($action) {
             sendResponse(false, 'An account type cannot be its own parent.');
         }
 
+        // Validate code is within the correct range for the selected parent group
+        if ($parent_id === null || !isset($accountGroupRanges[$parent_id])) {
+            sendResponse(false, 'Invalid parent group.');
+        }
+
+        $range = $accountGroupRanges[$parent_id];
+        $codeNum = (int)$code;
+
+        if ($codeNum < $range['range_start'] + 1 || $codeNum > $range['range_end']) {
+            sendResponse(false, "Code must be between " . ($range['range_start'] + 1) . " and " . $range['range_end'] . " for this group.");
+        }
+
         $codeEsc = mysqli_real_escape_string($conn, $code);
         $nameEsc = mysqli_real_escape_string($conn, $name);
 
+        // Check if code is unique (excluding current type)
         $checkQuery = "SELECT id FROM account_types WHERE code = '$codeEsc' AND id != $id LIMIT 1";
         $checkResult = mysqli_query($conn, $checkQuery);
         if ($checkResult && mysqli_num_rows($checkResult) > 0) {
             sendResponse(false, "Another account type with code '$code' already exists.");
         }
 
-        if ($parent_id !== null) {
-            $pQuery = "SELECT id FROM account_types WHERE id = $parent_id LIMIT 1";
-            $pResult = mysqli_query($conn, $pQuery);
-            if (!$pResult || mysqli_num_rows($pResult) === 0) {
-                sendResponse(false, 'Selected parent account type does not exist.');
-            }
-            $parentVal = $parent_id;
-        } else {
-            $parentVal = "NULL";
+        // Check if name is unique (excluding current type)
+        $checkNameQuery = "SELECT id FROM account_types WHERE name = '$nameEsc' AND id != $id LIMIT 1";
+        $checkNameResult = mysqli_query($conn, $checkNameQuery);
+        if ($checkNameResult && mysqli_num_rows($checkNameResult) > 0) {
+            sendResponse(false, "Another account type with name '$name' already exists.");
         }
 
         mysqli_begin_transaction($conn);
 
         try {
             $updateQuery = "UPDATE account_types SET 
-                                code = '$codeEsc', 
-                                name = '$nameEsc', 
-                                parent_id = $parentVal, 
-                                updated_at = CURRENT_TIMESTAMP 
+                            code = '$codeEsc', 
+                            name = '$nameEsc', 
+                            parent_id = $parent_id, 
+                            updated_at = CURRENT_TIMESTAMP 
                             WHERE id = $id";
             
             if (mysqli_query($conn, $updateQuery)) {
@@ -305,6 +336,44 @@ switch ($action) {
         $exists = ($result && mysqli_num_rows($result) > 0);
 
         echo json_encode(['success' => true, 'exists' => $exists]);
+        exit();
+        break;
+
+    case 'get_next_code':
+        $parentId = isset($_GET['parent_id']) ? trim($_GET['parent_id']) : '';
+        
+        global $accountGroupRanges;
+        
+        if (!isset($accountGroupRanges[$parentId])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parent group']);
+            exit();
+        }
+        
+        $range = $accountGroupRanges[$parentId];
+        $rangeStart = $range['range_start'];
+        $rangeEnd = $range['range_end'];
+        
+        $query = "SELECT code FROM account_types WHERE code >= '$rangeStart' AND code <= '$rangeEnd' ORDER BY code ASC";
+        $result = mysqli_query($conn, $query);
+        
+        $existingCodes = [];
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $existingCodes[] = (int)$row['code'];
+            }
+        }
+        
+        // Find next available code starting from range_start + 1
+        $nextCode = $rangeStart + 1;
+        while (in_array($nextCode, $existingCodes)) {
+            $nextCode++;
+            if ($nextCode > $rangeEnd) {
+                echo json_encode(['success' => false, 'message' => 'No available codes in this range']);
+                exit();
+            }
+        }
+        
+        echo json_encode(['success' => true, 'next_code' => (string)$nextCode]);
         exit();
         break;
 

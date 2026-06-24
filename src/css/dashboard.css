@@ -213,7 +213,8 @@ body {
 .accounts-grid > div,
 .account-types-grid > div,
 .categories-grid > div,
-.elements-grid > div {
+.elements-grid > div,
+.lots-grid > div {
   min-width: 0;
 }
 

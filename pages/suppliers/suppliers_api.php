@@ -34,6 +34,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+function getNextAccountCode() {
+    global $conn;
+    
+    // Liabilities group range (2001-2999)
+    $rangeStart = 2000;
+    $rangeEnd = 2999;
+    
+    $existingCodes = [];
+    
+    // Check account_types table for codes in the range
+    $queryTypes = "SELECT code FROM account_types 
+                   WHERE code >= $rangeStart 
+                   AND code <= $rangeEnd 
+                   ORDER BY code ASC";
+    $resultTypes = mysqli_query($conn, $queryTypes);
+    if ($resultTypes) {
+        while ($row = mysqli_fetch_assoc($resultTypes)) {
+            $existingCodes[] = (int)$row['code'];
+        }
+    }
+    
+    // Check accounts table for codes in the range
+    $queryAccounts = "SELECT account_code FROM accounts 
+                      WHERE account_code >= $rangeStart 
+                      AND account_code <= $rangeEnd 
+                      ORDER BY account_code ASC";
+    $resultAccounts = mysqli_query($conn, $queryAccounts);
+    if ($resultAccounts) {
+        while ($row = mysqli_fetch_assoc($resultAccounts)) {
+            $existingCodes[] = (int)$row['account_code'];
+        }
+    }
+    
+    // Remove duplicates
+    $existingCodes = array_unique($existingCodes);
+    sort($existingCodes);
+    
+    // Find next available code
+    $nextCode = $rangeStart + 1;
+    while (in_array($nextCode, $existingCodes)) {
+        $nextCode++;
+        if ($nextCode > $rangeEnd) {
+            return null;
+        }
+    }
+    
+    return (string)$nextCode;
+}
+
+function getAccountsPayableTypeId() {
+    global $conn;
+    $query = "SELECT id FROM account_types WHERE name = 'Accounts Payable' LIMIT 1";
+    $result = mysqli_query($conn, $query);
+    if ($result && mysqli_num_rows($result) > 0) {
+        return (int)mysqli_fetch_assoc($result)['id'];
+    }
+    return null;
+}
+
 switch ($action) {
     case 'list':
         if (!hasPermission($conn, $userId, 'view_suppliers')) {
@@ -42,11 +101,9 @@ switch ($action) {
         }
 
         $query = "SELECT s.*,
-                         a.account_code, a.account_name,
-                         c.code as currency_code, c.name as currency_name
+                         a.account_code, a.account_name
                   FROM suppliers s
                   LEFT JOIN accounts a ON s.payables_account_id = a.id
-                  LEFT JOIN currencies c ON s.currency_id = c.id
                   ORDER BY s.name ASC";
         $result = mysqli_query($conn, $query);
         $suppliers = [];
@@ -65,9 +122,6 @@ switch ($action) {
                     'payables_account_id' => $row['payables_account_id'] !== null ? (int)$row['payables_account_id'] : null,
                     'account_code' => $row['account_code'],
                     'account_name' => $row['account_name'],
-                    'currency_id' => $row['currency_id'] !== null ? (int)$row['currency_id'] : null,
-                    'currency_code' => $row['currency_code'],
-                    'currency_name' => $row['currency_name'],
                     'region' => $row['region'],
                     'is_active' => (int)$row['is_active'],
                     'notes' => $row['notes'],
@@ -90,13 +144,9 @@ switch ($action) {
         $supplier_type = isset($_POST['supplier_type']) ? trim($_POST['supplier_type']) : 'individual';
         $name = isset($_POST['name']) ? trim($_POST['name']) : '';
         $nif = isset($_POST['nif']) ? trim($_POST['nif']) : '';
-        $vat_reg_no = isset($_POST['vat_reg_no']) ? trim($_POST['vat_reg_no']) : '';
         $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
         $email = isset($_POST['email']) ? trim($_POST['email']) : '';
         $address = isset($_POST['address']) ? trim($_POST['address']) : '';
-        $payables_account_id = isset($_POST['payables_account_id']) && $_POST['payables_account_id'] !== '' ? (int)$_POST['payables_account_id'] : null;
-        $currency_id = isset($_POST['currency_id']) && $_POST['currency_id'] !== '' ? (int)$_POST['currency_id'] : null;
-        $region = isset($_POST['region']) ? trim($_POST['region']) : '';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
 
@@ -108,22 +158,6 @@ switch ($action) {
             sendResponse(false, 'Invalid supplier type.');
         }
 
-        if ($payables_account_id !== null) {
-            $chkAccount = mysqli_query($conn, "SELECT id FROM accounts WHERE id = $payables_account_id LIMIT 1");
-            if (!$chkAccount || mysqli_num_rows($chkAccount) === 0) {
-                sendResponse(false, 'Selected payables account does not exist.');
-            }
-        }
-
-        if ($currency_id === null) {
-            sendResponse(false, 'Currency is required.');
-        }
-
-        $chkCurrency = mysqli_query($conn, "SELECT id FROM currencies WHERE id = $currency_id LIMIT 1");
-        if (!$chkCurrency || mysqli_num_rows($chkCurrency) === 0) {
-            sendResponse(false, 'Selected currency does not exist.');
-        }
-
         $nameEsc = mysqli_real_escape_string($conn, $name);
         $chkName = mysqli_query($conn, "SELECT id FROM suppliers WHERE name = '$nameEsc' LIMIT 1");
         if ($chkName && mysqli_num_rows($chkName) > 0) {
@@ -133,19 +167,36 @@ switch ($action) {
         mysqli_begin_transaction($conn);
 
         try {
+            $accountsPayableTypeId = getAccountsPayableTypeId();
+            if ($accountsPayableTypeId === null) {
+                throw new Exception('Accounts Payable account type not found in the system.');
+            }
+
+            $nextCode = getNextAccountCode();
+            if ($nextCode === null) {
+                throw new Exception('No available account codes in the Liabilities range (2001-2999).');
+            }
+
+            $accountNameEsc = mysqli_real_escape_string($conn, $name . ' - Accounts Payable');
+            $insertAccountQuery = "INSERT INTO accounts 
+                                   (account_type_id, account_code, account_name, is_active, description)
+                                   VALUES ($accountsPayableTypeId, '$nextCode', '$accountNameEsc', 1, 'Auto-created account for supplier: $nameEsc')";
+            
+            if (!mysqli_query($conn, $insertAccountQuery)) {
+                throw new Exception('Failed to create account: ' . mysqli_error($conn));
+            }
+            
+            $accountId = mysqli_insert_id($conn);
+
             $nifEsc = mysqli_real_escape_string($conn, $nif);
-            $vatEsc = mysqli_real_escape_string($conn, $vat_reg_no);
             $phoneEsc = mysqli_real_escape_string($conn, $phone);
             $emailEsc = mysqli_real_escape_string($conn, $email);
             $addressEsc = mysqli_real_escape_string($conn, $address);
-            $regionEsc = mysqli_real_escape_string($conn, $region);
             $notesEsc = mysqli_real_escape_string($conn, $notes);
 
-            $parentVal = $payables_account_id !== null ? $payables_account_id : "NULL";
-            $currVal = $currency_id !== null ? $currency_id : "NULL";
-
-            $insertQuery = "INSERT INTO suppliers (supplier_type, name, nif, vat_reg_no, phone, email, address, payables_account_id, currency_id, region, notes, is_active, created_by) 
-                            VALUES ('$supplier_type', '$nameEsc', '$nifEsc', '$vatEsc', '$phoneEsc', '$emailEsc', '$addressEsc', $parentVal, $currVal, '$regionEsc', '$notesEsc', $is_active, $userId)";
+            $insertQuery = "INSERT INTO suppliers 
+                            (supplier_type, name, nif, phone, email, address, payables_account_id, notes, is_active, created_by) 
+                            VALUES ('$supplier_type', '$nameEsc', '$nifEsc', '$phoneEsc', '$emailEsc', '$addressEsc', $accountId, '$notesEsc', $is_active, $userId)";
             
             if (mysqli_query($conn, $insertQuery)) {
                 $newId = mysqli_insert_id($conn);
@@ -154,13 +205,10 @@ switch ($action) {
                     'supplier_type' => $supplier_type,
                     'name' => $name,
                     'nif' => $nif,
-                    'vat_reg_no' => $vat_reg_no,
                     'phone' => $phone,
                     'email' => $email,
                     'address' => $address,
-                    'payables_account_id' => $payables_account_id,
-                    'currency_id' => $currency_id,
-                    'region' => $region,
+                    'payables_account_id' => $accountId,
                     'is_active' => $is_active,
                     'notes' => $notes
                 ];
@@ -188,13 +236,9 @@ switch ($action) {
         $supplier_type = isset($_POST['supplier_type']) ? trim($_POST['supplier_type']) : 'individual';
         $name = isset($_POST['name']) ? trim($_POST['name']) : '';
         $nif = isset($_POST['nif']) ? trim($_POST['nif']) : '';
-        $vat_reg_no = isset($_POST['vat_reg_no']) ? trim($_POST['vat_reg_no']) : '';
         $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
         $email = isset($_POST['email']) ? trim($_POST['email']) : '';
         $address = isset($_POST['address']) ? trim($_POST['address']) : '';
-        $payables_account_id = isset($_POST['payables_account_id']) && $_POST['payables_account_id'] !== '' ? (int)$_POST['payables_account_id'] : null;
-        $currency_id = isset($_POST['currency_id']) && $_POST['currency_id'] !== '' ? (int)$_POST['currency_id'] : null;
-        $region = isset($_POST['region']) ? trim($_POST['region']) : '';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
 
@@ -204,22 +248,6 @@ switch ($action) {
 
         if (!in_array($supplier_type, ['individual', 'cooperative', 'company'])) {
             sendResponse(false, 'Invalid supplier type.');
-        }
-
-        if ($payables_account_id !== null) {
-            $chkAccount = mysqli_query($conn, "SELECT id FROM accounts WHERE id = $payables_account_id LIMIT 1");
-            if (!$chkAccount || mysqli_num_rows($chkAccount) === 0) {
-                sendResponse(false, 'Selected payables account does not exist.');
-            }
-        }
-
-        if ($currency_id === null) {
-            sendResponse(false, 'Currency is required.');
-        }
-
-        $chkCurrency = mysqli_query($conn, "SELECT id FROM currencies WHERE id = $currency_id LIMIT 1");
-        if (!$chkCurrency || mysqli_num_rows($chkCurrency) === 0) {
-            sendResponse(false, 'Selected currency does not exist.');
         }
 
         $fetchQuery = "SELECT * FROM suppliers WHERE id = $id LIMIT 1";
@@ -239,27 +267,18 @@ switch ($action) {
 
         try {
             $nifEsc = mysqli_real_escape_string($conn, $nif);
-            $vatEsc = mysqli_real_escape_string($conn, $vat_reg_no);
             $phoneEsc = mysqli_real_escape_string($conn, $phone);
             $emailEsc = mysqli_real_escape_string($conn, $email);
             $addressEsc = mysqli_real_escape_string($conn, $address);
-            $regionEsc = mysqli_real_escape_string($conn, $region);
             $notesEsc = mysqli_real_escape_string($conn, $notes);
-
-            $parentVal = $payables_account_id !== null ? $payables_account_id : "NULL";
-            $currVal = $currency_id !== null ? $currency_id : "NULL";
 
             $updateQuery = "UPDATE suppliers SET 
                                 supplier_type = '$supplier_type', 
                                 name = '$nameEsc', 
                                 nif = '$nifEsc', 
-                                vat_reg_no = '$vatEsc', 
                                 phone = '$phoneEsc', 
                                 email = '$emailEsc', 
                                 address = '$addressEsc', 
-                                payables_account_id = $parentVal,
-                                currency_id = $currVal,
-                                region = '$regionEsc', 
                                 notes = '$notesEsc', 
                                 is_active = $is_active, 
                                 updated_by = $userId, 
@@ -272,13 +291,9 @@ switch ($action) {
                     'supplier_type' => $supplier_type,
                     'name' => $name,
                     'nif' => $nif,
-                    'vat_reg_no' => $vat_reg_no,
                     'phone' => $phone,
                     'email' => $email,
                     'address' => $address,
-                    'payables_account_id' => $payables_account_id,
-                    'currency_id' => $currency_id,
-                    'region' => $region,
                     'is_active' => $is_active,
                     'notes' => $notes
                 ];
@@ -315,10 +330,8 @@ switch ($action) {
         $oldValues = mysqli_fetch_assoc($fetchResult);
         $name = $oldValues['name'];
 
-        // Check for dependencies in other tables to maintain database integrity
         $dependencies = [];
 
-        // Check supplier_advances if table exists
         $tableCheck = mysqli_query($conn, "SHOW TABLES LIKE 'supplier_advances'");
         if ($tableCheck && mysqli_num_rows($tableCheck) > 0) {
             $chkAdvances = mysqli_query($conn, "SELECT COUNT(*) as count FROM supplier_advances WHERE supplier_id = $id");
@@ -330,7 +343,6 @@ switch ($action) {
             }
         }
 
-        // Check purchases
         $chkPurchases = mysqli_query($conn, "SELECT COUNT(*) as count FROM purchases WHERE supplier_id = $id");
         if ($chkPurchases) {
             $count = (int)mysqli_fetch_assoc($chkPurchases)['count'];
@@ -339,7 +351,6 @@ switch ($action) {
             }
         }
 
-        // Check lots
         $chkLots = mysqli_query($conn, "SELECT COUNT(*) as count FROM lots WHERE supplier_id = $id");
         if ($chkLots) {
             $count = (int)mysqli_fetch_assoc($chkLots)['count'];
@@ -348,7 +359,6 @@ switch ($action) {
             }
         }
 
-        // Check supplier_payments
         $chkPayments = mysqli_query($conn, "SELECT COUNT(*) as count FROM supplier_payments WHERE supplier_id = $id");
         if ($chkPayments) {
             $count = (int)mysqli_fetch_assoc($chkPayments)['count'];

@@ -18,31 +18,11 @@ $canCreate = hasPermission($conn, $userId, 'create_supplier');
 $canEdit = hasPermission($conn, $userId, 'edit_supplier');
 $canDelete = hasPermission($conn, $userId, 'delete_supplier');
 
-// Fetch accounts for dropdown
-$accountsList = [];
-$accResult = mysqli_query($conn, "SELECT id, account_code, account_name FROM accounts WHERE is_active = 1 ORDER BY account_code ASC");
-if ($accResult) {
-    while ($row = mysqli_fetch_assoc($accResult)) {
-        $accountsList[] = $row;
-    }
-}
-
-// Fetch currencies for dropdown
-$currenciesList = [];
-$curResult = mysqli_query($conn, "SELECT id, code, name FROM currencies WHERE is_active = 1 ORDER BY code ASC");
-if ($curResult) {
-    while ($row = mysqli_fetch_assoc($curResult)) {
-        $currenciesList[] = $row;
-    }
-}
-
 // Fetch suppliers with JOINs
-$query = "SELECT s.*, 
-                 a.account_code, a.account_name,
-                 c.code as currency_code, c.name as currency_name
+$query = "SELECT s.*,
+                 a.account_code, a.account_name
           FROM suppliers s
           LEFT JOIN accounts a ON s.payables_account_id = a.id
-          LEFT JOIN currencies c ON s.currency_id = c.id
           ORDER BY s.name ASC";
 $result = mysqli_query($conn, $query);
 $suppliersData = [];
@@ -60,9 +40,6 @@ if ($result) {
             'payables_account_id' => $row['payables_account_id'] !== null ? (int)$row['payables_account_id'] : null,
             'account_code' => $row['account_code'],
             'account_name' => $row['account_name'],
-            'currency_id' => $row['currency_id'] !== null ? (int)$row['currency_id'] : null,
-            'currency_code' => $row['currency_code'],
-            'currency_name' => $row['currency_name'],
             'region' => $row['region'],
             'is_active' => (int)$row['is_active'],
             'notes' => $row['notes'],
@@ -200,8 +177,6 @@ foreach ($suppliersData as $s) {
                 <th>Type</th>
                 <th>TIN (NIF)</th>
                 <th>Phone</th>
-                <th>Payables Account</th>
-                <th>Currency</th>
                 <th>Region</th>
                 <th>Status</th>
                 <th style="width: 80px; text-align: right;">Actions</th>
@@ -210,7 +185,7 @@ foreach ($suppliersData as $s) {
             <tbody id="suppliersList">
               <?php if (empty($suppliersData)): ?>
                 <tr>
-                  <td colspan="10" class="table-empty">No suppliers configured yet.</td>
+                  <td colspan="8" class="table-empty">No suppliers configured yet.</td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($suppliersData as $index => $s): ?>
@@ -220,8 +195,6 @@ foreach ($suppliersData as $s) {
                     $typeVal = htmlspecialchars(ucfirst($s['supplier_type']));
                     $nifVal = $s['nif'] ? htmlspecialchars($s['nif']) : '—';
                     $phoneVal = $s['phone'] ? htmlspecialchars($s['phone']) : '—';
-                    $payablesVal = $s['account_code'] ? htmlspecialchars($s['account_code']) . ' - ' . htmlspecialchars($s['account_name']) : '—';
-                    $currencyVal = $s['currency_code'] ? htmlspecialchars($s['currency_code']) : '—';
                     $regionVal = $s['region'] ? htmlspecialchars($s['region']) : '—';
                     $statusLabel = $s['is_active'] === 1
                       ? '<span class="status-pill pill-green">Active</span>'
@@ -233,8 +206,6 @@ foreach ($suppliersData as $s) {
                     <td><span class="code-badge"><?php echo $typeVal; ?></span></td>
                     <td><?php echo $nifVal; ?></td>
                     <td><?php echo $phoneVal; ?></td>
-                    <td><?php echo $payablesVal; ?></td>
-                    <td><?php echo $currencyVal; ?></td>
                     <td><?php echo $regionVal; ?></td>
                     <td><?php echo $statusLabel; ?></td>
                     <td style="text-align: right;">
@@ -287,11 +258,6 @@ foreach ($suppliersData as $s) {
           </div>
 
           <div class="form-group">
-            <label for="supplierVat">VAT Registration No</label>
-            <input type="text" id="supplierVat" name="vat_reg_no" class="form-control" placeholder="e.g. VAT-928472">
-          </div>
-
-          <div class="form-group">
             <label for="supplierPhone">Phone Contact</label>
             <input type="text" id="supplierPhone" name="phone" class="form-control" placeholder="e.g. +250 788 000 000">
           </div>
@@ -304,31 +270,6 @@ foreach ($suppliersData as $s) {
           <div class="form-group">
             <label for="supplierAddress">Physical Address</label>
             <input type="text" id="supplierAddress" name="address" class="form-control" placeholder="e.g. KN 5 Rd, Kigali">
-          </div>
-
-          <div class="form-group">
-            <label for="supplierPayablesAccount">Payables Account</label>
-            <select id="supplierPayablesAccount" name="payables_account_id" class="form-control">
-              <option value="">(Select Payables Account)</option>
-              <?php foreach ($accountsList as $acc): ?>
-                <option value="<?php echo $acc['id']; ?>"><?php echo htmlspecialchars($acc['account_code']) . ' - ' . htmlspecialchars($acc['account_name']); ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="supplierCurrency">Currency</label>
-            <select id="supplierCurrency" name="currency_id" class="form-control" required>
-              <option value="">(Select Currency)</option>
-              <?php foreach ($currenciesList as $cur): ?>
-                <option value="<?php echo $cur['id']; ?>"><?php echo htmlspecialchars($cur['code']) . ' - ' . htmlspecialchars($cur['name']); ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="supplierRegion">Mining Region / Zone</label>
-            <input type="text" id="supplierRegion" name="region" class="form-control" placeholder="e.g. Southern Province, Rutsiro">
           </div>
 
           <div class="form-group">
@@ -379,8 +320,6 @@ foreach ($suppliersData as $s) {
 
 <script>
   window.initialSuppliersData = <?php echo json_encode($suppliersData); ?>;
-  window.accountsList = <?php echo json_encode($accountsList); ?>;
-  window.currenciesList = <?php echo json_encode($currenciesList); ?>;
 </script>
 <script src="../../src/js/navbar.js"></script>
 <script src="../../src/js/sidebar.js"></script>

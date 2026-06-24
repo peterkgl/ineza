@@ -1,0 +1,15 @@
+---------suplayer remove-----------
+1. VAT Registration No
+2. Payables Account (izajya yikora Auto)
+3. Currency
+4. Mining Region / Zone
+5. Administrative Notes
+
+--------------product removed column----------
+1. Chemical / Mineral Full Designation
+2. Product Category and (table of product category)
+ 
+----------------------comment-------------
+1. kuri product ngomba gukora table ya Unit of Measure noneho nkajya mpamagaza foreign key ya Unit of Measure
+2.muri table ya Product Elements ngomba kuvanamo izi column 'Parent Product, Display Order'
+3. noneho mukurecivinga product muri 'lots' njyempamagaza products elements zose nselectinge izo iyo product ndicivinze yujuje

@@ -1,10 +1,10 @@
 .lots-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 16px;
+  grid-template-columns: 1fr 340px;
+  gap: 14px;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1100px) {
   .lots-grid {
     grid-template-columns: 1fr;
   }
