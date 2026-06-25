@@ -41,17 +41,10 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to view products.');
         }
 
-        $query = "SELECT p.*, 
-                         inv.account_code as inventory_code, inv.account_name as inventory_name,
-                         sal.account_code as sales_code, sal.account_name as sales_name,
-                         cogs.account_code as cogs_code, cogs.account_name as cogs_name,
-                         pc.category_code, pc.category_name
-                  FROM products p
-                  LEFT JOIN accounts inv ON p.inventory_account_id = inv.id
-                  LEFT JOIN accounts sal ON p.sales_account_id = sal.id
-                  LEFT JOIN accounts cogs ON p.cogs_account_id = cogs.id
-                  LEFT JOIN product_categories pc ON p.category_id = pc.id
-                  ORDER BY p.code ASC";
+        $query = "SELECT p.*, uom.code as uom_code, uom.name as uom_name 
+                  FROM product p
+                  LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
+                  ORDER BY p.product_code ASC";
         $result = mysqli_query($conn, $query);
         $products = [];
 
@@ -59,23 +52,13 @@ switch ($action) {
             while ($row = mysqli_fetch_assoc($result)) {
                 $products[] = [
                     'id' => (int)$row['id'],
-                    'code' => $row['code'],
-                    'name' => $row['name'],
-                    'full_name' => $row['full_name'],
-                    'unit_of_measure' => $row['unit_of_measure'],
+                    'product_code' => $row['product_code'],
+                    'product_name' => $row['product_name'],
+                    'category' => $row['category'],
+                    'uom_id' => (int)$row['uom_id'],
+                    'uom_code' => $row['uom_code'],
+                    'uom_name' => $row['uom_name'],
                     'description' => $row['description'],
-                    'inventory_account_id' => $row['inventory_account_id'] !== null ? (int)$row['inventory_account_id'] : null,
-                    'inventory_code' => $row['inventory_code'],
-                    'inventory_name' => $row['inventory_name'],
-                    'sales_account_id' => $row['sales_account_id'] !== null ? (int)$row['sales_account_id'] : null,
-                    'sales_code' => $row['sales_code'],
-                    'sales_name' => $row['sales_name'],
-                    'cogs_account_id' => $row['cogs_account_id'] !== null ? (int)$row['cogs_account_id'] : null,
-                    'cogs_code' => $row['cogs_code'],
-                    'cogs_name' => $row['cogs_name'],
-                    'category_id' => $row['category_id'] !== null ? (int)$row['category_id'] : null,
-                    'category_code' => $row['category_code'],
-                    'category_name' => $row['category_name'],
                     'is_active' => (int)$row['is_active'],
                     'created_at' => $row['created_at'],
                     'updated_at' => $row['updated_at']
@@ -83,7 +66,7 @@ switch ($action) {
             }
         }
 
-        logAudit($conn, 'VIEW', 'products', 'Products List', 'User viewed the products list');
+        logAudit($conn, 'VIEW', 'product', 'Products List', 'User viewed the products list');
         sendResponse(true, 'Products retrieved successfully.', $products);
         break;
 
@@ -93,23 +76,19 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to create products.');
         }
 
-        $code = isset($_POST['code']) ? strtoupper(trim($_POST['code'])) : '';
-        $name = isset($_POST['name']) ? trim($_POST['name']) : '';
-        $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
-        $unit = isset($_POST['unit_of_measure']) ? trim($_POST['unit_of_measure']) : 'kg';
+        $product_code = isset($_POST['product_code']) ? strtoupper(trim($_POST['product_code'])) : '';
+        $product_name = isset($_POST['product_name']) ? trim($_POST['product_name']) : '';
+        $category = isset($_POST['category']) ? trim($_POST['category']) : '';
+        $uom_id = isset($_POST['uom_id']) ? (int)$_POST['uom_id'] : 1;
         $description = isset($_POST['description']) ? trim($_POST['description']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
-        $inventory_account_id = isset($_POST['inventory_account_id']) && $_POST['inventory_account_id'] !== '' ? (int)$_POST['inventory_account_id'] : null;
-        $sales_account_id = isset($_POST['sales_account_id']) && $_POST['sales_account_id'] !== '' ? (int)$_POST['sales_account_id'] : null;
-        $cogs_account_id = isset($_POST['cogs_account_id']) && $_POST['cogs_account_id'] !== '' ? (int)$_POST['cogs_account_id'] : null;
-        $category_id = isset($_POST['category_id']) && $_POST['category_id'] !== '' ? (int)$_POST['category_id'] : null;
 
-        if (empty($code) || empty($name)) {
-            sendResponse(false, 'Product code and name are required.');
+        if (empty($product_code) || empty($product_name) || empty($uom_id)) {
+            sendResponse(false, 'Product code, product name, and unit of measure are required.');
         }
 
-        $codeEsc = mysqli_real_escape_string($conn, $code);
-        $chkCode = mysqli_query($conn, "SELECT id FROM products WHERE code = '$codeEsc' LIMIT 1");
+        $codeEsc = mysqli_real_escape_string($conn, $product_code);
+        $chkCode = mysqli_query($conn, "SELECT id FROM product WHERE product_code = '$codeEsc' LIMIT 1");
         if ($chkCode && mysqli_num_rows($chkCode) > 0) {
             sendResponse(false, 'A product with this code already exists.');
         }
@@ -117,36 +96,26 @@ switch ($action) {
         mysqli_begin_transaction($conn);
 
         try {
-            $nameEsc = mysqli_real_escape_string($conn, $name);
-            $fullNameEsc = mysqli_real_escape_string($conn, $full_name);
-            $unitEsc = mysqli_real_escape_string($conn, $unit);
+            $nameEsc = mysqli_real_escape_string($conn, $product_name);
+            $categoryEsc = mysqli_real_escape_string($conn, $category);
             $descEsc = mysqli_real_escape_string($conn, $description);
 
-            $invVal = $inventory_account_id !== null ? $inventory_account_id : "NULL";
-            $salVal = $sales_account_id !== null ? $sales_account_id : "NULL";
-            $cogsVal = $cogs_account_id !== null ? $cogs_account_id : "NULL";
-            $catVal = $category_id !== null ? $category_id : "NULL";
-
-            $insertProduct = "INSERT INTO products (code, name, full_name, unit_of_measure, description, inventory_account_id, sales_account_id, cogs_account_id, is_active, created_by, category_id) 
-                              VALUES ('$codeEsc', '$nameEsc', '$fullNameEsc', '$unitEsc', '$descEsc', $invVal, $salVal, $cogsVal, $is_active, $userId, $catVal)";
+            $insertProduct = "INSERT INTO product (product_code, product_name, category, uom_id, description, is_active) 
+                              VALUES ('$codeEsc', '$nameEsc', '$categoryEsc', $uom_id, '$descEsc', $is_active)";
             
             if (mysqli_query($conn, $insertProduct)) {
                 $newId = mysqli_insert_id($conn);
                 $newValues = [
                     'id' => $newId,
-                    'code' => $code,
-                    'name' => $name,
-                    'full_name' => $full_name,
-                    'unit_of_measure' => $unit,
+                    'product_code' => $product_code,
+                    'product_name' => $product_name,
+                    'category' => $category,
+                    'uom_id' => $uom_id,
                     'description' => $description,
-                    'inventory_account_id' => $inventory_account_id,
-                    'sales_account_id' => $sales_account_id,
-                    'cogs_account_id' => $cogs_account_id,
-                    'category_id' => $category_id,
                     'is_active' => $is_active
                 ];
 
-                logAudit($conn, 'CREATE', 'products', $code, "Created product: $name", null, $newValues);
+                logAudit($conn, 'CREATE', 'product', $product_code, "Created product: $product_name", null, $newValues);
                 $_SESSION['products_token'] = bin2hex(random_bytes(32));
                 mysqli_commit($conn);
                 sendResponse(true, 'Product created successfully.', $newValues);
@@ -166,30 +135,26 @@ switch ($action) {
         }
 
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
-        $code = isset($_POST['code']) ? strtoupper(trim($_POST['code'])) : '';
-        $name = isset($_POST['name']) ? trim($_POST['name']) : '';
-        $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
-        $unit = isset($_POST['unit_of_measure']) ? trim($_POST['unit_of_measure']) : 'kg';
+        $product_code = isset($_POST['product_code']) ? strtoupper(trim($_POST['product_code'])) : '';
+        $product_name = isset($_POST['product_name']) ? trim($_POST['product_name']) : '';
+        $category = isset($_POST['category']) ? trim($_POST['category']) : '';
+        $uom_id = isset($_POST['uom_id']) ? (int)$_POST['uom_id'] : 1;
         $description = isset($_POST['description']) ? trim($_POST['description']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
-        $inventory_account_id = isset($_POST['inventory_account_id']) && $_POST['inventory_account_id'] !== '' ? (int)$_POST['inventory_account_id'] : null;
-        $sales_account_id = isset($_POST['sales_account_id']) && $_POST['sales_account_id'] !== '' ? (int)$_POST['sales_account_id'] : null;
-        $cogs_account_id = isset($_POST['cogs_account_id']) && $_POST['cogs_account_id'] !== '' ? (int)$_POST['cogs_account_id'] : null;
-        $category_id = isset($_POST['category_id']) && $_POST['category_id'] !== '' ? (int)$_POST['category_id'] : null;
 
-        if ($id <= 0 || empty($code) || empty($name)) {
-            sendResponse(false, 'Valid ID, product code, and name are required.');
+        if ($id <= 0 || empty($product_code) || empty($product_name) || empty($uom_id)) {
+            sendResponse(false, 'Valid ID, product code, product name, and unit of measure are required.');
         }
 
-        $fetchQuery = "SELECT * FROM products WHERE id = $id LIMIT 1";
+        $fetchQuery = "SELECT * FROM product WHERE id = $id LIMIT 1";
         $fetchResult = mysqli_query($conn, $fetchQuery);
         if (!$fetchResult || mysqli_num_rows($fetchResult) === 0) {
             sendResponse(false, 'Product not found.');
         }
         $oldValues = mysqli_fetch_assoc($fetchResult);
 
-        $codeEsc = mysqli_real_escape_string($conn, $code);
-        $chkCode = mysqli_query($conn, "SELECT id FROM products WHERE code = '$codeEsc' AND id != $id LIMIT 1");
+        $codeEsc = mysqli_real_escape_string($conn, $product_code);
+        $chkCode = mysqli_query($conn, "SELECT id FROM product WHERE product_code = '$codeEsc' AND id != $id LIMIT 1");
         if ($chkCode && mysqli_num_rows($chkCode) > 0) {
             sendResponse(false, 'A product with this code already exists.');
         }
@@ -197,47 +162,32 @@ switch ($action) {
         mysqli_begin_transaction($conn);
 
         try {
-            $nameEsc = mysqli_real_escape_string($conn, $name);
-            $fullNameEsc = mysqli_real_escape_string($conn, $full_name);
-            $unitEsc = mysqli_real_escape_string($conn, $unit);
+            $nameEsc = mysqli_real_escape_string($conn, $product_name);
+            $categoryEsc = mysqli_real_escape_string($conn, $category);
             $descEsc = mysqli_real_escape_string($conn, $description);
 
-            $invVal = $inventory_account_id !== null ? $inventory_account_id : "NULL";
-            $salVal = $sales_account_id !== null ? $sales_account_id : "NULL";
-            $cogsVal = $cogs_account_id !== null ? $cogs_account_id : "NULL";
-            $catVal = $category_id !== null ? $category_id : "NULL";
-
-            $updateProduct = "UPDATE products SET 
-                                code = '$codeEsc', 
-                                name = '$nameEsc', 
-                                full_name = '$fullNameEsc', 
-                                unit_of_measure = '$unitEsc', 
-                                description = '$descEsc', 
-                                inventory_account_id = $invVal,
-                                sales_account_id = $salVal,
-                                cogs_account_id = $cogsVal,
-                                category_id = $catVal,
-                                is_active = $is_active, 
-                                updated_by = $userId, 
-                                updated_at = CURRENT_TIMESTAMP 
+            $updateProduct = "UPDATE product SET 
+                              product_code = '$codeEsc', 
+                              product_name = '$nameEsc', 
+                              category = '$categoryEsc', 
+                              uom_id = $uom_id, 
+                              description = '$descEsc',
+                              is_active = $is_active, 
+                              updated_at = CURRENT_TIMESTAMP 
                               WHERE id = $id";
             
             if (mysqli_query($conn, $updateProduct)) {
                 $newValues = [
                     'id' => $id,
-                    'code' => $code,
-                    'name' => $name,
-                    'full_name' => $full_name,
-                    'unit_of_measure' => $unit,
+                    'product_code' => $product_code,
+                    'product_name' => $product_name,
+                    'category' => $category,
+                    'uom_id' => $uom_id,
                     'description' => $description,
-                    'inventory_account_id' => $inventory_account_id,
-                    'sales_account_id' => $sales_account_id,
-                    'cogs_account_id' => $cogs_account_id,
-                    'category_id' => $category_id,
                     'is_active' => $is_active
                 ];
 
-                logAudit($conn, 'UPDATE', 'products', $code, "Updated product: $name", $oldValues, $newValues);
+                logAudit($conn, 'UPDATE', 'product', $product_code, "Updated product: $product_name", $oldValues, $newValues);
                 $_SESSION['products_token'] = bin2hex(random_bytes(32));
                 mysqli_commit($conn);
                 sendResponse(true, 'Product updated successfully.', $newValues);
@@ -261,16 +211,16 @@ switch ($action) {
             sendResponse(false, 'Invalid product ID.');
         }
 
-        $fetchQuery = "SELECT * FROM products WHERE id = $id LIMIT 1";
+        $fetchQuery = "SELECT * FROM product WHERE id = $id LIMIT 1";
         $fetchResult = mysqli_query($conn, $fetchQuery);
         if (!$fetchResult || mysqli_num_rows($fetchResult) === 0) {
             sendResponse(false, 'Product not found.');
         }
         $oldValues = mysqli_fetch_assoc($fetchResult);
-        $code = $oldValues['code'];
-        $name = $oldValues['name'];
+        $product_code = $oldValues['product_code'];
+        $product_name = $oldValues['product_name'];
 
-        $chkElements = mysqli_query($conn, "SELECT COUNT(*) as count FROM product_elements WHERE product_id = $id");
+        $chkElements = mysqli_query($conn, "SELECT COUNT(*) as count FROM product_element_composition WHERE product_id = $id");
         $elementsCount = 0;
         if ($chkElements) {
             $elementsCount = (int)mysqli_fetch_assoc($chkElements)['count'];
@@ -283,9 +233,9 @@ switch ($action) {
         mysqli_begin_transaction($conn);
 
         try {
-            $deleteProduct = "DELETE FROM products WHERE id = $id";
+            $deleteProduct = "DELETE FROM product WHERE id = $id";
             if (mysqli_query($conn, $deleteProduct)) {
-                logAudit($conn, 'DELETE', 'products', $code, "Deleted product: $name", $oldValues);
+                logAudit($conn, 'DELETE', 'product', $product_code, "Deleted product: $product_name", $oldValues);
                 $_SESSION['products_token'] = bin2hex(random_bytes(32));
                 mysqli_commit($conn);
                 sendResponse(true, 'Product deleted successfully.');
@@ -303,4 +253,3 @@ switch ($action) {
         sendResponse(false, 'Invalid action requested.');
         break;
 }
-?>

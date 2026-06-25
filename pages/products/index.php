@@ -18,23 +18,13 @@ $canCreate = hasPermission($conn, $userId, 'create_product');
 $canEdit = hasPermission($conn, $userId, 'edit_product');
 $canDelete = hasPermission($conn, $userId, 'delete_product');
 
-// Load all active accounts for dropdown options
-$accountsQuery = "SELECT id, account_code, account_name FROM accounts WHERE is_active = 1 ORDER BY account_code ASC";
-$accountsResult = mysqli_query($conn, $accountsQuery);
-$accountOptionsHtml = "<option value=''>-- Select Account --</option>";
-if ($accountsResult) {
-    while ($row = mysqli_fetch_assoc($accountsResult)) {
-        $accountOptionsHtml .= "<option value='{$row['id']}'>[" . htmlspecialchars($row['account_code']) . "] " . htmlspecialchars($row['account_name']) . "</option>";
-    }
-}
-
-// Load all active categories for dropdown options
-$categoriesQuery = "SELECT id, category_code, category_name FROM product_categories WHERE is_active = 1 ORDER BY category_name ASC";
-$categoriesResult = mysqli_query($conn, $categoriesQuery);
-$categoryOptionsHtml = "<option value=''>-- Select Category --</option>";
-if ($categoriesResult) {
-    while ($row = mysqli_fetch_assoc($categoriesResult)) {
-        $categoryOptionsHtml .= "<option value='{$row['id']}'>[" . htmlspecialchars($row['category_code']) . "] " . htmlspecialchars($row['category_name']) . "</option>";
+// Load all active units of measure for dropdown options
+$uomQuery = "SELECT id, code, name FROM unit_of_measure WHERE is_active = 1 ORDER BY code ASC";
+$uomResult = mysqli_query($conn, $uomQuery);
+$uomOptionsHtml = "<option value=''>-- Select Unit --</option>";
+if ($uomResult) {
+    while ($row = mysqli_fetch_assoc($uomResult)) {
+        $uomOptionsHtml .= "<option value='{$row['id']}'>" . htmlspecialchars($row['name']) . " (" . htmlspecialchars($row['code']) . ")</option>";
     }
 }
 ?>
@@ -118,17 +108,6 @@ if ($categoriesResult) {
         <div class="stat-val" id="stat-inactive">0</div>
         <div class="stat-label">Inactive Products</div>
       </div>
-
-      <div class="stat-card" id="card-units-count">
-        <div class="stat-top">
-          <div class="stat-icon" style="background:var(--amber-bg)">
-            <svg viewBox="0 0 24 24" style="stroke:var(--amber)"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <span class="stat-trend trend-warn">Units</span>
-        </div>
-        <div class="stat-val" id="stat-base">0</div>
-        <div class="stat-label">Unique Unit Types</div>
-      </div>
     </div>
 
     <div class="products-grid">
@@ -149,28 +128,17 @@ if ($categoriesResult) {
                 <th>Code</th>
                 <th>Name</th>
                 <th>Category</th>
-                <th>Mineral Designation</th>
                 <th>Unit</th>
-                <th>Inventory A/C</th>
-                <th>Sales A/C</th>
-                <th>COGS A/C</th>
                 <th>Status</th>
                 <th style="width: 80px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="productsList">
               <?php
-              $query = "SELECT p.*, 
-                               inv.account_code as inventory_code, inv.account_name as inventory_name,
-                               sal.account_code as sales_code, sal.account_name as sales_name,
-                               cogs.account_code as cogs_code, cogs.account_name as cogs_name,
-                               pc.category_code, pc.category_name
-                        FROM products p
-                        LEFT JOIN accounts inv ON p.inventory_account_id = inv.id
-                        LEFT JOIN accounts sal ON p.sales_account_id = sal.id
-                        LEFT JOIN accounts cogs ON p.cogs_account_id = cogs.id
-                        LEFT JOIN product_categories pc ON p.category_id = pc.id
-                        ORDER BY p.code ASC";
+              $query = "SELECT p.*, uom.code as uom_code, uom.name as uom_name 
+                        FROM product p
+                        LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
+                        ORDER BY p.product_code ASC";
               $result = mysqli_query($conn, $query);
               $productsData = [];
               $rowNum = 1;
@@ -178,23 +146,13 @@ if ($categoriesResult) {
                   while ($row = mysqli_fetch_assoc($result)) {
                       $productsData[] = [
                           'id' => (int)$row['id'],
-                          'code' => $row['code'],
-                          'name' => $row['name'],
-                          'full_name' => $row['full_name'],
-                          'unit_of_measure' => $row['unit_of_measure'],
+                          'product_code' => $row['product_code'],
+                          'product_name' => $row['product_name'],
+                          'category' => $row['category'],
+                          'uom_id' => (int)$row['uom_id'],
+                          'uom_code' => $row['uom_code'],
+                          'uom_name' => $row['uom_name'],
                           'description' => $row['description'],
-                          'inventory_account_id' => $row['inventory_account_id'] !== null ? (int)$row['inventory_account_id'] : null,
-                          'inventory_code' => $row['inventory_code'],
-                          'inventory_name' => $row['inventory_name'],
-                          'sales_account_id' => $row['sales_account_id'] !== null ? (int)$row['sales_account_id'] : null,
-                          'sales_code' => $row['sales_code'],
-                          'sales_name' => $row['sales_name'],
-                          'cogs_account_id' => $row['cogs_account_id'] !== null ? (int)$row['cogs_account_id'] : null,
-                          'cogs_code' => $row['cogs_code'],
-                          'cogs_name' => $row['cogs_name'],
-                          'category_id' => $row['category_id'] !== null ? (int)$row['category_id'] : null,
-                          'category_code' => $row['category_code'],
-                          'category_name' => $row['category_name'],
                           'is_active' => (int)$row['is_active']
                       ];
                       
@@ -217,20 +175,16 @@ if ($categoriesResult) {
                       
                       echo '<tr>';
                       echo '<td>' . $rowNum++ . '</td>';
-                      echo '<td class="td-bold">' . htmlspecialchars($row['code']) . '</td>';
-                      echo '<td class="td-name">' . htmlspecialchars($row['name']) . '</td>';
-                      echo '<td>' . ($row['category_name'] ? '<span class="parent-type-badge">' . htmlspecialchars($row['category_name']) . '</span>' : '—') . '</td>';
-                      echo '<td>' . ($row['full_name'] ? htmlspecialchars($row['full_name']) : '—') . '</td>';
-                      echo '<td><span class="code-badge">' . htmlspecialchars($row['unit_of_measure']) . '</span></td>';
-                      echo '<td>' . ($row['inventory_name'] ? '[' . htmlspecialchars($row['inventory_code']) . '] ' . htmlspecialchars($row['inventory_name']) : '—') . '</td>';
-                      echo '<td>' . ($row['sales_name'] ? '[' . htmlspecialchars($row['sales_code']) . '] ' . htmlspecialchars($row['sales_name']) : '—') . '</td>';
-                      echo '<td>' . ($row['cogs_name'] ? '[' . htmlspecialchars($row['cogs_code']) . '] ' . htmlspecialchars($row['cogs_name']) : '—') . '</td>';
+                      echo '<td class="td-bold">' . htmlspecialchars($row['product_code']) . '</td>';
+                      echo '<td class="td-name">' . htmlspecialchars($row['product_name']) . '</td>';
+                      echo '<td>' . ($row['category'] ? htmlspecialchars($row['category']) : '—') . '</td>';
+                      echo '<td><span class="code-badge">' . htmlspecialchars($row['uom_code']) . '</span></td>';
                       echo '<td>' . $statusBadge . '</td>';
                       echo '<td style="text-align: right;">' . $actions . '</td>';
                       echo '</tr>';
                   }
               } else {
-                  echo '<tr><td colspan="11" class="table-empty">No products found.</td></tr>';
+                  echo '<tr><td colspan="7" class="table-empty">No products found.</td></tr>';
               }
               ?>
             </tbody>
@@ -255,55 +209,29 @@ if ($categoriesResult) {
 
           <div class="form-group">
             <label for="productCode">Product Code</label>
-            <input type="text" id="productCode" name="code" class="form-control" placeholder="e.g. Sn, Ta, Nb" required>
+            <input type="text" id="productCode" name="product_code" class="form-control" placeholder="e.g. COLTAN-TA, TIN-SN" required>
           </div>
 
           <div class="form-group">
             <label for="productName">Product Name</label>
-            <input type="text" id="productName" name="name" class="form-control" placeholder="e.g. Tin, Tantalum" required>
+            <input type="text" id="productName" name="product_name" class="form-control" placeholder="e.g. Coltan (Tantalite), Cassiterite (Tin)" required>
           </div>
 
           <div class="form-group">
-            <label for="productFullName">Chemical / Mineral Full Designation</label>
-            <input type="text" id="productFullName" name="full_name" class="form-control" placeholder="e.g. Cassiterite SnO2">
+            <label for="category">Category</label>
+            <input type="text" id="category" name="category" class="form-control" placeholder="e.g. Coltan, Tin, Wolfram">
           </div>
 
           <div class="form-group">
-            <label for="productCategory">Product Category</label>
-            <select id="productCategory" name="category_id" class="form-control">
-              <?php echo $categoryOptionsHtml; ?>
+            <label for="uomId">Unit of Measure</label>
+            <select id="uomId" name="uom_id" class="form-control" required>
+              <?php echo $uomOptionsHtml; ?>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="productUnit">Unit of Measure</label>
-            <input type="text" id="productUnit" name="unit_of_measure" class="form-control" placeholder="e.g. kg, tonnes" value="kg" required>
-          </div>
-
-          <div class="form-group">
-            <label for="productDescription">Description</label>
-            <input type="text" id="productDescription" name="description" class="form-control" placeholder="e.g. Concentrated tin ore logs">
-          </div>
-
-          <div class="form-group">
-            <label for="inventoryAccount">Inventory Account</label>
-            <select id="inventoryAccount" name="inventory_account_id" class="form-control">
-              <?php echo $accountOptionsHtml; ?>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="salesAccount">Sales Account</label>
-            <select id="salesAccount" name="sales_account_id" class="form-control">
-              <?php echo $accountOptionsHtml; ?>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="cogsAccount">Cost of Goods Sold (COGS) Account</label>
-            <select id="cogsAccount" name="cogs_account_id" class="form-control">
-              <?php echo $accountOptionsHtml; ?>
-            </select>
+            <label for="description">Description</label>
+            <textarea id="description" name="description" class="form-control" placeholder="Enter product description" rows="3"></textarea>
           </div>
 
           <div class="checkbox-group">

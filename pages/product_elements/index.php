@@ -17,14 +17,6 @@ if (empty($_SESSION['elements_token'])) {
 $canCreate = hasPermission($conn, $userId, 'create_product_element');
 $canEdit = hasPermission($conn, $userId, 'edit_product_element');
 $canDelete = hasPermission($conn, $userId, 'delete_product_element');
-
-$products = [];
-$productsRes = mysqli_query($conn, "SELECT id, code, name FROM products WHERE is_active = 1 ORDER BY name ASC");
-if ($productsRes) {
-    while ($row = mysqli_fetch_assoc($productsRes)) {
-        $products[] = $row;
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -134,20 +126,17 @@ if ($productsRes) {
             <thead>
               <tr>
                 <th style="width: 50px;">#</th>
-                <th>Product</th>
                 <th>Element Code</th>
                 <th>Element Name</th>
-                <th>Unit</th>
-                <th>Display Order</th>
+                <th>Symbol</th>
+                <th>Description</th>
+                <th>Status</th>
                 <th style="width: 80px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="elementsList">
               <?php
-              $query = "SELECT pe.*, p.name as product_name, p.code as product_code 
-                        FROM product_elements pe 
-                        JOIN products p ON pe.product_id = p.id 
-                        ORDER BY p.name ASC, pe.sort_order ASC";
+              $query = "SELECT pe.* FROM product_element pe ORDER BY pe.element_code ASC";
               $result = mysqli_query($conn, $query);
               $elementsData = [];
               $rowNum = 1;
@@ -155,13 +144,11 @@ if ($productsRes) {
                   while ($row = mysqli_fetch_assoc($result)) {
                       $elementsData[] = [
                           'id' => (int)$row['id'],
-                          'product_id' => (int)$row['product_id'],
-                          'product_name' => $row['product_name'],
-                          'product_code' => $row['product_code'],
                           'element_code' => $row['element_code'],
                           'element_name' => $row['element_name'],
-                          'unit_of_measure' => $row['unit_of_measure'],
-                          'sort_order' => (int)$row['sort_order']
+                          'symbol' => $row['symbol'],
+                          'description' => $row['description'],
+                          'is_active' => (int)$row['is_active']
                       ];
 
                       $actions = '<div class="action-buttons" style="justify-content: flex-end;">';
@@ -177,13 +164,15 @@ if ($productsRes) {
                       }
                       $actions .= '</div>';
 
+                      $statusBadge = $row['is_active'] ? '<span class="parent-type-badge" style="background-color: var(--success-bg); color: var(--success);">Active</span>' : '<span class="parent-type-badge" style="background-color: var(--error-bg); color: var(--error);">Inactive</span>';
+
                       echo '<tr>';
                       echo '<td>' . $rowNum++ . '</td>';
-                      echo '<td><span class="parent-type-badge">' . htmlspecialchars($row['product_name']) . ' (' . htmlspecialchars($row['product_code']) . ')</span></td>';
                       echo '<td class="td-bold">' . htmlspecialchars($row['element_code']) . '</td>';
                       echo '<td class="td-name">' . htmlspecialchars($row['element_name']) . '</td>';
-                      echo '<td><span class="code-badge">' . htmlspecialchars($row['unit_of_measure']) . '</span></td>';
-                      echo '<td>' . (int)$row['sort_order'] . '</td>';
+                      echo '<td><span class="code-badge">' . htmlspecialchars($row['symbol'] ?? '') . '</span></td>';
+                      echo '<td>' . htmlspecialchars($row['description'] ?? '') . '</td>';
+                      echo '<td>' . $statusBadge . '</td>';
                       echo '<td style="text-align: right;">' . $actions . '</td>';
                       echo '</tr>';
                   }
@@ -212,33 +201,31 @@ if ($productsRes) {
           <input type="hidden" id="elementToken" name="token" value="<?php echo htmlspecialchars($_SESSION['elements_token']); ?>">
 
           <div class="form-group">
-            <label for="productSelect">Parent Product</label>
-            <select id="productSelect" name="product_id" class="form-control" required>
-              <option value="">-- Select Product --</option>
-              <?php foreach ($products as $p): ?>
-                <option value="<?php echo (int)$p['id']; ?>"><?php echo htmlspecialchars($p['name'] . ' (' . $p['code'] . ')'); ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
-          <div class="form-group">
             <label for="elementCode">Element Code</label>
-            <input type="text" id="elementCode" name="element_code" class="form-control" placeholder="e.g. Sn%, Fe%, Ta2O5%" required>
+            <input type="text" id="elementCode" name="element_code" class="form-control" placeholder="e.g., Ta2O5, Sn, Fe" required>
           </div>
 
           <div class="form-group">
             <label for="elementName">Element Name</label>
-            <input type="text" id="elementName" name="element_name" class="form-control" placeholder="e.g. Tin Grade, Iron Grade" required>
+            <input type="text" id="elementName" name="element_name" class="form-control" placeholder="e.g., Tantalum Pentoxide, Tin, Iron" required>
           </div>
 
           <div class="form-group">
-            <label for="elementUnit">Unit of Measure</label>
-            <input type="text" id="elementUnit" name="unit" class="form-control" placeholder="e.g. %, ppm" value="%" required>
+            <label for="symbol">Symbol</label>
+            <input type="text" id="symbol" name="symbol" class="form-control" placeholder="e.g., Ta₂O₅, Sn, Fe">
           </div>
 
           <div class="form-group">
-            <label for="displayOrder">Display Order</label>
-            <input type="number" id="displayOrder" name="display_order" class="form-control" min="0" max="255" value="0" required>
+            <label for="description">Description</label>
+            <textarea id="description" name="description" class="form-control" placeholder="Optional description" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="isActive">Status</label>
+            <select id="isActive" name="is_active" class="form-control">
+              <option value="1" selected>Active</option>
+              <option value="0">Inactive</option>
+            </select>
           </div>
 
           <div style="display: flex; gap: 8px; margin-top: 20px;">

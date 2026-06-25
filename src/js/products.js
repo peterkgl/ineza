@@ -30,31 +30,17 @@ document.addEventListener('DOMContentLoaded', function () {
     var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
     if (!query) return allProducts;
     return allProducts.filter(function (p) {
-      var codeVal = (p.code || '').toLowerCase();
-      var nameVal = (p.name || '').toLowerCase();
-      var fullNameVal = (p.full_name || '').toLowerCase();
-      var unitVal = (p.unit_of_measure || '').toLowerCase();
-      var invCode = (p.inventory_code || '').toLowerCase();
-      var invName = (p.inventory_name || '').toLowerCase();
-      var salCode = (p.sales_code || '').toLowerCase();
-      var salName = (p.sales_name || '').toLowerCase();
-      var cogsCode = (p.cogs_code || '').toLowerCase();
-      var cogsName = (p.cogs_name || '').toLowerCase();
-      var catCode = (p.category_code || '').toLowerCase();
-      var catName = (p.category_name || '').toLowerCase();
+      var codeVal = (p.product_code || '').toLowerCase();
+      var nameVal = (p.product_name || '').toLowerCase();
+      var categoryVal = (p.category || '').toLowerCase();
+      var uomCodeVal = (p.uom_code || '').toLowerCase();
+      var uomNameVal = (p.uom_name || '').toLowerCase();
       var statusVal = (p.is_active === 1 ? 'active' : 'inactive').toLowerCase();
       return codeVal.indexOf(query) !== -1 ||
              nameVal.indexOf(query) !== -1 ||
-             fullNameVal.indexOf(query) !== -1 ||
-             unitVal.indexOf(query) !== -1 ||
-             invCode.indexOf(query) !== -1 ||
-             invName.indexOf(query) !== -1 ||
-             salCode.indexOf(query) !== -1 ||
-             salName.indexOf(query) !== -1 ||
-             cogsCode.indexOf(query) !== -1 ||
-             cogsName.indexOf(query) !== -1 ||
-             catCode.indexOf(query) !== -1 ||
-             catName.indexOf(query) !== -1 ||
+             categoryVal.indexOf(query) !== -1 ||
+             uomCodeVal.indexOf(query) !== -1 ||
+             uomNameVal.indexOf(query) !== -1 ||
              statusVal.indexOf(query) !== -1;
     });
   }
@@ -108,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     if (totalItems === 0) {
-      productsList.innerHTML = '<tr><td colspan="10" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching products found.' : 'No products configured yet.') + '</td></tr>';
+      productsList.innerHTML = '<tr><td colspan="7" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching products found.' : 'No products configured yet.') + '</td></tr>';
       renderPagination(totalItems, totalPages);
       return;
     }
@@ -120,30 +106,21 @@ document.addEventListener('DOMContentLoaded', function () {
     var html = '';
     paginated.forEach(function (p, index) {
       var globalIndex = startIndex + index + 1;
-      var codeVal = escapeHtml(p.code);
-      var nameVal = escapeHtml(p.name);
-      var fullNameVal = p.full_name ? escapeHtml(p.full_name) : '—';
-      var unitVal = escapeHtml(p.unit_of_measure);
+      var codeVal = escapeHtml(p.product_code);
+      var nameVal = escapeHtml(p.product_name);
+      var categoryVal = p.category ? escapeHtml(p.category) : '—';
+      var uomVal = escapeHtml(p.uom_code);
       
       var statusLabel = p.is_active === 1
         ? '<span class="status-pill pill-green">Active</span>'
         : '<span class="status-pill pill-red">Inactive</span>';
 
-      var invVal = p.inventory_code ? '<span class="parent-type-badge">[' + escapeHtml(p.inventory_code) + '] ' + escapeHtml(p.inventory_name) + '</span>' : '—';
-      var salVal = p.sales_code ? '<span class="parent-type-badge">[' + escapeHtml(p.sales_code) + '] ' + escapeHtml(p.sales_name) + '</span>' : '—';
-      var cogsVal = p.cogs_code ? '<span class="parent-type-badge">[' + escapeHtml(p.cogs_code) + '] ' + escapeHtml(p.cogs_name) + '</span>' : '—';
-      var catVal = p.category_code ? '<span class="parent-type-badge">[' + escapeHtml(p.category_code) + '] ' + escapeHtml(p.category_name) + '</span>' : '—';
-
       html += '<tr>' +
         '<td>' + globalIndex + '</td>' +
         '<td><span class="code-badge">' + codeVal + '</span></td>' +
         '<td><strong>' + nameVal + '</strong></td>' +
-        '<td>' + catVal + '</td>' +
-        '<td>' + fullNameVal + '</td>' +
-        '<td>' + unitVal + '</td>' +
-        '<td>' + invVal + '</td>' +
-        '<td>' + salVal + '</td>' +
-        '<td>' + cogsVal + '</td>' +
+        '<td>' + categoryVal + '</td>' +
+        '<td>' + uomVal + '</td>' +
         '<td>' + statusLabel + '</td>' +
         '<td style="text-align: right;">' +
           '<div class="action-buttons" style="justify-content: flex-end;">' +
@@ -225,7 +202,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var total = products.length;
     var active = 0;
     var inactive = 0;
-    var uniqueUnits = {};
 
     products.forEach(function (p) {
       if (p.is_active === 1) {
@@ -233,18 +209,11 @@ document.addEventListener('DOMContentLoaded', function () {
       } else {
         inactive++;
       }
-      
-      if (p.unit_of_measure && p.unit_of_measure.trim() !== '') {
-        uniqueUnits[p.unit_of_measure.trim().toLowerCase()] = true;
-      }
     });
-
-    var unitsCount = Object.keys(uniqueUnits).length;
 
     document.getElementById('stat-total').textContent = total;
     document.getElementById('stat-active').textContent = active;
     document.getElementById('stat-inactive').textContent = inactive;
-    document.getElementById('stat-base').textContent = unitsCount;
   }
 
   function updateToken(token) {
@@ -273,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var p = products.find(function (x) { return x.id === id; });
         if (p) {
           activeDeleteId = id;
-          confirmBody.textContent = 'Are you sure you want to delete the product configuration "' + p.name + ' (' + p.code + ')"? This will fail if elements are configured under this product.';
+          confirmBody.textContent = 'Are you sure you want to delete the product configuration "' + p.product_name + ' (' + p.product_code + ')"? This will fail if elements are configured under this product.';
           confirmOverlay.style.display = 'flex';
         }
       });
@@ -285,21 +254,17 @@ document.addEventListener('DOMContentLoaded', function () {
     
     productIdInput.value = p.id;
     var codeInput = document.getElementById('productCode');
-    codeInput.value = p.code;
+    codeInput.value = p.product_code;
     codeInput.setAttribute('readonly', 'true');
     codeInput.style.opacity = '0.7';
 
-    document.getElementById('productName').value = p.name;
-    document.getElementById('productFullName').value = p.full_name || '';
-    document.getElementById('productUnit').value = p.unit_of_measure;
-    document.getElementById('productDescription').value = p.description || '';
-    document.getElementById('inventoryAccount').value = p.inventory_account_id || '';
-    document.getElementById('salesAccount').value = p.sales_account_id || '';
-    document.getElementById('cogsAccount').value = p.cogs_account_id || '';
-    document.getElementById('productCategory').value = p.category_id || '';
+    document.getElementById('productName').value = p.product_name;
+    document.getElementById('category').value = p.category || '';
+    document.getElementById('uomId').value = p.uom_id;
+    document.getElementById('description').value = p.description || '';
     document.getElementById('productActive').checked = p.is_active === 1;
 
-    formTitle.textContent = 'Edit Product: ' + p.code;
+    formTitle.textContent = 'Edit Product: ' + p.product_code;
     saveBtn.textContent = 'Update Product';
     cancelBtn.style.display = 'inline-block';
     
@@ -317,11 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
     codeInput.removeAttribute('readonly');
     codeInput.style.opacity = '1';
     
-    document.getElementById('productUnit').value = 'kg';
-    document.getElementById('inventoryAccount').value = '';
-    document.getElementById('salesAccount').value = '';
-    document.getElementById('cogsAccount').value = '';
-    document.getElementById('productCategory').value = '';
+    document.getElementById('uomId').value = '';
 
     formTitle.textContent = 'Add New Product';
     saveBtn.textContent = 'Save Product';
@@ -334,20 +295,16 @@ document.addEventListener('DOMContentLoaded', function () {
       e.preventDefault();
 
       var id = productIdInput.value;
-      var code = document.getElementById('productCode').value.trim();
-      var name = document.getElementById('productName').value.trim();
-      var fullName = document.getElementById('productFullName').value.trim();
-      var unit = document.getElementById('productUnit').value.trim();
-      var description = document.getElementById('productDescription').value.trim();
-      var inventoryAccountId = document.getElementById('inventoryAccount').value;
-      var salesAccountId = document.getElementById('salesAccount').value;
-      var cogsAccountId = document.getElementById('cogsAccount').value;
-      var categoryId = document.getElementById('productCategory').value;
+      var product_code = document.getElementById('productCode').value.trim();
+      var product_name = document.getElementById('productName').value.trim();
+      var category = document.getElementById('category').value.trim();
+      var uom_id = document.getElementById('uomId').value;
+      var description = document.getElementById('description').value.trim();
       var active = document.getElementById('productActive').checked ? '1' : '0';
       var token = productTokenInput.value;
 
-      if (!code || !name || !unit) {
-        showAlert(formAlertPlaceholder, 'error', 'Product code, name, and unit of measure are required.');
+      if (!product_code || !product_name || !uom_id) {
+        showAlert(formAlertPlaceholder, 'error', 'Product code, product name, and unit of measure are required.');
         return;
       }
 
@@ -355,15 +312,11 @@ document.addEventListener('DOMContentLoaded', function () {
       
       var formData = new URLSearchParams();
       if (id) formData.append('id', id);
-      formData.append('code', code);
-      formData.append('name', name);
-      formData.append('full_name', fullName);
-      formData.append('unit_of_measure', unit);
+      formData.append('product_code', product_code);
+      formData.append('product_name', product_name);
+      formData.append('category', category);
+      formData.append('uom_id', uom_id);
       formData.append('description', description);
-      formData.append('inventory_account_id', inventoryAccountId);
-      formData.append('sales_account_id', salesAccountId);
-      formData.append('cogs_account_id', cogsAccountId);
-      formData.append('category_id', categoryId);
       formData.append('is_active', active);
       formData.append('token', token);
 

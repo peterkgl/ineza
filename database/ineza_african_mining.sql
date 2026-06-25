@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 24, 2026 at 05:11 AM
+-- Generation Time: Jun 25, 2026 at 10:13 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -37,6 +37,15 @@ CREATE TABLE `accounts` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `accounts`
+--
+
+INSERT INTO `accounts` (`id`, `account_type_id`, `account_code`, `account_name`, `is_active`, `description`, `created_at`, `updated_at`) VALUES
+(2, 3, '2002', 'Eugene ndayishimiye - Accounts Payable', 1, 'Auto-created account for supplier: Eugene ndayishimiye', '2026-06-24 04:30:13', '2026-06-24 04:30:13'),
+(3, 3, '2003', 'Igiraneza Fablice - Accounts Payable', 1, 'Auto-created account for supplier: Igiraneza Fablice', '2026-06-24 04:31:43', '2026-06-24 04:31:43'),
+(4, 3, '2013', 'bk', 1, '', '2026-06-24 04:48:12', '2026-06-24 04:48:12');
 
 -- --------------------------------------------------------
 
@@ -623,7 +632,25 @@ INSERT INTO `audit_log` (`id`, `user_full_name`, `action`, `target_table`, `targ
 (508, 'Super Admin', 'CREATE', 'account_types', '2002', 'Created new account type: Accounts Payables (2002)', NULL, '{\"id\":5,\"code\":\"2002\",\"name\":\"Accounts Payables\",\"parent_id\":-2,\"is_editable\":1,\"is_deletable\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:27'),
 (509, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:27'),
 (510, 'Super Admin', 'DELETE', 'account_types', '2002', 'Deleted account type: Accounts Payables (2002)', '{\"id\":\"5\",\"code\":\"2002\",\"name\":\"Accounts Payables\",\"parent_id\":\"-2\",\"is_editable\":\"1\",\"is_deletable\":\"1\",\"created_at\":\"2026-06-24 04:56:27\",\"updated_at\":\"2026-06-24 04:56:27\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:32'),
-(511, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:32');
+(511, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'dmfipm2f226sr8rn94q3lscdir', NULL, '2026-06-24 02:56:32'),
+(512, 'Super Admin', 'CREATE', 'suppliers', 'Aime col', 'Created supplier: Aime col (cooperative)', NULL, '{\"id\":6,\"supplier_type\":\"cooperative\",\"name\":\"Aime col\",\"nif\":\"09987\",\"vat_reg_no\":\"VAT334\",\"phone\":\"+250789887655\",\"email\":\"aimecol314@gmail.com\",\"address\":\"musanze faraja\",\"payables_account_id\":1,\"region\":\"Rutsiro\",\"is_active\":1,\"notes\":\"done\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:12:53'),
+(513, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:12:53'),
+(514, 'Super Admin', 'DELETE', 'accounts', '2001', 'Deleted account: Aime col - Accounts Payable (2001)', '{\"id\":\"1\",\"account_type_id\":\"3\",\"account_code\":\"2001\",\"account_name\":\"Aime col - Accounts Payable\",\"is_active\":\"1\",\"description\":\"Auto-created account for supplier: Aime col\",\"created_at\":\"2026-06-24 06:12:53\",\"updated_at\":\"2026-06-24 06:12:53\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:21:34'),
+(515, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:21:34'),
+(516, 'Super Admin', 'DELETE', 'suppliers', 'Eugene ndayishimiye', 'Deleted supplier: Eugene ndayishimiye', '{\"id\":\"5\",\"supplier_type\":\"cooperative\",\"name\":\"Eugene ndayishimiye\",\"nif\":\"09987\",\"vat_reg_no\":null,\"phone\":\"+250785750117\",\"email\":\"nendayishimye@gmail.com\",\"address\":\"Unnamed Road\",\"payables_account_id\":null,\"currency_id\":null,\"region\":null,\"is_active\":\"1\",\"notes\":\"done\",\"created_at\":\"2026-06-22 14:27:56\",\"updated_at\":\"2026-06-22 14:27:56\",\"created_by\":\"2\",\"updated_by\":null}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:21:46'),
+(517, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:21:46'),
+(518, 'Super Admin', 'DELETE', 'suppliers', 'Aime col', 'Deleted supplier: Aime col', '{\"id\":\"6\",\"supplier_type\":\"cooperative\",\"name\":\"Aime col\",\"nif\":\"09987\",\"vat_reg_no\":\"VAT334\",\"phone\":\"+250789887655\",\"email\":\"aimecol314@gmail.com\",\"address\":\"musanze faraja\",\"payables_account_id\":\"1\",\"currency_id\":null,\"region\":\"Rutsiro\",\"is_active\":\"1\",\"notes\":\"done\",\"created_at\":\"2026-06-24 06:12:53\",\"updated_at\":\"2026-06-24 06:12:53\",\"created_by\":\"2\",\"updated_by\":null}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:21:50'),
+(519, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:21:50'),
+(520, 'Super Admin', 'CREATE', 'suppliers', 'Eugene ndayishimiye', 'Created supplier: Eugene ndayishimiye (cooperative)', NULL, '{\"id\":7,\"supplier_type\":\"cooperative\",\"name\":\"Eugene ndayishimiye\",\"nif\":\"09987\",\"phone\":\"+250785750117\",\"email\":\"nendayishimye@gmail.com\",\"address\":\"Unnamed Road\",\"payables_account_id\":2,\"is_active\":1,\"notes\":\"done\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:30:13'),
+(521, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:30:13'),
+(522, 'Super Admin', 'CREATE', 'suppliers', 'Igiraneza Fablice', 'Created supplier: Igiraneza Fablice (individual)', NULL, '{\"id\":8,\"supplier_type\":\"individual\",\"name\":\"Igiraneza Fablice\",\"nif\":\"0448\",\"phone\":\"+250785750109\",\"email\":\"igiraneza@gmail.com\",\"address\":\"kigali\",\"payables_account_id\":3,\"is_active\":1,\"notes\":\"done\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:31:43'),
+(523, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', '4g3ktvp4enn0f8o7he5fn9b79n', NULL, '2026-06-24 04:31:43'),
+(524, 'Super Admin', 'CREATE', 'accounts', '2013', 'Created new account: bk (2013)', NULL, '{\"id\":4,\"account_type_id\":3,\"account_code\":\"2013\",\"account_name\":\"bk\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'f81k6curtiqdqqr6qpj2u9aneu', NULL, '2026-06-24 04:48:12'),
+(525, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'f81k6curtiqdqqr6qpj2u9aneu', NULL, '2026-06-24 04:48:12'),
+(526, 'Super Admin', 'CREATE', 'lots', 'LOT-SN-20260624-001', 'Created lot: LOT-SN-20260624-001', NULL, '{\"id\":8,\"lot_number\":\"LOT-SN-20260624-001\",\"product_id\":9,\"status\":\"OPEN\",\"quantity_received\":800,\"remaining_quantity\":800}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'lbhhtau03pn3u21vms5flb5bfm', NULL, '2026-06-24 21:12:11'),
+(527, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'lbhhtau03pn3u21vms5flb5bfm', NULL, '2026-06-24 21:12:11'),
+(528, 'Super Admin', 'UPDATE', 'lots', 'LOT-SN-20260624-001', 'Closed lot: LOT-SN-20260624-001', '{\"id\":\"8\",\"lot_number\":\"LOT-SN-20260624-001\",\"product_id\":\"9\",\"supplier_id\":\"7\",\"received_date\":\"2026-06-24\",\"quantity_received\":\"800.000\",\"remaining_quantity\":\"800.000\",\"unit_cost\":null,\"currency_id\":null,\"exchange_rate\":null,\"status\":\"OPEN\",\"closing_date\":null,\"description\":\"\",\"created_by\":\"2\",\"created_at\":\"2026-06-24 23:12:11\",\"warehouse_id\":\"2\"}', '{\"id\":\"8\",\"lot_number\":\"LOT-SN-20260624-001\",\"product_id\":\"9\",\"supplier_id\":\"7\",\"received_date\":\"2026-06-24\",\"quantity_received\":\"800.000\",\"remaining_quantity\":\"800.000\",\"unit_cost\":null,\"currency_id\":null,\"exchange_rate\":null,\"status\":\"CLOSED\",\"closing_date\":\"2026-06-24\",\"description\":\"\",\"created_by\":\"2\",\"created_at\":\"2026-06-24 23:12:11\",\"warehouse_id\":\"2\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'lbhhtau03pn3u21vms5flb5bfm', NULL, '2026-06-24 21:24:48'),
+(529, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 'lbhhtau03pn3u21vms5flb5bfm', NULL, '2026-06-24 21:24:48');
 
 -- --------------------------------------------------------
 
@@ -655,23 +682,28 @@ INSERT INTO `currencies` (`id`, `code`, `name`, `symbol`, `is_base_currency`, `i
 -- --------------------------------------------------------
 
 --
--- Table structure for table `customers`
+-- Table structure for table `customer`
 --
 
-CREATE TABLE `customers` (
-  `id` bigint(20) NOT NULL,
-  `customer_code` varchar(50) DEFAULT NULL,
-  `name` varchar(255) NOT NULL,
-  `phone` varchar(50) DEFAULT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `adress` text NOT NULL,
-  `currency_id` bigint(20) DEFAULT NULL,
-  `receivable_account_id` bigint(20) DEFAULT NULL,
-  `credit_limit` decimal(18,2) DEFAULT 0.00 COMMENT 'nideni ntarengwa umukiriya yemerewe kubamo company iyo rirenze system yanga kumuhereza ideni keretse abanje kwishyura',
-  `payment_term_days` int(11) DEFAULT 0,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE `customer` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `customer_code` varchar(30) DEFAULT NULL,
+  `customer_type` enum('company','individual','government') DEFAULT 'company',
+  `name` varchar(200) NOT NULL,
+  `nif` varchar(50) DEFAULT NULL,
+  `vat_reg_no` varchar(100) DEFAULT NULL,
+  `contact_person` varchar(150) DEFAULT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  `email` varchar(150) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `country` varchar(100) DEFAULT NULL,
+  `credit_limit` decimal(18,2) DEFAULT 0.00,
+  `currency` char(3) DEFAULT 'USD' COMMENT 'Default billing currency',
+  `is_active` tinyint(1) DEFAULT 1,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Buyers / export customers who purchase mineral products from Ineza';
 
 -- --------------------------------------------------------
 
@@ -738,6 +770,23 @@ CREATE TABLE `exchange_rates` (
 
 INSERT INTO `exchange_rates` (`id`, `from_currency_id`, `to_currency_id`, `rate`, `rate_date`, `source`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
 (2, 1, 2, 1400.00000000, '2026-06-17', 'bnr', 2, '2026-06-17 11:49:17', 2, '2026-06-17 11:49:48');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `government_tax_log`
+--
+
+CREATE TABLE `government_tax_log` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `purchasing_id` bigint(20) UNSIGNED NOT NULL,
+  `tax_authority` enum('RRA','RMA','INKOMANE','OTHER') NOT NULL,
+  `tax_amount` decimal(18,4) NOT NULL,
+  `currency` char(3) NOT NULL DEFAULT 'RWF',
+  `tax_rate_pct` decimal(8,4) DEFAULT NULL,
+  `notes` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Government taxes withheld per purchase (RRA, RMA, INKOMANE)';
 
 -- --------------------------------------------------------
 
@@ -888,7 +937,12 @@ INSERT INTO `login` (`id`, `user_id`, `email`, `login_time`, `ip_address`, `stat
 (65, 2, 'admin@gmail.com', '2026-06-24 00:28:07', '::1', 'success'),
 (66, 2, 'admin@gmail.com', '2026-06-24 00:34:38', '::1', 'success'),
 (67, 2, 'admin@gmail.com', '2026-06-24 02:08:22', '::1', 'success'),
-(68, 2, 'admin@gmail.com', '2026-06-24 02:35:12', '::1', 'success');
+(68, 2, 'admin@gmail.com', '2026-06-24 02:35:12', '::1', 'success'),
+(69, 2, 'admin@gmail.com', '2026-06-24 03:27:22', '::1', 'success'),
+(70, 2, 'admin@gmail.com', '2026-06-24 04:12:06', '::1', 'success'),
+(71, 2, 'admin@gmail.com', '2026-06-24 04:36:54', '::1', 'success'),
+(72, 2, 'admin@gmail.com', '2026-06-24 20:31:19', '::1', 'success'),
+(73, 2, 'admin@gmail.com', '2026-06-25 20:11:49', '::1', 'success');
 
 -- --------------------------------------------------------
 
@@ -897,23 +951,11 @@ INSERT INTO `login` (`id`, `user_id`, `email`, `login_time`, `ip_address`, `stat
 --
 
 CREATE TABLE `lots` (
-  `id` bigint(20) NOT NULL,
-  `lot_number` varchar(100) DEFAULT NULL,
-  `product_id` bigint(20) NOT NULL,
-  `supplier_id` bigint(20) DEFAULT NULL,
-  `received_date` date DEFAULT NULL,
-  `quantity_received` decimal(18,3) DEFAULT NULL,
-  `remaining_quantity` decimal(18,3) DEFAULT NULL,
-  `unit_cost` decimal(18,2) DEFAULT NULL,
-  `currency_id` bigint(20) DEFAULT NULL,
-  `exchange_rate` decimal(18,6) DEFAULT NULL,
-  `status` enum('OPEN','CLOSED') DEFAULT 'OPEN',
-  `closing_date` date DEFAULT NULL,
-  `description` text DEFAULT NULL,
-  `created_by` bigint(20) UNSIGNED DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `warehouse_id` bigint(20) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `id` int(10) UNSIGNED NOT NULL,
+  `lots_code` varchar(50) NOT NULL COMMENT 'e.g. Lot 1-Ta, Lot 01-Tin',
+  `opening_date` date NOT NULL,
+  `closing_date` date DEFAULT NULL COMMENT 'NULL means lot is still open'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Batch/lot system. Each lot groups multiple purchase deliveries together.';
 
 -- --------------------------------------------------------
 
@@ -984,98 +1026,64 @@ INSERT INTO `permissions` (`id`, `permition_name`, `permition_code`, `created_at
 -- --------------------------------------------------------
 
 --
--- Table structure for table `products`
+-- Table structure for table `product`
 --
 
-CREATE TABLE `products` (
-  `id` smallint(5) UNSIGNED NOT NULL,
-  `code` varchar(10) NOT NULL COMMENT 'e.g. Sn, Ta, Nb',
-  `name` varchar(100) NOT NULL COMMENT 'e.g. Tin, Tantalum, Niobium',
-  `full_name` varchar(150) DEFAULT NULL,
-  `unit_of_measure` varchar(20) DEFAULT 'kg' COMMENT 'kg, tonnes, etc.',
-  `description` text DEFAULT NULL,
-  `inventory_account_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `sales_account_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `cogs_account_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `is_active` tinyint(1) DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by` int(11) NOT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `updated_by` int(11) DEFAULT NULL,
-  `category_id` bigint(20) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `products`
---
-
-INSERT INTO `products` (`id`, `code`, `name`, `full_name`, `unit_of_measure`, `description`, `inventory_account_id`, `sales_account_id`, `cogs_account_id`, `is_active`, `created_at`, `created_by`, `updated_at`, `updated_by`, `category_id`) VALUES
-(9, 'SN', 'Tin', 'Sn02', 'kg', 'to viewing all details only', 14, 10, 17, 1, '2026-06-22 12:27:34', 2, '2026-06-22 12:27:34', NULL, 4);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `product_categories`
---
-
-CREATE TABLE `product_categories` (
-  `id` bigint(20) NOT NULL,
-  `category_code` varchar(50) DEFAULT NULL,
-  `category_name` varchar(255) NOT NULL,
+CREATE TABLE `product` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `product_code` varchar(50) NOT NULL COMMENT 'e.g. COLTAN-TA, TIN-SN',
+  `product_name` varchar(200) NOT NULL COMMENT 'e.g. Coltan (Tantalite), Cassiterite (Tin)',
+  `category` varchar(100) DEFAULT NULL COMMENT 'e.g. Coltan, Tin, Wolfram',
+  `uom_id` int(10) UNSIGNED NOT NULL COMMENT 'Default unit of measure',
   `description` text DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `product_categories`
---
-
-INSERT INTO `product_categories` (`id`, `category_code`, `category_name`, `description`, `is_active`, `created_at`) VALUES
-(4, '001', 'Mineral', 'to viewing all details only', 1, '2026-06-22 12:27:01');
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Products traded by Ineza African Mining (Coltan, Tin, etc.)';
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `product_elements`
+-- Table structure for table `product_element`
 --
 
-CREATE TABLE `product_elements` (
-  `id` smallint(5) UNSIGNED NOT NULL,
-  `product_id` smallint(5) UNSIGNED NOT NULL,
-  `element_code` varchar(20) NOT NULL COMMENT 'e.g. Sn%, Fe%, Ta205%, Ta%, Nb205%',
-  `element_name` varchar(100) NOT NULL,
-  `unit` varchar(20) DEFAULT '%' COMMENT 'Percent grade, ppm, etc.',
-  `display_order` tinyint(3) UNSIGNED DEFAULT 0,
+CREATE TABLE `product_element` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `element_code` varchar(30) NOT NULL COMMENT 'e.g. Ta205, Nb205, Sn, Fe, Bal',
+  `element_name` varchar(150) NOT NULL COMMENT 'e.g. Tantalum Pentoxide, Tin, Iron',
+  `symbol` varchar(20) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by` int(11) NOT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `updated_by` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Grade elements per product (e.g. Tin has Sn%, Fe%; Tantalum has Ta205%, Nb205%, Fe%)';
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Mineral/chemical elements tracked per purchase (Ta205, Nb205, Sn, Fe, etc.)';
+
+--
+-- Dumping data for table `product_element`
+--
+
+INSERT INTO `product_element` (`id`, `element_code`, `element_name`, `symbol`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Ta205', 'Tantalum Pentoxide', 'Ta₂O₅', NULL, 1, '2026-06-25 13:03:32', '2026-06-25 13:03:32'),
+(2, 'Ta', 'Tantalum', 'Ta', NULL, 1, '2026-06-25 13:03:32', '2026-06-25 13:03:32'),
+(3, 'Nb205', 'Niobium Pentoxide', 'Nb₂O₅', NULL, 1, '2026-06-25 13:03:32', '2026-06-25 13:03:32'),
+(4, 'Fe', 'Iron', 'Fe', NULL, 1, '2026-06-25 13:03:32', '2026-06-25 13:03:32'),
+(5, 'Sn', 'Tin', 'Sn', NULL, 1, '2026-06-25 13:03:32', '2026-06-25 13:03:32'),
+(6, 'Bal', 'Balance / Other', NULL, NULL, 1, '2026-06-25 13:03:32', '2026-06-25 13:03:32');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `purchases`
+-- Table structure for table `product_element_composition`
 --
 
-CREATE TABLE `purchases` (
-  `id` bigint(20) NOT NULL,
-  `purchase_number` varchar(100) DEFAULT NULL,
-  `supplier_id` bigint(20) NOT NULL,
-  `currency_id` bigint(20) DEFAULT NULL,
-  `exchange_rate` decimal(18,6) DEFAULT NULL,
-  `purchase_date` date DEFAULT NULL,
-  `subtotal` decimal(18,2) DEFAULT NULL,
-  `discount` decimal(18,2) DEFAULT NULL,
-  `tax` decimal(18,2) DEFAULT NULL,
-  `total` decimal(18,2) DEFAULT NULL,
-  `journal_entry_id` bigint(20) NOT NULL,
-  `status` enum('DRAFT','POSTED') DEFAULT 'DRAFT',
-  `warehouse_id` bigint(20) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by` bigint(20) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE `product_element_composition` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `product_id` int(10) UNSIGNED NOT NULL,
+  `product_element_id` int(10) UNSIGNED NOT NULL,
+  `is_primary_grade` tinyint(1) DEFAULT 0 COMMENT '1 = the main commercial grade element',
+  `display_order` tinyint(4) DEFAULT 0,
+  `notes` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Which elements are tracked per product (e.g. Coltan tracks Ta205, Nb205, Fe, Bal)';
 
 -- --------------------------------------------------------
 
@@ -1092,6 +1100,60 @@ CREATE TABLE `purchase_items` (
   `unit_price` decimal(18,2) DEFAULT NULL,
   `amount` decimal(18,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `purchasing`
+--
+
+CREATE TABLE `purchasing` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `purchase_no` varchar(50) NOT NULL COMMENT 'Internal reference e.g. PUR-2025-0001',
+  `delivery_no` varchar(30) DEFAULT NULL COMMENT 'D/Down reference e.g. DD 1',
+  `inventory_code` varchar(50) DEFAULT NULL COMMENT 'Inventory/stock code per delivery',
+  `delivery_date` date NOT NULL,
+  `purchase_date` date NOT NULL DEFAULT curdate(),
+  `lot_id` int(10) UNSIGNED NOT NULL COMMENT 'Which lot/batch this delivery belongs to',
+  `product_id` int(10) UNSIGNED NOT NULL COMMENT 'Which mineral product was purchased',
+  `supplier_id` bigint(20) UNSIGNED NOT NULL COMMENT 'The négociant/supplier',
+  `warehouse_id` int(10) UNSIGNED NOT NULL COMMENT 'Receiving warehouse',
+  `quantity_kg` decimal(14,4) NOT NULL COMMENT 'Delivered quantity in Kg',
+  `uom_id` int(10) UNSIGNED NOT NULL DEFAULT 1 COMMENT 'Unit of measure (default KG)',
+  `price_per_kg_rwf` decimal(18,4) DEFAULT NULL COMMENT 'Price per Kg in Rwf',
+  `purchase_value_rwf` decimal(18,2) DEFAULT NULL COMMENT 'Total purchase value in Rwf',
+  `exchange_rate` decimal(14,4) DEFAULT NULL COMMENT 'RWF/USD rate on purchase date',
+  `purchase_value_usd` decimal(18,4) DEFAULT NULL COMMENT 'Total purchase value in USD',
+  `net_paid_supplier_usd` decimal(18,4) DEFAULT NULL COMMENT 'Net amount paid to supplier USD',
+  `charges_per_kg` decimal(12,4) DEFAULT NULL COMMENT 'Processing charge per Kg',
+  `price_per_ta_unit` decimal(12,4) DEFAULT NULL COMMENT 'Price per Ta unit (coltan)',
+  `price_per_kg_usd` decimal(12,4) DEFAULT NULL COMMENT '$ price per Kg',
+  `lme_price` decimal(14,4) DEFAULT NULL COMMENT 'LME reference price (Tin)',
+  `tc_charges` decimal(12,4) DEFAULT NULL COMMENT 'Treatment/refining charges',
+  `tax_rra` decimal(14,4) DEFAULT NULL COMMENT 'RRA tax withheld',
+  `tax_rma` decimal(14,4) DEFAULT NULL COMMENT 'RMA tax withheld',
+  `tax_inkomane` decimal(14,4) DEFAULT NULL COMMENT 'INKOMANE levy withheld',
+  `production_charges` decimal(14,4) DEFAULT NULL COMMENT 'Total production charges',
+  `status` enum('draft','confirmed','received','cancelled') NOT NULL DEFAULT 'draft',
+  `notes` text DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='One row per mineral purchase/delivery. Links lot, product, supplier, warehouse.';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `purchasing_element_grade`
+--
+
+CREATE TABLE `purchasing_element_grade` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `purchasing_id` bigint(20) UNSIGNED NOT NULL,
+  `product_element_id` int(10) UNSIGNED NOT NULL,
+  `grade_pct` decimal(10,6) DEFAULT NULL COMMENT 'Element grade as a fraction e.g. 0.418582',
+  `notes` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Assay / chemical grade readings per element per purchase line';
 
 -- --------------------------------------------------------
 
@@ -1149,93 +1211,106 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sales`
+-- Table structure for table `sells`
 --
 
-CREATE TABLE `sales` (
-  `id` bigint(20) NOT NULL,
-  `sale_number` varchar(100) DEFAULT NULL,
-  `customer_id` bigint(20) DEFAULT NULL,
-  `currency_id` bigint(20) DEFAULT NULL,
-  `exchange_rate` decimal(18,6) DEFAULT NULL,
-  `sale_date` date DEFAULT NULL,
-  `subtotal` decimal(18,2) DEFAULT NULL,
-  `discount` decimal(18,2) DEFAULT NULL,
-  `tax` decimal(18,2) DEFAULT NULL,
-  `total` decimal(18,2) DEFAULT NULL,
-  `journal_entry_id` bigint(20) NOT NULL,
-  `status` enum('DRAFT','POSTED') DEFAULT 'DRAFT',
-  `warehouse_id` bigint(20) NOT NULL,
-  `created_by` bigint(20) NOT NULL,
+CREATE TABLE `sells` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `sale_no` varchar(50) NOT NULL COMMENT 'e.g. SALE-2025-0001',
+  `customer_id` bigint(20) UNSIGNED NOT NULL,
+  `sale_date` date NOT NULL,
+  `delivery_date` date DEFAULT NULL,
+  `warehouse_id` int(10) UNSIGNED NOT NULL COMMENT 'Warehouse from which goods are shipped',
+  `total_qty_kg` decimal(14,4) DEFAULT 0.0000,
+  `total_value_rwf` decimal(20,2) DEFAULT NULL,
+  `total_value_usd` decimal(20,4) DEFAULT NULL,
+  `exchange_rate` decimal(14,4) DEFAULT NULL,
+  `currency` char(3) DEFAULT 'USD',
+  `payment_terms` varchar(100) DEFAULT NULL COMMENT 'e.g. Net 30, CIA, T/T',
+  `incoterms` varchar(50) DEFAULT NULL COMMENT 'e.g. FOB Mombasa, CIF',
+  `export_permit_no` varchar(100) DEFAULT NULL,
+  `destination_country` varchar(100) DEFAULT NULL,
+  `status` enum('draft','confirmed','shipped','invoiced','paid','cancelled') NOT NULL DEFAULT 'draft',
+  `notes` text DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Sales order header — one row per export/sale transaction';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sells_item`
+--
+
+CREATE TABLE `sells_item` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `sells_id` bigint(20) UNSIGNED NOT NULL,
+  `product_id` int(10) UNSIGNED NOT NULL,
+  `lot_id` int(10) UNSIGNED NOT NULL COMMENT 'Traces which lot the sold goods came from',
+  `warehouse_id` int(10) UNSIGNED NOT NULL COMMENT 'Source warehouse (may differ from sells header for multi-wh)',
+  `uom_id` int(10) UNSIGNED NOT NULL DEFAULT 1,
+  `quantity_kg` decimal(14,4) NOT NULL,
+  `price_per_kg_usd` decimal(18,4) DEFAULT NULL,
+  `price_per_kg_rwf` decimal(18,4) DEFAULT NULL,
+  `line_value_usd` decimal(20,4) DEFAULT NULL,
+  `line_value_rwf` decimal(20,2) DEFAULT NULL,
+  `grade_pct_primary` decimal(10,6) DEFAULT NULL COMMENT 'Primary element grade e.g. Ta205%, Sn%',
+  `primary_element_id` int(10) UNSIGNED DEFAULT NULL COMMENT 'FK to product_element',
+  `cogs_per_kg_usd` decimal(18,4) DEFAULT NULL,
+  `cogs_total_usd` decimal(20,4) DEFAULT NULL,
+  `notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Sales line items — links each sale to lot for full traceability of origin';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `stock`
+--
+
+CREATE TABLE `stock` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `warehouse_id` int(10) UNSIGNED NOT NULL COMMENT 'Which warehouse holds this stock',
+  `product_id` int(10) UNSIGNED NOT NULL COMMENT 'Which product',
+  `lot_id` int(10) UNSIGNED NOT NULL COMMENT 'Which lot/batch',
+  `uom_id` int(10) UNSIGNED NOT NULL DEFAULT 1,
+  `qty_purchased` decimal(14,4) NOT NULL DEFAULT 0.0000 COMMENT 'Total Kg received from purchasing',
+  `qty_sold` decimal(14,4) NOT NULL DEFAULT 0.0000 COMMENT 'Total Kg shipped out via sales',
+  `qty_adjusted` decimal(14,4) NOT NULL DEFAULT 0.0000 COMMENT 'Manual adjustments (+/-)',
+  `qty_on_hand` decimal(14,4) GENERATED ALWAYS AS (`qty_purchased` - `qty_sold` + `qty_adjusted`) STORED COMMENT 'Computed remaining stock: purchased − sold + adjustments',
+  `avg_cost_per_kg_rwf` decimal(18,4) DEFAULT NULL COMMENT 'Weighted average cost in RWF',
+  `avg_cost_per_kg_usd` decimal(18,4) DEFAULT NULL COMMENT 'Weighted average cost in USD',
+  `total_value_rwf` decimal(20,2) DEFAULT NULL,
+  `total_value_usd` decimal(20,4) DEFAULT NULL,
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Running stock balance per warehouse, product, and lot. qty_on_hand is auto-computed.';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `stock_movement`
+--
+
+CREATE TABLE `stock_movement` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `movement_type` enum('PURCHASE_IN','SALE_OUT','TRANSFER_IN','TRANSFER_OUT','ADJUSTMENT_IN','ADJUSTMENT_OUT','RETURN_IN','OPENING_STOCK') NOT NULL,
+  `warehouse_id` int(10) UNSIGNED NOT NULL,
+  `product_id` int(10) UNSIGNED NOT NULL,
+  `lot_id` int(10) UNSIGNED DEFAULT NULL,
+  `uom_id` int(10) UNSIGNED NOT NULL DEFAULT 1,
+  `qty_kg` decimal(14,4) NOT NULL COMMENT 'Positive number always; direction from movement_type',
+  `unit_cost_rwf` decimal(18,4) DEFAULT NULL,
+  `unit_cost_usd` decimal(18,4) DEFAULT NULL,
+  `total_value_rwf` decimal(20,2) DEFAULT NULL,
+  `total_value_usd` decimal(20,4) DEFAULT NULL,
+  `reference_type` varchar(50) DEFAULT NULL COMMENT 'purchasing, sells, transfer, adjustment',
+  `reference_id` bigint(20) DEFAULT NULL COMMENT 'FK to the source record (purchasing.id or sells.id)',
+  `movement_date` date NOT NULL,
+  `notes` text DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sale_items`
---
-
-CREATE TABLE `sale_items` (
-  `id` bigint(20) NOT NULL,
-  `sale_id` bigint(20) DEFAULT NULL,
-  `lot_id` bigint(20) DEFAULT NULL,
-  `product_id` bigint(20) DEFAULT NULL,
-  `quantity` decimal(18,3) DEFAULT NULL,
-  `unit_price` decimal(18,2) DEFAULT NULL,
-  `amount` decimal(18,2) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `stock_adjustments`
---
-
-CREATE TABLE `stock_adjustments` (
-  `id` bigint(20) NOT NULL,
-  `adjustment_number` varchar(100) DEFAULT NULL,
-  `warehouse_id` bigint(20) DEFAULT NULL,
-  `adjustment_date` date DEFAULT NULL,
-  `reason` text DEFAULT NULL,
-  `status` enum('DRAFT','POSTED') DEFAULT 'DRAFT',
-  `created_by` bigint(20) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `stock_adjustment_items`
---
-
-CREATE TABLE `stock_adjustment_items` (
-  `id` bigint(20) NOT NULL,
-  `stock_adjustment_id` bigint(20) DEFAULT NULL,
-  `lot_id` bigint(20) DEFAULT NULL,
-  `product_id` bigint(20) DEFAULT NULL,
-  `quantity` decimal(18,3) DEFAULT NULL,
-  `adjustment_type` enum('INCREASE','DECREASE') DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `stock_movements`
---
-
-CREATE TABLE `stock_movements` (
-  `id` bigint(20) NOT NULL,
-  `product_id` bigint(20) DEFAULT NULL,
-  `lot_id` bigint(20) DEFAULT NULL,
-  `reference_type` varchar(50) DEFAULT NULL COMMENT 'igaragaza icyateye movement ese habayeho purchase, sells, ADJUSTMENT, return, transfer ',
-  `reference_id` bigint(20) DEFAULT NULL,
-  `quantity_in` decimal(18,3) DEFAULT 0.000,
-  `quantity_out` decimal(18,3) DEFAULT 0.000,
-  `movement_date` date DEFAULT NULL,
-  `warehouse_id` bigint(20) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Full audit trail of every stock movement (in, out, transfer, adjustment)';
 
 -- --------------------------------------------------------
 
@@ -1248,9 +1323,13 @@ CREATE TABLE `suppliers` (
   `supplier_type` enum('individual','cooperative','company') DEFAULT 'individual',
   `name` varchar(200) NOT NULL,
   `nif` varchar(50) DEFAULT NULL COMMENT 'Tax Identification Number',
+  `vat_reg_no` varchar(100) DEFAULT NULL,
   `phone` varchar(30) DEFAULT NULL,
   `email` varchar(150) DEFAULT NULL,
   `address` text DEFAULT NULL,
+  `payables_account_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `currency_id` int(11) DEFAULT NULL,
+  `region` varchar(200) DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `notes` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -1263,8 +1342,9 @@ CREATE TABLE `suppliers` (
 -- Dumping data for table `suppliers`
 --
 
-INSERT INTO `suppliers` (`id`, `supplier_type`, `name`, `nif`, `phone`, `email`, `address`, `is_active`, `notes`, `created_at`, `updated_at`, `created_by`, `updated_by`) VALUES
-(5, 'cooperative', 'Eugene ndayishimiye', '09987', '+250785750117', 'nendayishimye@gmail.com', 'Unnamed Road', 1, 'done', '2026-06-22 12:27:56', '2026-06-22 12:27:56', 2, NULL);
+INSERT INTO `suppliers` (`id`, `supplier_type`, `name`, `nif`, `vat_reg_no`, `phone`, `email`, `address`, `payables_account_id`, `currency_id`, `region`, `is_active`, `notes`, `created_at`, `updated_at`, `created_by`, `updated_by`) VALUES
+(7, 'cooperative', 'Eugene ndayishimiye', '09987', NULL, '+250785750117', 'nendayishimye@gmail.com', 'Unnamed Road', 2, NULL, NULL, 1, 'done', '2026-06-24 04:30:13', '2026-06-24 04:30:13', 2, NULL),
+(8, 'individual', 'Igiraneza Fablice', '0448', NULL, '+250785750109', 'igiraneza@gmail.com', 'kigali', 3, NULL, NULL, 1, 'done', '2026-06-24 04:31:43', '2026-06-24 04:31:43', 2, NULL);
 
 -- --------------------------------------------------------
 
@@ -1319,6 +1399,34 @@ CREATE TABLE `supplier_payment_allocations` (
   `amount_allocated` decimal(18,2) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `unit_of_measure`
+--
+
+CREATE TABLE `unit_of_measure` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `code` varchar(20) NOT NULL COMMENT 'e.g. KG, MT, G, LB',
+  `name` varchar(100) NOT NULL COMMENT 'e.g. Kilogram, Metric Ton',
+  `symbol` varchar(10) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Units of measure used across products, purchases, and sales';
+
+--
+-- Dumping data for table `unit_of_measure`
+--
+
+INSERT INTO `unit_of_measure` (`id`, `code`, `name`, `symbol`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'KG', 'Kilogram', 'kg', 1, '2026-06-25 13:01:42', '2026-06-25 13:01:42'),
+(2, 'MT', 'Metric Ton', 'MT', 1, '2026-06-25 13:01:42', '2026-06-25 13:01:42'),
+(3, 'G', 'Gram', 'g', 1, '2026-06-25 13:01:42', '2026-06-25 13:01:42'),
+(4, 'LB', 'Pound', 'lb', 1, '2026-06-25 13:01:42', '2026-06-25 13:01:42'),
+(5, 'L', 'Litre', 'L', 1, '2026-06-25 13:01:42', '2026-06-25 13:01:42'),
+(6, 'PCS', 'Pieces', 'pcs', 1, '2026-06-25 13:01:42', '2026-06-25 13:01:42');
 
 -- --------------------------------------------------------
 
@@ -1389,6 +1497,29 @@ CREATE TABLE `warehouses` (
 INSERT INTO `warehouses` (`id`, `warehouse_code`, `warehouse_name`, `address`, `is_active`, `created_at`, `created_by`) VALUES
 (2, 'KIGALI', 'Kicukiro', 'KK05', 1, '2026-06-22 10:58:30', 2);
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `warehouse_transfer`
+--
+
+CREATE TABLE `warehouse_transfer` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `transfer_no` varchar(50) NOT NULL,
+  `from_warehouse_id` int(10) UNSIGNED NOT NULL,
+  `to_warehouse_id` int(10) UNSIGNED NOT NULL,
+  `product_id` int(10) UNSIGNED NOT NULL,
+  `lot_id` int(10) UNSIGNED NOT NULL,
+  `uom_id` int(10) UNSIGNED NOT NULL DEFAULT 1,
+  `quantity_kg` decimal(14,4) NOT NULL,
+  `transfer_date` date NOT NULL,
+  `status` enum('pending','in_transit','completed','cancelled') DEFAULT 'pending',
+  `notes` text DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Inter-warehouse stock transfers';
+
 --
 -- Indexes for dumped tables
 --
@@ -1432,11 +1563,11 @@ ALTER TABLE `currencies`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `customers`
+-- Indexes for table `customer`
 --
-ALTER TABLE `customers`
+ALTER TABLE `customer`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `customer_code` (`customer_code`);
+  ADD UNIQUE KEY `uq_customer_code` (`customer_code`);
 
 --
 -- Indexes for table `customer_payments`
@@ -1461,6 +1592,14 @@ ALTER TABLE `exchange_rates`
   ADD KEY `fk_er_from` (`from_currency_id`),
   ADD KEY `fk_er_to` (`to_currency_id`),
   ADD KEY `fk_er_user` (`created_by`);
+
+--
+-- Indexes for table `government_tax_log`
+--
+ALTER TABLE `government_tax_log`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_gtl_purchasing` (`purchasing_id`),
+  ADD KEY `idx_gtl_authority` (`tax_authority`);
 
 --
 -- Indexes for table `inventory_counts`
@@ -1501,9 +1640,7 @@ ALTER TABLE `login`
 --
 ALTER TABLE `lots`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `lot_number` (`lot_number`),
-  ADD KEY `warehouse_id` (`warehouse_id`),
-  ADD KEY `fk_lots_user` (`created_by`);
+  ADD UNIQUE KEY `uq_lots_code` (`lots_code`);
 
 --
 -- Indexes for table `permissions`
@@ -1514,41 +1651,48 @@ ALTER TABLE `permissions`
   ADD UNIQUE KEY `permition_code` (`permition_code`);
 
 --
--- Indexes for table `products`
+-- Indexes for table `product`
 --
-ALTER TABLE `products`
+ALTER TABLE `product`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_products_inventory_account` (`inventory_account_id`),
-  ADD KEY `fk_products_sales_account` (`sales_account_id`),
-  ADD KEY `fk_products_cogs_account` (`cogs_account_id`),
-  ADD KEY `fk_products_category` (`category_id`);
+  ADD UNIQUE KEY `uq_product_code` (`product_code`),
+  ADD KEY `fk_product_uom` (`uom_id`);
 
 --
--- Indexes for table `product_categories`
+-- Indexes for table `product_element`
 --
-ALTER TABLE `product_categories`
+ALTER TABLE `product_element`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `category_code` (`category_code`);
+  ADD UNIQUE KEY `uq_element_code` (`element_code`);
 
 --
--- Indexes for table `product_elements`
+-- Indexes for table `product_element_composition`
 --
-ALTER TABLE `product_elements`
+ALTER TABLE `product_element_composition`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_pe_product` (`product_id`);
-
---
--- Indexes for table `purchases`
---
-ALTER TABLE `purchases`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `purchase_number` (`purchase_number`);
+  ADD UNIQUE KEY `uq_product_element` (`product_id`,`product_element_id`),
+  ADD KEY `fk_pec_element` (`product_element_id`);
 
 --
 -- Indexes for table `purchase_items`
 --
 ALTER TABLE `purchase_items`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `purchasing`
+--
+ALTER TABLE `purchasing`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_purchase_no` (`purchase_no`);
+
+--
+-- Indexes for table `purchasing_element_grade`
+--
+ALTER TABLE `purchasing_element_grade`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_peg_purchase_element` (`purchasing_id`,`product_element_id`),
+  ADD KEY `fk_peg_element` (`product_element_id`);
 
 --
 -- Indexes for table `roles`
@@ -1565,35 +1709,29 @@ ALTER TABLE `role_permissions`
   ADD KEY `permission_id` (`permission_id`);
 
 --
--- Indexes for table `sales`
+-- Indexes for table `sells`
 --
-ALTER TABLE `sales`
+ALTER TABLE `sells`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `sale_number` (`sale_number`);
+  ADD UNIQUE KEY `uq_sale_no` (`sale_no`);
 
 --
--- Indexes for table `sale_items`
+-- Indexes for table `sells_item`
 --
-ALTER TABLE `sale_items`
+ALTER TABLE `sells_item`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `stock_adjustments`
+-- Indexes for table `stock`
 --
-ALTER TABLE `stock_adjustments`
+ALTER TABLE `stock`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `adjustment_number` (`adjustment_number`);
+  ADD UNIQUE KEY `uq_stock_wh_prod_lot` (`warehouse_id`,`product_id`,`lot_id`);
 
 --
--- Indexes for table `stock_adjustment_items`
+-- Indexes for table `stock_movement`
 --
-ALTER TABLE `stock_adjustment_items`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `stock_movements`
---
-ALTER TABLE `stock_movements`
+ALTER TABLE `stock_movement`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -1625,6 +1763,13 @@ ALTER TABLE `supplier_payment_allocations`
   ADD KEY `purchase_id` (`purchase_id`);
 
 --
+-- Indexes for table `unit_of_measure`
+--
+ALTER TABLE `unit_of_measure`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_uom_code` (`code`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -1646,6 +1791,13 @@ ALTER TABLE `warehouses`
   ADD UNIQUE KEY `warehouse_code` (`warehouse_code`);
 
 --
+-- Indexes for table `warehouse_transfer`
+--
+ALTER TABLE `warehouse_transfer`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_transfer_no` (`transfer_no`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -1653,7 +1805,7 @@ ALTER TABLE `warehouses`
 -- AUTO_INCREMENT for table `accounts`
 --
 ALTER TABLE `accounts`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `account_types`
@@ -1671,7 +1823,7 @@ ALTER TABLE `attachments`
 -- AUTO_INCREMENT for table `audit_log`
 --
 ALTER TABLE `audit_log`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=512;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=530;
 
 --
 -- AUTO_INCREMENT for table `currencies`
@@ -1680,10 +1832,10 @@ ALTER TABLE `currencies`
   MODIFY `id` tinyint(3) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT for table `customers`
+-- AUTO_INCREMENT for table `customer`
 --
-ALTER TABLE `customers`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `customer`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `customer_payments`
@@ -1702,6 +1854,12 @@ ALTER TABLE `customer_payment_allocations`
 --
 ALTER TABLE `exchange_rates`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `government_tax_log`
+--
+ALTER TABLE `government_tax_log`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `inventory_counts`
@@ -1731,13 +1889,13 @@ ALTER TABLE `journal_entry_lines`
 -- AUTO_INCREMENT for table `login`
 --
 ALTER TABLE `login`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
 
 --
 -- AUTO_INCREMENT for table `lots`
 --
 ALTER TABLE `lots`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `permissions`
@@ -1746,28 +1904,22 @@ ALTER TABLE `permissions`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
 
 --
--- AUTO_INCREMENT for table `products`
+-- AUTO_INCREMENT for table `product`
 --
-ALTER TABLE `products`
-  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+ALTER TABLE `product`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `product_categories`
+-- AUTO_INCREMENT for table `product_element`
 --
-ALTER TABLE `product_categories`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+ALTER TABLE `product_element`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT for table `product_elements`
+-- AUTO_INCREMENT for table `product_element_composition`
 --
-ALTER TABLE `product_elements`
-  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `purchases`
---
-ALTER TABLE `purchases`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+ALTER TABLE `product_element_composition`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `purchase_items`
@@ -1776,46 +1928,52 @@ ALTER TABLE `purchase_items`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `purchasing`
+--
+ALTER TABLE `purchasing`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `purchasing_element_grade`
+--
+ALTER TABLE `purchasing_element_grade`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `roles`
 --
 ALTER TABLE `roles`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
--- AUTO_INCREMENT for table `sales`
+-- AUTO_INCREMENT for table `sells`
 --
-ALTER TABLE `sales`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `sells`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `sale_items`
+-- AUTO_INCREMENT for table `sells_item`
 --
-ALTER TABLE `sale_items`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `sells_item`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `stock_adjustments`
+-- AUTO_INCREMENT for table `stock`
 --
-ALTER TABLE `stock_adjustments`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `stock`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `stock_adjustment_items`
+-- AUTO_INCREMENT for table `stock_movement`
 --
-ALTER TABLE `stock_adjustment_items`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `stock_movements`
---
-ALTER TABLE `stock_movements`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `stock_movement`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `suppliers`
 --
 ALTER TABLE `suppliers`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `supplier_advances`
@@ -1836,6 +1994,12 @@ ALTER TABLE `supplier_payment_allocations`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `unit_of_measure`
+--
+ALTER TABLE `unit_of_measure`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
@@ -1846,6 +2010,12 @@ ALTER TABLE `users`
 --
 ALTER TABLE `warehouses`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `warehouse_transfer`
+--
+ALTER TABLE `warehouse_transfer`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables
@@ -1879,6 +2049,12 @@ ALTER TABLE `exchange_rates`
   ADD CONSTRAINT `fk_er_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
+-- Constraints for table `government_tax_log`
+--
+ALTER TABLE `government_tax_log`
+  ADD CONSTRAINT `fk_gtl_purchasing` FOREIGN KEY (`purchasing_id`) REFERENCES `purchasing` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `inventory_counts`
 --
 ALTER TABLE `inventory_counts`
@@ -1891,26 +2067,24 @@ ALTER TABLE `login`
   ADD CONSTRAINT `fk_login_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `lots`
+-- Constraints for table `product`
 --
-ALTER TABLE `lots`
-  ADD CONSTRAINT `fk_lots_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `lots_ibfk_1` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`);
+ALTER TABLE `product`
+  ADD CONSTRAINT `fk_product_uom` FOREIGN KEY (`uom_id`) REFERENCES `unit_of_measure` (`id`);
 
 --
--- Constraints for table `products`
+-- Constraints for table `product_element_composition`
 --
-ALTER TABLE `products`
-  ADD CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `product_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_products_cogs_account` FOREIGN KEY (`cogs_account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_products_inventory_account` FOREIGN KEY (`inventory_account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_products_sales_account` FOREIGN KEY (`sales_account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `product_element_composition`
+  ADD CONSTRAINT `fk_pec_element` FOREIGN KEY (`product_element_id`) REFERENCES `product_element` (`id`),
+  ADD CONSTRAINT `fk_pec_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`);
 
 --
--- Constraints for table `product_elements`
+-- Constraints for table `purchasing_element_grade`
 --
-ALTER TABLE `product_elements`
-  ADD CONSTRAINT `fk_pe_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE;
+ALTER TABLE `purchasing_element_grade`
+  ADD CONSTRAINT `fk_peg_element` FOREIGN KEY (`product_element_id`) REFERENCES `product_element` (`id`),
+  ADD CONSTRAINT `fk_peg_purchase` FOREIGN KEY (`purchasing_id`) REFERENCES `purchasing` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `role_permissions`

@@ -41,10 +41,9 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to view product elements.');
         }
 
-        $query = "SELECT pe.*, p.code AS product_code, p.name AS product_name 
-                  FROM product_elements pe 
-                  JOIN products p ON pe.product_id = p.id 
-                  ORDER BY p.code ASC, pe.display_order ASC, pe.element_code ASC";
+        $query = "SELECT pe.* 
+                  FROM product_element pe 
+                  ORDER BY pe.element_code ASC";
         $result = mysqli_query($conn, $query);
         $elements = [];
 
@@ -52,20 +51,18 @@ switch ($action) {
             while ($row = mysqli_fetch_assoc($result)) {
                 $elements[] = [
                     'id' => (int)$row['id'],
-                    'product_id' => (int)$row['product_id'],
                     'element_code' => $row['element_code'],
                     'element_name' => $row['element_name'],
-                    'unit' => $row['unit'],
-                    'display_order' => (int)$row['display_order'],
-                    'product_code' => $row['product_code'],
-                    'product_name' => $row['product_name'],
+                    'symbol' => $row['symbol'],
+                    'description' => $row['description'],
+                    'is_active' => (int)$row['is_active'],
                     'created_at' => $row['created_at'],
                     'updated_at' => $row['updated_at']
                 ];
             }
         }
 
-        logAudit($conn, 'VIEW', 'product_elements', 'Product Elements List', 'User viewed the product elements list');
+        logAudit($conn, 'VIEW', 'product_element', 'Product Elements List', 'User viewed the product elements list');
         sendResponse(true, 'Product elements retrieved successfully.', $elements);
         break;
 
@@ -75,52 +72,44 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to create product elements.');
         }
 
-        $productId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
         $elementCode = isset($_POST['element_code']) ? trim($_POST['element_code']) : '';
         $elementName = isset($_POST['element_name']) ? trim($_POST['element_name']) : '';
-        $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '%';
-        $displayOrder = isset($_POST['display_order']) ? (int)$_POST['display_order'] : 0;
+        $symbol = isset($_POST['symbol']) ? trim($_POST['symbol']) : '';
+        $description = isset($_POST['description']) ? trim($_POST['description']) : '';
+        $isActive = isset($_POST['is_active']) ? (int)$_POST['is_active'] : 1;
 
-        if ($productId <= 0 || empty($elementCode) || empty($elementName)) {
-            sendResponse(false, 'Product, element code, and element name are required.');
+        if (empty($elementCode) || empty($elementName)) {
+            sendResponse(false, 'Element code and element name are required.');
         }
-
-        $prodCheck = mysqli_query($conn, "SELECT name, code FROM products WHERE id = $productId LIMIT 1");
-        if (!$prodCheck || mysqli_num_rows($prodCheck) === 0) {
-            sendResponse(false, 'Invalid parent product selected.');
-        }
-        $prodRow = mysqli_fetch_assoc($prodCheck);
-        $productCode = $prodRow['code'];
 
         $elementCodeEsc = mysqli_real_escape_string($conn, $elementCode);
-        $chkCode = mysqli_query($conn, "SELECT id FROM product_elements WHERE product_id = $productId AND element_code = '$elementCodeEsc' LIMIT 1");
+        $chkCode = mysqli_query($conn, "SELECT id FROM product_element WHERE element_code = '$elementCodeEsc' LIMIT 1");
         if ($chkCode && mysqli_num_rows($chkCode) > 0) {
-            sendResponse(false, 'An element with this code already exists for the selected product.');
+            sendResponse(false, 'An element with this code already exists.');
         }
 
         mysqli_begin_transaction($conn);
 
         try {
             $elementNameEsc = mysqli_real_escape_string($conn, $elementName);
-            $unitEsc = mysqli_real_escape_string($conn, $unit);
+            $symbolEsc = mysqli_real_escape_string($conn, $symbol);
+            $descriptionEsc = mysqli_real_escape_string($conn, $description);
 
-            $insertElement = "INSERT INTO product_elements (product_id, element_code, element_name, unit, display_order, created_by) 
-                              VALUES ($productId, '$elementCodeEsc', '$elementNameEsc', '$unitEsc', $displayOrder, $userId)";
+            $insertElement = "INSERT INTO product_element (element_code, element_name, symbol, description, is_active) 
+                              VALUES ('$elementCodeEsc', '$elementNameEsc', '$symbolEsc', '$descriptionEsc', $isActive)";
             
             if (mysqli_query($conn, $insertElement)) {
                 $newId = mysqli_insert_id($conn);
                 $newValues = [
                     'id' => $newId,
-                    'product_id' => $productId,
                     'element_code' => $elementCode,
                     'element_name' => $elementName,
-                    'unit' => $unit,
-                    'display_order' => $displayOrder,
-                    'product_code' => $productCode,
-                    'product_name' => $prodRow['name']
+                    'symbol' => $symbol,
+                    'description' => $description,
+                    'is_active' => $isActive
                 ];
 
-                logAudit($conn, 'CREATE', 'product_elements', $elementCode, "Created product element: $elementName for product $productCode", null, $newValues);
+                logAudit($conn, 'CREATE', 'product_element', $elementCode, "Created product element: $elementName", null, $newValues);
                 $_SESSION['elements_token'] = bin2hex(random_bytes(32));
                 mysqli_commit($conn);
                 sendResponse(true, 'Product element created successfully.', $newValues);
@@ -140,65 +129,56 @@ switch ($action) {
         }
 
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
-        $productId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
         $elementCode = isset($_POST['element_code']) ? trim($_POST['element_code']) : '';
         $elementName = isset($_POST['element_name']) ? trim($_POST['element_name']) : '';
-        $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '%';
-        $displayOrder = isset($_POST['display_order']) ? (int)$_POST['display_order'] : 0;
+        $symbol = isset($_POST['symbol']) ? trim($_POST['symbol']) : '';
+        $description = isset($_POST['description']) ? trim($_POST['description']) : '';
+        $isActive = isset($_POST['is_active']) ? (int)$_POST['is_active'] : 1;
 
-        if ($id <= 0 || $productId <= 0 || empty($elementCode) || empty($elementName)) {
-            sendResponse(false, 'Valid ID, product, element code, and element name are required.');
+        if ($id <= 0 || empty($elementCode) || empty($elementName)) {
+            sendResponse(false, 'Valid ID, element code, and element name are required.');
         }
 
-        $fetchQuery = "SELECT * FROM product_elements WHERE id = $id LIMIT 1";
+        $fetchQuery = "SELECT * FROM product_element WHERE id = $id LIMIT 1";
         $fetchResult = mysqli_query($conn, $fetchQuery);
         if (!$fetchResult || mysqli_num_rows($fetchResult) === 0) {
             sendResponse(false, 'Product element not found.');
         }
         $oldValues = mysqli_fetch_assoc($fetchResult);
 
-        $prodCheck = mysqli_query($conn, "SELECT name, code FROM products WHERE id = $productId LIMIT 1");
-        if (!$prodCheck || mysqli_num_rows($prodCheck) === 0) {
-            sendResponse(false, 'Invalid parent product selected.');
-        }
-        $prodRow = mysqli_fetch_assoc($prodCheck);
-        $productCode = $prodRow['code'];
-
         $elementCodeEsc = mysqli_real_escape_string($conn, $elementCode);
-        $chkCode = mysqli_query($conn, "SELECT id FROM product_elements WHERE product_id = $productId AND element_code = '$elementCodeEsc' AND id != $id LIMIT 1");
+        $chkCode = mysqli_query($conn, "SELECT id FROM product_element WHERE element_code = '$elementCodeEsc' AND id != $id LIMIT 1");
         if ($chkCode && mysqli_num_rows($chkCode) > 0) {
-            sendResponse(false, 'An element with this code already exists for the selected product.');
+            sendResponse(false, 'An element with this code already exists.');
         }
 
         mysqli_begin_transaction($conn);
 
         try {
             $elementNameEsc = mysqli_real_escape_string($conn, $elementName);
-            $unitEsc = mysqli_real_escape_string($conn, $unit);
+            $symbolEsc = mysqli_real_escape_string($conn, $symbol);
+            $descriptionEsc = mysqli_real_escape_string($conn, $description);
 
-            $updateElement = "UPDATE product_elements SET 
-                                product_id = $productId, 
+            $updateElement = "UPDATE product_element SET 
                                 element_code = '$elementCodeEsc', 
                                 element_name = '$elementNameEsc', 
-                                unit = '$unitEsc', 
-                                display_order = $displayOrder, 
-                                updated_by = $userId, 
+                                symbol = '$symbolEsc', 
+                                description = '$descriptionEsc', 
+                                is_active = $isActive, 
                                 updated_at = CURRENT_TIMESTAMP 
                               WHERE id = $id";
             
             if (mysqli_query($conn, $updateElement)) {
                 $newValues = [
                     'id' => $id,
-                    'product_id' => $productId,
                     'element_code' => $elementCode,
                     'element_name' => $elementName,
-                    'unit' => $unit,
-                    'display_order' => $displayOrder,
-                    'product_code' => $productCode,
-                    'product_name' => $prodRow['name']
+                    'symbol' => $symbol,
+                    'description' => $description,
+                    'is_active' => $isActive
                 ];
 
-                logAudit($conn, 'UPDATE', 'product_elements', $elementCode, "Updated product element: $elementName for product $productCode", $oldValues, $newValues);
+                logAudit($conn, 'UPDATE', 'product_element', $elementCode, "Updated product element: $elementName", $oldValues, $newValues);
                 $_SESSION['elements_token'] = bin2hex(random_bytes(32));
                 mysqli_commit($conn);
                 sendResponse(true, 'Product element updated successfully.', $newValues);
@@ -222,7 +202,7 @@ switch ($action) {
             sendResponse(false, 'Invalid product element ID.');
         }
 
-        $fetchQuery = "SELECT pe.*, p.code AS product_code FROM product_elements pe JOIN products p ON pe.product_id = p.id WHERE pe.id = $id LIMIT 1";
+        $fetchQuery = "SELECT * FROM product_element WHERE id = $id LIMIT 1";
         $fetchResult = mysqli_query($conn, $fetchQuery);
         if (!$fetchResult || mysqli_num_rows($fetchResult) === 0) {
             sendResponse(false, 'Product element not found.');
@@ -230,14 +210,13 @@ switch ($action) {
         $oldValues = mysqli_fetch_assoc($fetchResult);
         $elementCode = $oldValues['element_code'];
         $elementName = $oldValues['element_name'];
-        $productCode = $oldValues['product_code'];
 
         mysqli_begin_transaction($conn);
 
         try {
-            $deleteElement = "DELETE FROM product_elements WHERE id = $id";
+            $deleteElement = "DELETE FROM product_element WHERE id = $id";
             if (mysqli_query($conn, $deleteElement)) {
-                logAudit($conn, 'DELETE', 'product_elements', $elementCode, "Deleted product element: $elementName for product $productCode", $oldValues);
+                logAudit($conn, 'DELETE', 'product_element', $elementCode, "Deleted product element: $elementName", $oldValues);
                 $_SESSION['elements_token'] = bin2hex(random_bytes(32));
                 mysqli_commit($conn);
                 sendResponse(true, 'Product element deleted successfully.');

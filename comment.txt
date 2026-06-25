@@ -11,5 +11,16 @@
  
 ----------------------comment-------------
 1. kuri product ngomba gukora table ya Unit of Measure noneho nkajya mpamagaza foreign key ya Unit of Measure
-2.muri table ya Product Elements ngomba kuvanamo izi column 'Parent Product, Display Order'
+2. muri table ya Product Elements ngomba kuvanamo izi column 'Parent Product, Display Order'
 3. noneho mukurecivinga product muri 'lots' njyempamagaza products elements zose nselectinge izo iyo product ndicivinze yujuje
+
+
+--------------------comment--------------
+1. kuri product mugihe ndigucreatinga product kuri iniput yitwa 'Inventory Account' banjye banzanira account zose ziri muri Inventory
+2. noneho kuri 'Sales Account' mugihe ndigu creatinga account bajye banzanira account ziri muri 'selles'
+3. nahano kuri 'Cost of Goods Sold (COGS) Account' mugihe ndigu creatinga product bajye banzanira account zose ziri muri 'Cost of Goods Sold'
+
+
+
+----------------comment2-------------
+1. gukora lots (code, opening date, closing date)

@@ -31,6 +31,7 @@ $showPermissions = hasPermission($conn, $sidebarUserId, 'view_permissions');
 $showAuditLogs = hasPermission($conn, $sidebarUserId, 'view_audit_logs');
 $showWarehouses = hasPermission($conn, $sidebarUserId, 'view_warehouses');
 $showLots = hasPermission($conn, $sidebarUserId, 'view_lots');
+$showUnitOfMeasure = hasPermission($conn, $sidebarUserId, 'view_unit_of_measure');
 ?>
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -62,15 +63,9 @@ $showLots = hasPermission($conn, $sidebarUserId, 'view_lots');
     </a>
   <?php endif; ?>
 
-  <?php if ($showProducts || $showProductElements || $showProductCategories || $showWarehouses || $showLots): ?>
+  <?php if ($showProducts || $showProductElements || $showProductCategories || $showWarehouses || $showLots || $showUnitOfMeasure): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Products &amp; Stock</div>
-    <?php if ($showProductCategories): ?>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'product_categories') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>product_categories/index" id="nav-product-categories">
-        <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-        Product Categories
-      </a>
-    <?php endif; ?>
     <?php if ($showProducts): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'products') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>products/index" id="nav-products">
         <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
@@ -94,6 +89,12 @@ $showLots = hasPermission($conn, $sidebarUserId, 'view_lots');
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'product_elements') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>product_elements/index" id="nav-product-elements">
         <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         Product Elements
+      </a>
+    <?php endif; ?>
+    <?php if ($showUnitOfMeasure): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'unit_of_measure') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>unit_of_measure/index" id="nav-unit-of-measure">
+        <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm2 2v14h14V5H5z"/><path d="M7 9h10v2H7zM7 13h10v2H7z"/></svg>
+        Units of Measure
       </a>
     <?php endif; ?>
   <?php endif; ?>
