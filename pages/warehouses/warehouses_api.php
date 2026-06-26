@@ -200,18 +200,33 @@ switch ($action) {
         $name = $oldValues['warehouse_name'];
 
         // Enforce transactional safety with references checks
-        $chkTables = ['inventory_counts', 'lots', 'purchases', 'sales', 'stock_adjustments', 'stock_movements'];
+        $actualTables = [
+            'stock_movement' => 'stock movements',
+            'purchasing' => 'purchase records',
+        ];
         $isReferenced = false;
         $referencingTable = '';
 
-        foreach ($chkTables as $tbl) {
+        foreach ($actualTables as $tbl => $label) {
             $chk = mysqli_query($conn, "SELECT COUNT(*) as count FROM `$tbl` WHERE warehouse_id = $id");
             if ($chk) {
                 $count = (int)mysqli_fetch_assoc($chk)['count'];
                 if ($count > 0) {
                     $isReferenced = true;
-                    $referencingTable = $tbl;
+                    $referencingTable = $label;
                     break;
+                }
+            }
+        }
+        
+        // Also check stock table
+        if (!$isReferenced) {
+            $chkStock = mysqli_query($conn, "SELECT COUNT(*) as count FROM stock WHERE warehouse_id = $id AND qty_on_hand > 0");
+            if ($chkStock) {
+                $count = (int)mysqli_fetch_assoc($chkStock)['count'];
+                if ($count > 0) {
+                    $isReferenced = true;
+                    $referencingTable = 'active stock inventory';
                 }
             }
         }

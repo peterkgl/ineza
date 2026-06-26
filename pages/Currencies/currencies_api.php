@@ -272,8 +272,8 @@ switch ($action) {
             }
         }
 
-        // Check if referenced in purchases
-        $purQuery = "SELECT COUNT(*) as count FROM purchases WHERE currency_id = $id";
+        // Check if referenced in purchases (through suppliers)
+        $purQuery = "SELECT COUNT(*) as count FROM purchasing p JOIN suppliers s ON p.supplier_id = s.id WHERE s.currency_id = $id";
         $purResult = mysqli_query($conn, $purQuery);
         $purCount = $purResult ? (mysqli_fetch_assoc($purResult)['count'] ?? 0) : 0;
         if ($purCount > 0) {

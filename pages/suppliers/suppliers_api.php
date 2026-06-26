@@ -343,7 +343,7 @@ switch ($action) {
             }
         }
 
-        $chkPurchases = mysqli_query($conn, "SELECT COUNT(*) as count FROM purchases WHERE supplier_id = $id");
+        $chkPurchases = mysqli_query($conn, "SELECT COUNT(*) as count FROM purchasing WHERE supplier_id = $id");
         if ($chkPurchases) {
             $count = (int)mysqli_fetch_assoc($chkPurchases)['count'];
             if ($count > 0) {

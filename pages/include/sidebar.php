@@ -32,6 +32,7 @@ $showAuditLogs = hasPermission($conn, $sidebarUserId, 'view_audit_logs');
 $showWarehouses = hasPermission($conn, $sidebarUserId, 'view_warehouses');
 $showLots = hasPermission($conn, $sidebarUserId, 'view_lots');
 $showUnitOfMeasure = hasPermission($conn, $sidebarUserId, 'view_unit_of_measure');
+$showPurchases = hasPermission($conn, $sidebarUserId, 'view_purchas');
 ?>
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -63,7 +64,7 @@ $showUnitOfMeasure = hasPermission($conn, $sidebarUserId, 'view_unit_of_measure'
     </a>
   <?php endif; ?>
 
-  <?php if ($showProducts || $showProductElements || $showProductCategories || $showWarehouses || $showLots || $showUnitOfMeasure): ?>
+  <?php if ($showProducts || $showProductElements || $showProductCategories || $showWarehouses || $showLots || $showUnitOfMeasure || $showPurchases): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Products &amp; Stock</div>
     <?php if ($showProducts): ?>
@@ -71,6 +72,12 @@ $showUnitOfMeasure = hasPermission($conn, $sidebarUserId, 'view_unit_of_measure'
         <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         Products
         <span class="nav-badge green">Active</span>
+      </a>
+    <?php endif; ?>
+    <?php if ($showPurchases): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'purchas') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>purchas/index" id="nav-purchases">
+        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="9" y1="20" x2="9" y2="10"/></svg>
+        Purchases
       </a>
     <?php endif; ?>
     <?php if ($showLots): ?>

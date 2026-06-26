@@ -30,10 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var codeVal = (u.code || "").toLowerCase();
         var nameVal = (u.name || "").toLowerCase();
         var symbolVal = (u.symbol || "").toLowerCase();
-        matchQuery =
-          codeVal.indexOf(query) !== -1 ||
-          nameVal.indexOf(query) !== -1 ||
-          symbolVal.indexOf(query) !== -1;
+        matchQuery = codeVal.indexOf(query) !== -1 || nameVal.indexOf(query) !== -1 || symbolVal.indexOf(query) !== -1;
       }
 
       var matchStatus = true;
@@ -83,7 +80,7 @@ document.addEventListener("DOMContentLoaded", function () {
         showAlert(
           alertPlaceholder,
           "error",
-          "An error occurred while loading units of measure.",
+          "An error occurred while loading units of measure."
         );
       });
   }
@@ -249,9 +246,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var code = document.getElementById("unitCode").value.trim().toUpperCase();
       var name = document.getElementById("unitName").value.trim();
       var symbol = document.getElementById("unitSymbol").value.trim();
-      var is_active = document.getElementById("unitIsActive").checked
-        ? "1"
-        : "0";
+      var is_active = document.getElementById("unitIsActive").checked ? "1" : "0";
       var token = unitTokenInput.value;
 
       if (!code || !name) {
@@ -301,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function () {
           showAlert(
             formAlertPlaceholder,
             "error",
-            "An error occurred while saving the unit of measure.",
+            "An error occurred while saving the unit of measure."
           );
         });
     });
@@ -347,7 +342,7 @@ document.addEventListener("DOMContentLoaded", function () {
         showAlert(
           alertPlaceholder,
           "error",
-          "An error occurred while deleting the unit of measure.",
+          "An error occurred while deleting the unit of measure."
         );
         activeDeleteId = null;
       });
