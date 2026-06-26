@@ -708,10 +708,10 @@
   fill: none;
 }
 
-.status-option-icon.icon-draft {
+.status-option-icon.icon-pending {
   background: rgba(100, 100, 120, 0.1);
 }
-.status-option-icon.icon-draft svg {
+.status-option-icon.icon-pending svg {
   stroke: var(--text3);
 }
 
@@ -814,4 +814,45 @@
 .elements-config-box.is-invalid {
   border-color: var(--red) !important;
   box-shadow: 0 0 0 4px rgba(163, 45, 45, 0.08) !important;
+}
+
+/* Custom Alert Messages */
+.alert-msg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius, 8px);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  animation: alertFadeIn 0.3s ease;
+  width: auto;
+}
+
+@keyframes alertFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.alert-msg.success {
+  background: var(--alert-green-bg, #f4fbf7);
+  color: var(--green, #10b981);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.alert-msg.error {
+  background: var(--alert-red-bg, #fff8f8);
+  color: var(--red, #ef4444);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.alert-msg svg.alert-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  flex-shrink: 0;
+  margin-top: 1px;
 }

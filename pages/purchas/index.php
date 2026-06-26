@@ -231,7 +231,7 @@ if ($result) {
             <input type="text" id="searchInput" class="form-control" placeholder="Search purchases..." style="max-width: 200px; padding: 5px 8px; font-size: 12px; margin: 0;">
             <select id="statusFilter" class="form-control" style="max-width: 130px; padding: 5px 8px; font-size: 12px; margin: 0;">
               <option value="">All Statuses</option>
-              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
               <option value="received">Received</option>
               <option value="cancelled">Cancelled</option>
@@ -309,6 +309,7 @@ if ($result) {
 
 <!-- Modal: Change Purchase Status -->
 <div class="status-modal-overlay" id="statusModalOverlay">
+  <input type="hidden" name="token" value="<?php echo htmlspecialchars($_SESSION['purchas_token']); ?>">
   <div class="status-modal">
     <div class="status-modal-header">
       <span class="modal-title-text">
@@ -325,12 +326,12 @@ if ($result) {
         <span id="statusCurrentPill"></span>
       </div>
       <div class="status-options-grid">
-        <label class="status-option" data-status="draft">
-          <input type="radio" name="new_status" value="draft">
-          <div class="status-option-icon icon-draft">
+        <label class="status-option" data-status="pending">
+          <input type="radio" name="new_status" value="pending">
+          <div class="status-option-icon icon-pending">
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           </div>
-          <span class="status-option-label">Draft</span>
+          <span class="status-option-label">Pending</span>
           <span class="status-option-desc">Initial entry, not yet confirmed</span>
         </label>
         <label class="status-option" data-status="confirmed">

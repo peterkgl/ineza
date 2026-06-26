@@ -41,7 +41,7 @@ function updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $qty_d
     $lot_id = (int)$lot_id;
     $uom_id = (int)$uom_id;
     
-    $chk = mysqli_query($conn, "SELECT id, qty_purchased, total_value_usd, total_value_rwf FROM stock WHERE warehouse_id = $warehouse_id AND product_id = $product_id AND lot_id = $lot_id LIMIT 1");
+    $chk = mysqli_query($conn, "SELECT id, qty_purchased, total_value_usd, total_value_rwf FROM stock WHERE product_id = $product_id LIMIT 1");
     if ($chk && mysqli_num_rows($chk) > 0) {
         $row = mysqli_fetch_assoc($chk);
         $stockId = $row['id'];
@@ -216,9 +216,8 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to create purchases.');
         }
 
-        // Required Inputs
         $purchase_date = isset($_POST['purchase_date']) && !empty($_POST['purchase_date']) ? trim($_POST['purchase_date']) : date('Y-m-d');
-        $delivery_date = isset($_POST['delivery_date']) && !empty($_POST['delivery_date']) ? trim($_POST['delivery_date']) : date('Y-m-d');
+        $delivery_date = isset($_POST['delivery_date']) && !empty($_POST['delivery_date']) ? trim($_POST['delivery_date']) : null;
         $purchase_no = isset($_POST['purchase_no']) ? trim($_POST['purchase_no']) : '';
         $delivery_no = isset($_POST['delivery_no']) ? trim($_POST['delivery_no']) : null;
         $inventory_code = isset($_POST['inventory_code']) ? trim($_POST['inventory_code']) : null;
@@ -246,7 +245,7 @@ switch ($action) {
         $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : null;
         $production_charges = isset($_POST['production_charges']) && $_POST['production_charges'] !== '' ? (float)$_POST['production_charges'] : null;
         
-        $status = isset($_POST['status']) ? trim($_POST['status']) : 'draft';
+        $status = isset($_POST['status']) ? trim($_POST['status']) : 'pending';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : null;
 
         // Elements data structure: elements[element_id] = grade_pct
@@ -276,6 +275,7 @@ switch ($action) {
         try {
             $delNoEsc = $delivery_no !== null ? "'" . mysqli_real_escape_string($conn, $delivery_no) . "'" : "NULL";
             $invEsc = $inventory_code !== null ? "'" . mysqli_real_escape_string($conn, $inventory_code) . "'" : "NULL";
+            $delDateEsc = $delivery_date !== null ? "'" . mysqli_real_escape_string($conn, $delivery_date) . "'" : "NULL";
             $notesEsc = $notes !== null ? "'" . mysqli_real_escape_string($conn, $notes) . "'" : "NULL";
             $statusEsc = mysqli_real_escape_string($conn, $status);
 
@@ -304,7 +304,7 @@ switch ($action) {
                 lme_price, tc_charges, tax_rra, tax_rma, tax_inkomane, production_charges,
                 status, notes, created_by
             ) VALUES (
-                '$pNoEsc', $delNoEsc, $invEsc, '$delivery_date', '$purchase_date',
+                '$pNoEsc', $delNoEsc, $invEsc, $delDateEsc, '$purchase_date',
                 $lot_id, $product_id, $supplier_id, $warehouse_id, $quantity_kg, $uom_id,
                 $p_kg_rwf, $p_val_rwf, $ex_rate, $p_val_usd,
                 $n_paid, $chg_kg, $p_ta, $p_kg_usd,
@@ -368,30 +368,32 @@ switch ($action) {
                 }
             }
 
-            // Update Stock and create movement
-            $val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 0.0;
-            $val_rwf = $purchase_value_rwf !== null ? $purchase_value_rwf : 0.0;
-            
-            if (!updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf)) {
-                throw new Exception("Failed to update inventory stock.");
-            }
+            // Update Stock and create movement if received
+            if ($statusEsc === 'received') {
+                $val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 0.0;
+                $val_rwf = $purchase_value_rwf !== null ? $purchase_value_rwf : 0.0;
+                
+                if (!updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf)) {
+                    throw new Exception("Failed to update inventory stock.");
+                }
 
-            // Create Stock Movement
-            $unit_cost_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 0.0;
-            $unit_cost_rwf = $price_per_kg_rwf !== null ? $price_per_kg_rwf : 0.0;
+                // Create Stock Movement
+                $unit_cost_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 0.0;
+                $unit_cost_rwf = $price_per_kg_rwf !== null ? $price_per_kg_rwf : 0.0;
 
-            $insertMovement = "INSERT INTO stock_movement (
-                movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
-                unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
-                reference_type, reference_id, movement_date, notes, created_by
-            ) VALUES (
-                'PURCHASE_IN', $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg,
-                $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
-                'purchasing', $purchasingId, '$purchase_date', $notesEsc, $userId
-            )";
+                $insertMovement = "INSERT INTO stock_movement (
+                    movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
+                    unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
+                    reference_type, reference_id, movement_date, notes, created_by
+                ) VALUES (
+                    'PURCHASE_IN', $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg,
+                    $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
+                    'purchasing', $purchasingId, '$purchase_date', $notesEsc, $userId
+                )";
 
-            if (!mysqli_query($conn, $insertMovement)) {
-                throw new Exception("Failed to create stock movement: " . mysqli_error($conn));
+                if (!mysqli_query($conn, $insertMovement)) {
+                    throw new Exception("Failed to create stock movement: " . mysqli_error($conn));
+                }
             }
 
             // Audit Log
@@ -433,9 +435,8 @@ switch ($action) {
         }
         $oldValues = mysqli_fetch_assoc($fetchResult);
 
-        // Required Inputs
         $purchase_date = isset($_POST['purchase_date']) && !empty($_POST['purchase_date']) ? trim($_POST['purchase_date']) : date('Y-m-d');
-        $delivery_date = isset($_POST['delivery_date']) && !empty($_POST['delivery_date']) ? trim($_POST['delivery_date']) : date('Y-m-d');
+        $delivery_date = isset($_POST['delivery_date']) && !empty($_POST['delivery_date']) ? trim($_POST['delivery_date']) : null;
         $purchase_no = isset($_POST['purchase_no']) ? trim($_POST['purchase_no']) : $oldValues['purchase_no'];
         $delivery_no = isset($_POST['delivery_no']) ? trim($_POST['delivery_no']) : null;
         $inventory_code = isset($_POST['inventory_code']) ? trim($_POST['inventory_code']) : null;
@@ -463,7 +464,7 @@ switch ($action) {
         $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : null;
         $production_charges = isset($_POST['production_charges']) && $_POST['production_charges'] !== '' ? (float)$_POST['production_charges'] : null;
         
-        $status = isset($_POST['status']) ? trim($_POST['status']) : 'draft';
+        $status = isset($_POST['status']) ? trim($_POST['status']) : 'pending';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : null;
 
         $elements_grades = isset($_POST['elements']) ? $_POST['elements'] : [];
@@ -484,20 +485,23 @@ switch ($action) {
         mysqli_begin_transaction($conn);
 
         try {
-            // 1. Revert inventory stock of old values
-            $old_qty = (float)$oldValues['quantity_kg'];
-            $old_val_usd = (float)$oldValues['purchase_value_usd'];
-            $old_val_rwf = (float)$oldValues['purchase_value_rwf'];
-            if (!updateStock($conn, $oldValues['warehouse_id'], $oldValues['product_id'], $oldValues['lot_id'], $oldValues['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf)) {
-                throw new Exception("Failed to adjust inventory stock.");
-            }
+            // 1. Revert inventory stock of old values if it was received
+            if ($oldValues['status'] === 'received') {
+                $old_qty = (float)$oldValues['quantity_kg'];
+                $old_val_usd = (float)$oldValues['purchase_value_usd'];
+                $old_val_rwf = (float)$oldValues['purchase_value_rwf'];
+                if (!updateStock($conn, $oldValues['warehouse_id'], $oldValues['product_id'], $oldValues['lot_id'], $oldValues['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf)) {
+                    throw new Exception("Failed to adjust inventory stock.");
+                }
 
-            // 2. Delete old stock movement
-            mysqli_query($conn, "DELETE FROM stock_movement WHERE reference_type = 'purchasing' AND reference_id = $id");
+                // 2. Delete old stock movement
+                mysqli_query($conn, "DELETE FROM stock_movement WHERE reference_type = 'purchasing' AND reference_id = $id");
+            }
 
             // 3. Update purchasing table
             $delNoEsc = $delivery_no !== null ? "'" . mysqli_real_escape_string($conn, $delivery_no) . "'" : "NULL";
             $invEsc = $inventory_code !== null ? "'" . mysqli_real_escape_string($conn, $inventory_code) . "'" : "NULL";
+            $delDateEsc = $delivery_date !== null ? "'" . mysqli_real_escape_string($conn, $delivery_date) . "'" : "NULL";
             $notesEsc = $notes !== null ? "'" . mysqli_real_escape_string($conn, $notes) . "'" : "NULL";
             $statusEsc = mysqli_real_escape_string($conn, $status);
 
@@ -520,7 +524,7 @@ switch ($action) {
                 purchase_no = '$pNoEsc',
                 delivery_no = $delNoEsc,
                 inventory_code = $invEsc,
-                delivery_date = '$delivery_date',
+                delivery_date = $delDateEsc,
                 purchase_date = '$purchase_date',
                 lot_id = $lot_id,
                 product_id = $product_id,
@@ -604,30 +608,32 @@ switch ($action) {
                 }
             }
 
-            // 6. Update Stock with new values
-            $val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 0.0;
-            $val_rwf = $purchase_value_rwf !== null ? $purchase_value_rwf : 0.0;
-            
-            if (!updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf)) {
-                throw new Exception("Failed to update inventory stock.");
-            }
+            // 6. Update Stock with new values if status is received
+            if ($statusEsc === 'received') {
+                $val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 0.0;
+                $val_rwf = $purchase_value_rwf !== null ? $purchase_value_rwf : 0.0;
+                
+                if (!updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf)) {
+                    throw new Exception("Failed to update inventory stock.");
+                }
 
-            // 7. Create new Stock Movement
-            $unit_cost_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 0.0;
-            $unit_cost_rwf = $price_per_kg_rwf !== null ? $price_per_kg_rwf : 0.0;
+                // 7. Create new Stock Movement
+                $unit_cost_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 0.0;
+                $unit_cost_rwf = $price_per_kg_rwf !== null ? $price_per_kg_rwf : 0.0;
 
-            $insertMovement = "INSERT INTO stock_movement (
-                movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
-                unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
-                reference_type, reference_id, movement_date, notes, created_by
-            ) VALUES (
-                'PURCHASE_IN', $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg,
-                $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
-                'purchasing', $id, '$purchase_date', $notesEsc, $userId
-            )";
+                $insertMovement = "INSERT INTO stock_movement (
+                    movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
+                    unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
+                    reference_type, reference_id, movement_date, notes, created_by
+                ) VALUES (
+                    'PURCHASE_IN', $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg,
+                    $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
+                    'purchasing', $id, '$purchase_date', $notesEsc, $userId
+                )";
 
-            if (!mysqli_query($conn, $insertMovement)) {
-                throw new Exception("Failed to create stock movement: " . mysqli_error($conn));
+                if (!mysqli_query($conn, $insertMovement)) {
+                    throw new Exception("Failed to create stock movement: " . mysqli_error($conn));
+                }
             }
 
             // Audit log
@@ -663,13 +669,13 @@ switch ($action) {
             sendResponse(false, 'Valid purchase ID is required.');
         }
 
-        $allowedStatuses = ['draft', 'confirmed', 'received', 'cancelled'];
+        $allowedStatuses = ['pending', 'confirmed', 'received', 'cancelled'];
         if (!in_array($newStatus, $allowedStatuses)) {
             sendResponse(false, 'Invalid status value. Allowed: ' . implode(', ', $allowedStatuses));
         }
 
-        // Fetch current record
-        $chkPurch = mysqli_query($conn, "SELECT id, purchase_no, status FROM purchasing WHERE id = $id LIMIT 1");
+        // Fetch current record (all fields to allow stock reversion or inclusion)
+        $chkPurch = mysqli_query($conn, "SELECT * FROM purchasing WHERE id = $id LIMIT 1");
         if (!$chkPurch || mysqli_num_rows($chkPurch) === 0) {
             sendResponse(false, 'Purchase record not found.');
         }
@@ -681,15 +687,71 @@ switch ($action) {
             sendResponse(true, 'Status is already set to ' . strtoupper($newStatus) . '.');
         }
 
-        $statusEsc = mysqli_real_escape_string($conn, $newStatus);
-        $updateQuery = "UPDATE purchasing SET status = '$statusEsc', updated_at = CURRENT_TIMESTAMP WHERE id = $id";
+        mysqli_begin_transaction($conn);
 
-        if (mysqli_query($conn, $updateQuery)) {
+        try {
+            $statusEsc = mysqli_real_escape_string($conn, $newStatus);
+
+            // Trigger stock additions/removals based on transition
+            if ($oldStatus !== 'received' && $newStatus === 'received') {
+                // Ensure duplicate check: check if movement already exists
+                $checkMvt = mysqli_query($conn, "SELECT id FROM stock_movement WHERE reference_type = 'purchasing' AND reference_id = $id LIMIT 1");
+                if (!$checkMvt || mysqli_num_rows($checkMvt) === 0) {
+                    $quantity_kg = (float)$currentRow['quantity_kg'];
+                    $val_usd = $currentRow['purchase_value_usd'] !== null ? (float)$currentRow['purchase_value_usd'] : 0.0;
+                    $val_rwf = $currentRow['purchase_value_rwf'] !== null ? (float)$currentRow['purchase_value_rwf'] : 0.0;
+                    
+                    if (!updateStock($conn, $currentRow['warehouse_id'], $currentRow['product_id'], $currentRow['lot_id'], $currentRow['uom_id'], $quantity_kg, $val_usd, $val_rwf)) {
+                        throw new Exception("Failed to update inventory stock.");
+                    }
+
+                    // Create Stock Movement
+                    $unit_cost_usd = $currentRow['price_per_kg_usd'] !== null ? (float)$currentRow['price_per_kg_usd'] : 0.0;
+                    $unit_cost_rwf = $currentRow['price_per_kg_rwf'] !== null ? (float)$currentRow['price_per_kg_rwf'] : 0.0;
+                    $notesEsc = $currentRow['notes'] !== null ? "'" . mysqli_real_escape_string($conn, $currentRow['notes']) . "'" : "NULL";
+                    $purchase_date = $currentRow['purchase_date'];
+
+                    $insertMovement = "INSERT INTO stock_movement (
+                        movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
+                        unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
+                        reference_type, reference_id, movement_date, notes, created_by
+                    ) VALUES (
+                        'PURCHASE_IN', {$currentRow['warehouse_id']}, {$currentRow['product_id']}, {$currentRow['lot_id']}, {$currentRow['uom_id']}, $quantity_kg,
+                        $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
+                        'purchasing', $id, '$purchase_date', $notesEsc, $userId
+                    )";
+
+                    if (!mysqli_query($conn, $insertMovement)) {
+                        throw new Exception("Failed to create stock movement: " . mysqli_error($conn));
+                    }
+                }
+            } else if ($oldStatus === 'received' && $newStatus !== 'received') {
+                // Revert inventory stock
+                $old_qty = (float)$currentRow['quantity_kg'];
+                $old_val_usd = (float)$currentRow['purchase_value_usd'];
+                $old_val_rwf = (float)$currentRow['purchase_value_rwf'];
+                if (!updateStock($conn, $currentRow['warehouse_id'], $currentRow['product_id'], $currentRow['lot_id'], $currentRow['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf)) {
+                    throw new Exception("Failed to adjust inventory stock.");
+                }
+
+                // Delete stock movement
+                mysqli_query($conn, "DELETE FROM stock_movement WHERE reference_type = 'purchasing' AND reference_id = $id");
+            }
+
+            // Update status in the database
+            $updateQuery = "UPDATE purchasing SET status = '$statusEsc', updated_at = CURRENT_TIMESTAMP WHERE id = $id";
+            if (!mysqli_query($conn, $updateQuery)) {
+                throw new Exception("Failed to update status in database: " . mysqli_error($conn));
+            }
+
             logAudit($conn, 'UPDATE', 'purchasing', $purchase_no, "Status changed from $oldStatus to $newStatus", ['status' => $oldStatus], ['status' => $newStatus]);
             $_SESSION['purchas_token'] = bin2hex(random_bytes(32));
+            mysqli_commit($conn);
             sendResponse(true, "Purchase '$purchase_no' status changed to " . strtoupper($newStatus) . ".");
-        } else {
-            sendResponse(false, 'Failed to update status: ' . mysqli_error($conn));
+
+        } catch (Exception $e) {
+            mysqli_rollback($conn);
+            sendResponse(false, 'Failed to update status: ' . $e->getMessage());
         }
         break;
 
@@ -714,16 +776,18 @@ switch ($action) {
         mysqli_begin_transaction($conn);
 
         try {
-            // 1. Subtract values from stock
-            $old_qty = (float)$oldValues['quantity_kg'];
-            $old_val_usd = (float)$oldValues['purchase_value_usd'];
-            $old_val_rwf = (float)$oldValues['purchase_value_rwf'];
-            if (!updateStock($conn, $oldValues['warehouse_id'], $oldValues['product_id'], $oldValues['lot_id'], $oldValues['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf)) {
-                throw new Exception("Failed to adjust inventory stock.");
-            }
+            // 1. Subtract values from stock if it was received
+            if ($oldValues['status'] === 'received') {
+                $old_qty = (float)$oldValues['quantity_kg'];
+                $old_val_usd = (float)$oldValues['purchase_value_usd'];
+                $old_val_rwf = (float)$oldValues['purchase_value_rwf'];
+                if (!updateStock($conn, $oldValues['warehouse_id'], $oldValues['product_id'], $oldValues['lot_id'], $oldValues['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf)) {
+                    throw new Exception("Failed to adjust inventory stock.");
+                }
 
-            // 2. Delete stock movement
-            mysqli_query($conn, "DELETE FROM stock_movement WHERE reference_type = 'purchasing' AND reference_id = $id");
+                // 2. Delete stock movement
+                mysqli_query($conn, "DELETE FROM stock_movement WHERE reference_type = 'purchasing' AND reference_id = $id");
+            }
 
             // 3. Delete grades
             mysqli_query($conn, "DELETE FROM purchasing_element_grade WHERE purchasing_id = $id");

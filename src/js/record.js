@@ -694,7 +694,7 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       // ADD MODE
       document.getElementById("purchaseDate").value = new Date().toISOString().split('T')[0];
-      document.getElementById("deliveryDate").value = new Date().toISOString().split('T')[0];
+      document.getElementById("deliveryDate").value = "";
       exRateInput.value = 1400.0;
     }
     

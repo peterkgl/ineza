@@ -1134,7 +1134,7 @@ CREATE TABLE `purchasing` (
   `tax_rma` decimal(14,4) DEFAULT NULL COMMENT 'RMA tax withheld',
   `tax_inkomane` decimal(14,4) DEFAULT NULL COMMENT 'INKOMANE levy withheld',
   `production_charges` decimal(14,4) DEFAULT NULL COMMENT 'Total production charges',
-  `status` enum('draft','confirmed','received','cancelled') NOT NULL DEFAULT 'draft',
+  `status` enum('pending','confirmed','received','cancelled') NOT NULL DEFAULT 'pending',
   `notes` text DEFAULT NULL,
   `created_by` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),

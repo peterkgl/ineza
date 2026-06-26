@@ -222,8 +222,8 @@ if ($id > 0) {
               <input type="text" id="deliveryNo" name="delivery_no" class="form-control" placeholder="e.g. DN-59302">
             </div>
             <div class="form-group">
-              <label for="deliveryDate">Delivery Date *</label>
-              <input type="date" id="deliveryDate" name="delivery_date" class="form-control" required>
+              <label for="deliveryDate">Delivery Date</label>
+              <input type="date" id="deliveryDate" name="delivery_date" class="form-control">
             </div>
           </div>
           <div class="form-grid-3">
@@ -382,7 +382,7 @@ if ($id > 0) {
             <div class="form-group">
               <label for="status">Transaction Status</label>
               <select id="status" name="status" class="form-control">
-                <option value="draft">Draft</option>
+                <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="received">Received</option>
                 <option value="cancelled">Cancelled</option>
