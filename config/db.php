@@ -11,4 +11,18 @@ if (!$conn) {
 }
 
 mysqli_set_charset($conn, "utf8mb4");
+
+// Lazy daily rollover function for lot stock opening balances
+function ensureDailyRollover($conn) {
+    $today = date('Y-m-d');
+    $query = "UPDATE stock s
+              JOIN lots l ON s.lot_id = l.id
+              SET s.opening = s.closing,
+                  s.last_rolled_over_at = '$today'
+              WHERE l.closing_date IS NULL
+                AND (s.last_rolled_over_at < '$today' OR s.last_rolled_over_at IS NULL)";
+    mysqli_query($conn, $query);
+}
+
+ensureDailyRollover($conn);
 ?>

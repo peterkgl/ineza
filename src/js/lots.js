@@ -109,7 +109,12 @@ document.addEventListener("DOMContentLoaded", function () {
         ? '<span class="status-pill pill-green">Open</span>'
         : '<span class="status-pill pill-red">Closed</span>';
 
-      var actionBtns = "";
+      var actionBtns =
+        '<button class="btn-icon-only view-details" title="View Details" data-id="' +
+        l.id +
+        '">' +
+        '<svg viewBox="0 0 24 24" style="stroke: var(--blue);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+        "</button>";
       if (isOpen) {
         actionBtns +=
           '<button class="btn-icon-only edit" title="Edit Lot" data-id="' +
@@ -186,9 +191,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function attachRowEventListeners(lots) {
+    var viewBtns = document.querySelectorAll(".action-buttons .view-details");
     var editBtns = document.querySelectorAll(".action-buttons .edit");
     var deleteBtns = document.querySelectorAll(".action-buttons .delete");
     var closeBtns = document.querySelectorAll(".action-buttons .close-btn");
+
+    viewBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = parseInt(btn.getAttribute("data-id"), 10);
+        openDetailsModal(id);
+      });
+    });
 
     editBtns.forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -480,6 +493,58 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  // Details Modal Handlers
+  var detailsModalOverlay = document.getElementById("detailsModalOverlay");
+  var closeDetailsModalBtn = document.getElementById("closeDetailsModalBtn");
+
+  if (closeDetailsModalBtn) {
+    closeDetailsModalBtn.addEventListener("click", function() {
+      detailsModalOverlay.style.display = "none";
+    });
+  }
+
+  function openDetailsModal(lotId) {
+    fetch("lots_api.php?action=details&id=" + lotId)
+      .then(function (res) { return res.json(); })
+      .then(function (result) {
+        if (result.success) {
+          var data = result.data;
+          document.getElementById("detailsLotCode").textContent = data.lot.lots_code;
+          document.getElementById("detailsOpeningDate").textContent = data.lot.opening_date || "—";
+          document.getElementById("detailsClosingDate").textContent = data.lot.closing_date || "—";
+          
+          var statusPill = data.lot.status === "OPEN" 
+            ? '<span class="status-pill pill-green">Open</span>' 
+            : '<span class="status-pill pill-red">Closed</span>';
+          document.getElementById("detailsStatus").innerHTML = statusPill;
+
+          var stockList = document.getElementById("detailsStockList");
+          if (data.stock.length === 0) {
+            stockList.innerHTML = '<tr><td colspan="4" class="table-empty">No stock records found for this lot.</td></tr>';
+          } else {
+            var html = "";
+            data.stock.forEach(function (s) {
+              html += '<tr>' +
+                '<td>' + escapeHtml(s.warehouse_name) + '</td>' +
+                '<td><strong>' + escapeHtml(s.product_name) + '</strong></td>' +
+                '<td style="text-align: right; color: var(--text2); font-weight: 500;">' + s.opening.toFixed(2) + ' ' + escapeHtml(s.uom_code) + '</td>' +
+                '<td style="text-align: right; font-weight: 600; color: var(--green);">' + s.closing.toFixed(2) + ' ' + escapeHtml(s.uom_code) + '</td>' +
+                '</tr>';
+            });
+            stockList.innerHTML = html;
+          }
+
+          detailsModalOverlay.style.display = "flex";
+        } else {
+          showAlert(alertPlaceholder, "error", result.message);
+        }
+      })
+      .catch(function (err) {
+        console.error("Error fetching lot details:", err);
+        showAlert(alertPlaceholder, "error", "An error occurred while loading lot details.");
+      });
   }
 
   fetchLots();

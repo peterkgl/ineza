@@ -41,41 +41,63 @@ function updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $qty_d
     $lot_id = (int)$lot_id;
     $uom_id = (int)$uom_id;
     
-    $chk = mysqli_query($conn, "SELECT id, qty_purchased, total_value_usd, total_value_rwf FROM stock WHERE product_id = $product_id LIMIT 1");
+    $chk = mysqli_query($conn, "SELECT id, qty_purchased, qty_sold, qty_adjusted, total_value_usd, total_value_rwf, opening, closing FROM stock WHERE warehouse_id = $warehouse_id AND product_id = $product_id AND lot_id = $lot_id LIMIT 1");
     if ($chk && mysqli_num_rows($chk) > 0) {
         $row = mysqli_fetch_assoc($chk);
         $stockId = $row['id'];
-        $new_qty = (float)$row['qty_purchased'] + (float)$qty_diff;
+        $new_qty_purchased = (float)$row['qty_purchased'] + (float)$qty_diff;
+        if ($new_qty_purchased < 0) $new_qty_purchased = 0;
+        
+        $new_qty_on_hand = $new_qty_purchased - (float)$row['qty_sold'] + (float)$row['qty_adjusted'];
+        if ($new_qty_on_hand < 0) $new_qty_on_hand = 0;
+
         $new_val_usd = (float)$row['total_value_usd'] + (float)$value_usd_diff;
         $new_val_rwf = (float)$row['total_value_rwf'] + (float)$value_rwf_diff;
-        
-        // Prevent negative stock
-        if ($new_qty < 0) $new_qty = 0;
         if ($new_val_usd < 0) $new_val_usd = 0;
         if ($new_val_rwf < 0) $new_val_rwf = 0;
         
-        $avg_cost_usd = $new_qty > 0 ? $new_val_usd / $new_qty : 0;
-        $avg_cost_rwf = $new_qty > 0 ? $new_val_rwf / $new_qty : 0;
+        $avg_cost_usd = $new_qty_on_hand > 0 ? $new_val_usd / $new_qty_on_hand : 0;
+        $avg_cost_rwf = $new_qty_on_hand > 0 ? $new_val_rwf / $new_qty_on_hand : 0;
+        
+        $opening = (float)$row['opening'];
+        $closing = $new_qty_on_hand;
         
         $update = "UPDATE stock SET 
-                      qty_purchased = $new_qty, 
+                      qty_purchased = $new_qty_purchased, 
                       total_value_usd = $new_val_usd, 
                       total_value_rwf = $new_val_rwf, 
                       avg_cost_per_kg_usd = $avg_cost_usd, 
-                      avg_cost_per_kg_rwf = $avg_cost_rwf 
+                      avg_cost_per_kg_rwf = $avg_cost_rwf,
+                      closing = $closing
                    WHERE id = $stockId";
-        return mysqli_query($conn, $update);
+        if (mysqli_query($conn, $update)) {
+            return [
+                'success' => true,
+                'opening' => $opening,
+                'closing' => $closing
+            ];
+        }
     } else {
         if ($qty_diff > 0) {
             $avg_cost_usd = $value_usd_diff / $qty_diff;
             $avg_cost_rwf = $value_rwf_diff / $qty_diff;
             
-            $insert = "INSERT INTO stock (warehouse_id, product_id, lot_id, uom_id, qty_purchased, qty_sold, qty_adjusted, total_value_usd, total_value_rwf, avg_cost_per_kg_usd, avg_cost_per_kg_rwf) 
-                       VALUES ($warehouse_id, $product_id, $lot_id, $uom_id, $qty_diff, 0, 0, $value_usd_diff, $value_rwf_diff, $avg_cost_usd, $avg_cost_rwf)";
-            return mysqli_query($conn, $insert);
+            $opening = 0.0000;
+            $closing = $qty_diff;
+            $today = date('Y-m-d');
+            
+            $insert = "INSERT INTO stock (warehouse_id, product_id, lot_id, uom_id, qty_purchased, qty_sold, qty_adjusted, total_value_usd, total_value_rwf, avg_cost_per_kg_usd, avg_cost_per_kg_rwf, opening, closing, last_rolled_over_at) 
+                       VALUES ($warehouse_id, $product_id, $lot_id, $uom_id, $qty_diff, 0, 0, $value_usd_diff, $value_rwf_diff, $avg_cost_usd, $avg_cost_rwf, $opening, $closing, '$today')";
+            if (mysqli_query($conn, $insert)) {
+                return [
+                    'success' => true,
+                    'opening' => $opening,
+                    'closing' => $closing
+                ];
+            }
         }
     }
-    return true;
+    return false;
 }
 
 switch ($action) {
@@ -373,9 +395,12 @@ switch ($action) {
                 $val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 0.0;
                 $val_rwf = $purchase_value_rwf !== null ? $purchase_value_rwf : 0.0;
                 
-                if (!updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf)) {
+                $stock_info = updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf);
+                if (!$stock_info) {
                     throw new Exception("Failed to update inventory stock.");
                 }
+                $mvt_opening = $stock_info['opening'];
+                $mvt_closing = $stock_info['closing'];
 
                 // Create Stock Movement
                 $unit_cost_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 0.0;
@@ -384,11 +409,13 @@ switch ($action) {
                 $insertMovement = "INSERT INTO stock_movement (
                     movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
                     unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
-                    reference_type, reference_id, movement_date, notes, created_by
+                    reference_type, reference_id, movement_date, notes, created_by,
+                    opening, closing
                 ) VALUES (
                     'PURCHASE_IN', $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg,
                     $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
-                    'purchasing', $purchasingId, '$purchase_date', $notesEsc, $userId
+                    'purchasing', $purchasingId, '$purchase_date', $notesEsc, $userId,
+                    $mvt_opening, $mvt_closing
                 )";
 
                 if (!mysqli_query($conn, $insertMovement)) {
@@ -613,9 +640,12 @@ switch ($action) {
                 $val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 0.0;
                 $val_rwf = $purchase_value_rwf !== null ? $purchase_value_rwf : 0.0;
                 
-                if (!updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf)) {
+                $stock_info = updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf);
+                if (!$stock_info) {
                     throw new Exception("Failed to update inventory stock.");
                 }
+                $mvt_opening = $stock_info['opening'];
+                $mvt_closing = $stock_info['closing'];
 
                 // 7. Create new Stock Movement
                 $unit_cost_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 0.0;
@@ -624,11 +654,13 @@ switch ($action) {
                 $insertMovement = "INSERT INTO stock_movement (
                     movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
                     unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
-                    reference_type, reference_id, movement_date, notes, created_by
+                    reference_type, reference_id, movement_date, notes, created_by,
+                    opening, closing
                 ) VALUES (
                     'PURCHASE_IN', $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg,
                     $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
-                    'purchasing', $id, '$purchase_date', $notesEsc, $userId
+                    'purchasing', $id, '$purchase_date', $notesEsc, $userId,
+                    $mvt_opening, $mvt_closing
                 )";
 
                 if (!mysqli_query($conn, $insertMovement)) {
@@ -701,9 +733,12 @@ switch ($action) {
                     $val_usd = $currentRow['purchase_value_usd'] !== null ? (float)$currentRow['purchase_value_usd'] : 0.0;
                     $val_rwf = $currentRow['purchase_value_rwf'] !== null ? (float)$currentRow['purchase_value_rwf'] : 0.0;
                     
-                    if (!updateStock($conn, $currentRow['warehouse_id'], $currentRow['product_id'], $currentRow['lot_id'], $currentRow['uom_id'], $quantity_kg, $val_usd, $val_rwf)) {
+                    $stock_info = updateStock($conn, $currentRow['warehouse_id'], $currentRow['product_id'], $currentRow['lot_id'], $currentRow['uom_id'], $quantity_kg, $val_usd, $val_rwf);
+                    if (!$stock_info) {
                         throw new Exception("Failed to update inventory stock.");
                     }
+                    $mvt_opening = $stock_info['opening'];
+                    $mvt_closing = $stock_info['closing'];
 
                     // Create Stock Movement
                     $unit_cost_usd = $currentRow['price_per_kg_usd'] !== null ? (float)$currentRow['price_per_kg_usd'] : 0.0;
@@ -714,11 +749,13 @@ switch ($action) {
                     $insertMovement = "INSERT INTO stock_movement (
                         movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
                         unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
-                        reference_type, reference_id, movement_date, notes, created_by
+                        reference_type, reference_id, movement_date, notes, created_by,
+                        opening, closing
                     ) VALUES (
                         'PURCHASE_IN', {$currentRow['warehouse_id']}, {$currentRow['product_id']}, {$currentRow['lot_id']}, {$currentRow['uom_id']}, $quantity_kg,
                         $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
-                        'purchasing', $id, '$purchase_date', $notesEsc, $userId
+                        'purchasing', $id, '$purchase_date', $notesEsc, $userId,
+                        $mvt_opening, $mvt_closing
                     )";
 
                     if (!mysqli_query($conn, $insertMovement)) {

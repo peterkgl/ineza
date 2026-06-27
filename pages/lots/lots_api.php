@@ -95,6 +95,70 @@ switch ($action) {
                     'opening_date' => $opening_date,
                     'closing_date' => $closing_date
                 ];
+
+                // Carry over balances from the most recently closed lot
+                $oldLotQuery = "SELECT id, lots_code FROM lots WHERE closing_date IS NOT NULL ORDER BY closing_date DESC, id DESC LIMIT 1";
+                $oldLotResult = mysqli_query($conn, $oldLotQuery);
+                if ($oldLotResult && mysqli_num_rows($oldLotResult) > 0) {
+                    $oldLotRow = mysqli_fetch_assoc($oldLotResult);
+                    $oldLotId = (int)$oldLotRow['id'];
+                    $oldLotCode = $oldLotRow['lots_code'];
+
+                    // Fetch active stocks from the old lot
+                    $stockQuery = "SELECT warehouse_id, product_id, uom_id, closing, avg_cost_per_kg_usd, avg_cost_per_kg_rwf, total_value_usd, total_value_rwf 
+                                   FROM stock 
+                                   WHERE lot_id = $oldLotId AND closing > 0";
+                    $stockResult = mysqli_query($conn, $stockQuery);
+                    if ($stockResult) {
+                        while ($stRow = mysqli_fetch_assoc($stockResult)) {
+                            $warehouse_id = (int)$stRow['warehouse_id'];
+                            $product_id = (int)$stRow['product_id'];
+                            $uom_id = (int)$stRow['uom_id'];
+                            $carried_qty = (float)$stRow['closing'];
+                            $avg_cost_usd = (float)$stRow['avg_cost_per_kg_usd'];
+                            $avg_cost_rwf = (float)$stRow['avg_cost_per_kg_rwf'];
+                            $tot_val_usd = (float)$stRow['total_value_usd'];
+                            $tot_val_rwf = (float)$stRow['total_value_rwf'];
+
+                            // Insert new stock record representing the carry over
+                            $today = date('Y-m-d');
+                            $insertStock = "INSERT INTO stock (
+                                                warehouse_id, product_id, lot_id, uom_id, 
+                                                qty_purchased, qty_sold, qty_adjusted, 
+                                                avg_cost_per_kg_usd, avg_cost_per_kg_rwf, 
+                                                total_value_usd, total_value_rwf, 
+                                                opening, closing, last_rolled_over_at
+                                            ) VALUES (
+                                                $warehouse_id, $product_id, $newId, $uom_id, 
+                                                0, 0, $carried_qty, 
+                                                $avg_cost_usd, $avg_cost_rwf, 
+                                                $tot_val_usd, $tot_val_rwf, 
+                                                $carried_qty, $carried_qty, '$today'
+                                            )";
+                            if (!mysqli_query($conn, $insertStock)) {
+                                throw new Exception("Failed to carry over stock to new lot: " . mysqli_error($conn));
+                            }
+
+                            // Insert OPENING_STOCK movement record
+                            $notes = "Opening balance carried over from lot " . mysqli_real_escape_string($conn, $oldLotCode);
+                            $insertMvt = "INSERT INTO stock_movement (
+                                              movement_type, warehouse_id, product_id, lot_id, uom_id, 
+                                              qty_kg, unit_cost_usd, unit_cost_rwf, total_value_usd, total_value_rwf, 
+                                              reference_type, reference_id, movement_date, notes, created_by, 
+                                              opening, closing
+                                          ) VALUES (
+                                              'OPENING_STOCK', $warehouse_id, $product_id, $newId, $uom_id, 
+                                              $carried_qty, $avg_cost_usd, $avg_cost_rwf, $tot_val_usd, $tot_val_rwf, 
+                                              'lots', $newId, '$opening_date', '$notes', $userId, 
+                                              $carried_qty, $carried_qty
+                                          )";
+                            if (!mysqli_query($conn, $insertMvt)) {
+                                throw new Exception("Failed to insert opening stock movement: " . mysqli_error($conn));
+                            }
+                        }
+                    }
+                }
+
                 logAudit($conn, 'CREATE', 'lots', $lots_code, "Created lot: $lots_code", null, $newValues);
                 $_SESSION['lots_token'] = bin2hex(random_bytes(32));
                 mysqli_commit($conn);
@@ -199,6 +263,12 @@ switch ($action) {
             $today = date('Y-m-d');
             $update = mysqli_query($conn, "UPDATE lots SET closing_date = '$today' WHERE id = $id");
             if ($update) {
+                // Set opening and closing stock balances to the final stock qty_on_hand
+                $updateStockQuery = "UPDATE stock SET opening = qty_on_hand, closing = qty_on_hand WHERE lot_id = $id";
+                if (!mysqli_query($conn, $updateStockQuery)) {
+                    throw new Exception("Failed to update stock balances on lot close: " . mysqli_error($conn));
+                }
+
                 $newValues = $oldValues;
                 $newValues['closing_date'] = $today;
                 logAudit($conn, 'UPDATE', 'lots', $oldValues['lots_code'], "Closed lot: " . $oldValues['lots_code'], $oldValues, $newValues);
@@ -265,6 +335,56 @@ switch ($action) {
             mysqli_rollback($conn);
             sendResponse(false, 'Failed to delete lot: ' . $e->getMessage());
         }
+        break;
+
+    case 'details':
+        if (!hasPermission($conn, $userId, 'view_lots')) {
+            http_response_code(403);
+            sendResponse(false, 'Forbidden: You do not have permission to view lots.');
+        }
+
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if ($id <= 0) {
+            sendResponse(false, 'Invalid ID.');
+        }
+
+        $chkLot = mysqli_query($conn, "SELECT * FROM lots WHERE id = $id LIMIT 1");
+        if (!$chkLot || mysqli_num_rows($chkLot) === 0) {
+            sendResponse(false, 'Lot not found.');
+        }
+        $lot = mysqli_fetch_assoc($chkLot);
+
+        // Fetch stock records associated with this lot
+        $stockQuery = "SELECT s.*, pr.product_name, pr.product_code, w.warehouse_name, w.warehouse_code, uom.code as uom_code
+                       FROM stock s
+                       JOIN product pr ON s.product_id = pr.id
+                       JOIN warehouses w ON s.warehouse_id = w.id
+                       LEFT JOIN unit_of_measure uom ON s.uom_id = uom.id
+                       WHERE s.lot_id = $id";
+        $stockResult = mysqli_query($conn, $stockQuery);
+        $stockRecords = [];
+        if ($stockResult) {
+            while ($row = mysqli_fetch_assoc($stockResult)) {
+                $stockRecords[] = [
+                    'product_name' => $row['product_name'] . ' (' . $row['product_code'] . ')',
+                    'warehouse_name' => $row['warehouse_name'] . ' (' . $row['warehouse_code'] . ')',
+                    'opening' => (float)$row['opening'],
+                    'closing' => (float)$row['closing'],
+                    'uom_code' => $row['uom_code'] ?? 'kg'
+                ];
+            }
+        }
+
+        sendResponse(true, 'Lot details fetched successfully.', [
+            'lot' => [
+                'id' => (int)$lot['id'],
+                'lots_code' => $lot['lots_code'],
+                'opening_date' => $lot['opening_date'],
+                'closing_date' => $lot['closing_date'],
+                'status' => $lot['closing_date'] ? 'CLOSED' : 'OPEN'
+            ],
+            'stock' => $stockRecords
+        ]);
         break;
 
     default:

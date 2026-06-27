@@ -24,6 +24,7 @@ $query = "SELECT sm.*,
                  w.warehouse_name, 
                  w.warehouse_code, 
                  l.lots_code,
+                 l.closing_date AS lot_closing_date,
                  pr.product_name,
                  pr.product_code
           FROM stock_movement sm
@@ -223,12 +224,32 @@ if ($movement['reference_type'] === 'purchasing' && $movement['reference_id'] > 
 
         <div class="info-value-grid">
           <div class="info-group">
-            <div class="info-label">Lot Code</div>
-            <div class="info-value"><span class="status-pill pill-purple" style="font-weight: 600;"><?php echo htmlspecialchars($movement['lots_code'] ?? '—'); ?></span></div>
+            <div class="info-label">Lot Code / Status</div>
+            <div class="info-value" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="status-pill pill-purple" style="font-weight: 600;"><?php echo htmlspecialchars($movement['lots_code'] ?? '—'); ?></span>
+              <?php if ($movement['lot_id']): ?>
+                <?php if ($movement['lot_closing_date'] !== null): ?>
+                  <span class="status-pill pill-red" style="font-size: 10.5px; font-weight: 600; padding: 2px 8px;">CLOSED</span>
+                <?php else: ?>
+                  <span class="status-pill pill-green" style="font-size: 10.5px; font-weight: 600; padding: 2px 8px;">OPEN</span>
+                <?php endif; ?>
+              <?php endif; ?>
+            </div>
           </div>
           <div class="info-group">
             <div class="info-label">Quantity</div>
             <div class="info-value bold"><?php echo number_format((float)$movement['qty_kg'], 2) . ' ' . htmlspecialchars($movement['uom_code'] ?? 'kg'); ?></div>
+          </div>
+        </div>
+
+        <div class="info-value-grid">
+          <div class="info-group">
+            <div class="info-label">Opening Balance</div>
+            <div class="info-value bold"><?php echo number_format((float)$movement['opening'], 2) . ' ' . htmlspecialchars($movement['uom_code'] ?? 'kg'); ?></div>
+          </div>
+          <div class="info-group">
+            <div class="info-label">Closing Balance</div>
+            <div class="info-value bold"><?php echo number_format((float)$movement['closing'], 2) . ' ' . htmlspecialchars($movement['uom_code'] ?? 'kg'); ?></div>
           </div>
         </div>
 

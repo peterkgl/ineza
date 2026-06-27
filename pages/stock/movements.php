@@ -148,6 +148,8 @@ if ($result) {
               <th>Warehouse</th>
               <th>Lot Code</th>
               <th style="text-align: right;">Quantity</th>
+              <th style="text-align: right;">Opening (kg)</th>
+              <th style="text-align: right;">Closing (kg)</th>
               <th style="text-align: right;">Unit Cost (USD)</th>
               <th style="text-align: right;">Total Value (USD)</th>
               <th>Reference</th>
@@ -158,7 +160,7 @@ if ($result) {
           <tbody>
             <?php if (empty($movements)): ?>
               <tr>
-                <td colspan="11" class="table-empty">No stock movements recorded.</td>
+                <td colspan="13" class="table-empty">No stock movements recorded.</td>
               </tr>
             <?php else: ?>
               <?php foreach ($movements as $m): ?>
@@ -214,6 +216,8 @@ if ($result) {
                   <td class="td-name"><?php echo $wh; ?></td>
                   <td><span class="status-pill pill-purple" style="font-weight: 600;"><?php echo $lot; ?></span></td>
                   <td style="text-align: right; font-weight: 500;"><?php echo $qty; ?></td>
+                  <td style="text-align: right; color: var(--text2); font-weight: 500;"><?php echo number_format((float)$m['opening'], 2) . ' ' . htmlspecialchars($m['uom_code'] ?? 'kg'); ?></td>
+                  <td style="text-align: right; color: var(--text2); font-weight: 500;"><?php echo number_format((float)$m['closing'], 2) . ' ' . htmlspecialchars($m['uom_code'] ?? 'kg'); ?></td>
                   <td style="text-align: right; color: var(--text2);"><?php echo $cost; ?></td>
                   <td style="text-align: right; font-weight: 600; color: var(--green);"><?php echo $total; ?></td>
                   <td style="font-weight: 500; font-size: 11px;"><?php echo $ref; ?></td>

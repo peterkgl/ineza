@@ -47,6 +47,8 @@ if ($result) {
             'qty_sold' => (float)$row['qty_sold'],
             'qty_adjusted' => (float)$row['qty_adjusted'],
             'qty_on_hand' => (float)$row['qty_on_hand'],
+            'opening' => (float)$row['opening'],
+            'closing' => (float)$row['closing'],
             'avg_cost_per_kg_usd' => (float)$row['avg_cost_per_kg_usd'],
             'avg_cost_per_kg_rwf' => (float)$row['avg_cost_per_kg_rwf'],
             'total_value_usd' => (float)$row['total_value_usd'],
@@ -158,6 +160,8 @@ if ($result) {
               <th style="text-align: right;">Purchased (kg)</th>
               <th style="text-align: right;">Sold (kg)</th>
               <th style="text-align: right;">Adjusted (kg)</th>
+              <th style="text-align: right;">Opening (kg)</th>
+              <th style="text-align: right;">Closing (kg)</th>
               <th style="text-align: right;">On Hand (kg)</th>
               <th style="text-align: right;">Avg Cost (USD/kg)</th>
               <th style="text-align: right;">Total Value (USD)</th>
@@ -167,7 +171,7 @@ if ($result) {
           <tbody id="stockList">
             <?php if (empty($stockData)): ?>
               <tr>
-                <td colspan="11" class="table-empty">No stock records found.</td>
+                <td colspan="13" class="table-empty">No stock records found.</td>
               </tr>
             <?php else: ?>
               <?php foreach ($stockData as $index => $row): ?>
@@ -179,6 +183,8 @@ if ($result) {
                   $qtyPurch = number_format($row['qty_purchased'], 2);
                   $qtySold = number_format($row['qty_sold'], 2);
                   $qtyAdj = number_format($row['qty_adjusted'], 2);
+                  $qtyOpening = number_format($row['opening'], 2);
+                  $qtyClosing = number_format($row['closing'], 2);
                   $qtyHand = number_format($row['qty_on_hand'], 2);
                   $avgCost = '$' . number_format($row['avg_cost_per_kg_usd'], 2);
                   $totVal = '$' . number_format($row['total_value_usd'], 2);
@@ -191,6 +197,8 @@ if ($result) {
                   <td style="text-align: right; color: var(--text2);"><?php echo $qtyPurch; ?></td>
                   <td style="text-align: right; color: var(--text2);"><?php echo $qtySold; ?></td>
                   <td style="text-align: right; color: var(--text2);"><?php echo $qtyAdj; ?></td>
+                  <td style="text-align: right; color: var(--text2); font-weight: 500;"><?php echo $qtyOpening; ?></td>
+                  <td style="text-align: right; color: var(--text2); font-weight: 500;"><?php echo $qtyClosing; ?></td>
                   <td style="text-align: right; font-weight: 600;"><?php echo $qtyHand; ?></td>
                   <td style="text-align: right; color: var(--text2);"><?php echo $avgCost; ?></td>
                   <td style="text-align: right; font-weight: 600; color: var(--green);"><?php echo $totVal; ?></td>

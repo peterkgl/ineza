@@ -183,6 +183,9 @@ foreach ($lotsData as $l) {
                     <td><?php echo $statusLabel; ?></td>
                     <td style="text-align: right;">
                       <div class="action-buttons" style="justify-content: flex-end;">
+                        <button class="btn-icon-only view-details" title="View Details" data-id="<?php echo $l['id']; ?>">
+                          <svg viewBox="0 0 24 24" style="stroke: var(--blue);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </button>
                         <?php if ($canEdit && $isOpen): ?>
                           <button class="btn-icon-only edit" title="Edit Lot" data-id="<?php echo $l['id']; ?>">
                             <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -269,6 +272,52 @@ foreach ($lotsData as $l) {
     <div class="confirm-footer">
       <button class="btn-sm" id="confirmCancelBtn">Cancel</button>
       <button class="btn-sm btn-primary" id="confirmDeleteBtn" style="background:var(--red); border-color:var(--red);">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Lot Details -->
+<div class="confirm-modal-overlay" id="detailsModalOverlay" style="display: none;">
+  <div class="confirm-modal" style="max-width: 600px; width: 90%;">
+    <div class="confirm-title" style="border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; font-weight: 600;">
+      <svg viewBox="0 0 24 24" style="stroke: var(--blue);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      Lot Details: <span id="detailsLotCode"></span>
+    </div>
+    <div class="confirm-body" style="text-align: left;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        <div>
+          <div style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;">Opening Date</div>
+          <div id="detailsOpeningDate" style="font-size: 14px; font-weight: 500; margin-top: 4px;"></div>
+        </div>
+        <div>
+          <div style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;">Closing Date</div>
+          <div id="detailsClosingDate" style="font-size: 14px; font-weight: 500; margin-top: 4px;"></div>
+        </div>
+        <div>
+          <div style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;">Status</div>
+          <div id="detailsStatus" style="font-size: 14px; font-weight: 500; margin-top: 4px;"></div>
+        </div>
+      </div>
+      
+      <div style="font-size: 11px; text-transform: uppercase; color: var(--orange); font-weight: 600; margin-bottom: 8px; border-left: 3px solid var(--orange); padding-left: 8px; letter-spacing: 0.5px;">Stock Balances</div>
+      <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+        <table class="data-table" style="font-size: 12px; width: 100%;">
+          <thead>
+            <tr>
+              <th>Warehouse</th>
+              <th>Product</th>
+              <th style="text-align: right;">Opening (kg)</th>
+              <th style="text-align: right;">Closing (kg)</th>
+            </tr>
+          </thead>
+          <tbody id="detailsStockList">
+            <!-- Dynamic list -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="confirm-footer" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 16px;">
+      <button class="btn-sm" id="closeDetailsModalBtn">Close</button>
     </div>
   </div>
 </div>
