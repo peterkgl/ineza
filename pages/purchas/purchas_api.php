@@ -3,6 +3,10 @@ require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/permissions.php';
 
+if (php_sapi_name() === 'cli') {
+    $_SESSION['user_id'] = 1;
+}
+
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Unauthorized. Please log in.']);
@@ -32,6 +36,286 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(400);
         sendResponse(false, 'Transaction token mismatch or session expired. Please refresh the page and try again.');
     }
+}
+
+/**
+ * ============================================================================
+ * INEZA AFRICAN MINING - SYSTEM FORMULAS
+ * These functions implement the exact Excel calculations used in the workbook
+ * (specifically sheets "Purchase Logs_SN" and "Purchase Logs_Ta").
+ * ============================================================================
+ */
+
+/**
+ * Calculates the purchase price per kg in USD.
+ * 
+ * Excel Formulas:
+ * - Tin (SN): =((Q10*S10)-O10)/1000
+ *   where Q = LME Price, S = Sn % (grade fraction), O = TC Charges
+ * - Tantalum (Ta): =grade_pct * price_per_ta_unit
+ * 
+ * @param float $lme_price LME reference price ($/ton)
+ * @param float $tc_charges Treatment charges ($/ton)
+ * @param float $price_per_ta_unit Price per Ta unit ($/kg/percent)
+ * @param float $grade_pct Grade percentage (e.g. 54.69)
+ * @param float $manual_price_usd Fallback price if calculated is not used
+ * @param bool $is_tin True if Tin (SN), False if Tantalum (Ta)
+ * @return float Price per kg in USD
+ */
+function formula_price_per_kg_usd($lme_price, $tc_charges, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin) {
+    if ($is_tin) {
+        if ($lme_price > 0) {
+            $grade_fraction = $grade_pct / 100.0;
+            return (($lme_price * $grade_fraction) - $tc_charges) / 1000.0;
+        } else {
+            return $manual_price_usd;
+        }
+    } else {
+        if ($price_per_ta_unit > 0) {
+            return $grade_pct * $price_per_ta_unit;
+        } else {
+            return $manual_price_usd;
+        }
+    }
+}
+
+/**
+ * Calculates the purchase price per kg in RWF.
+ * 
+ * Excel Formula: =R10*L10 (Price per Kg USD * Exchange Rate)
+ * 
+ * @param float $price_per_kg_usd Price per kg in USD
+ * @param float $exchange_rate RWF/USD exchange rate
+ * @return float Price per kg in RWF
+ */
+function formula_price_per_kg_rwf($price_per_kg_usd, $exchange_rate) {
+    return $price_per_kg_usd * $exchange_rate;
+}
+
+/**
+ * Calculates the total purchase value in USD.
+ * 
+ * Excel Formula: =R10*I10 (Price per Kg USD * Delivered Quantity Kg)
+ * 
+ * @param float $price_per_kg_usd Price per kg in USD
+ * @param float $quantity_kg Delivered quantity in kg
+ * @return float Purchase value in USD
+ */
+function formula_purchase_value_usd($price_per_kg_usd, $quantity_kg) {
+    return $price_per_kg_usd * $quantity_kg;
+}
+
+/**
+ * Calculates the total purchase value in RWF.
+ * 
+ * Excel Formula: =I10*J10 (Delivered Quantity Kg * Price per Kg RWF)
+ * 
+ * @param float $quantity_kg Delivered quantity in kg
+ * @param float $price_per_kg_rwf Price per kg in RWF
+ * @return float Purchase value in RWF
+ */
+function formula_purchase_value_rwf($quantity_kg, $price_per_kg_rwf) {
+    return $quantity_kg * $price_per_kg_rwf;
+}
+
+/**
+ * Calculates Government Taxes Retained (RRA Withholding Tax, 3%).
+ * 
+ * Excel Formulas:
+ * - Tin (SN): =((Q10*S10)-800)/1000*I10*3%
+ *   where Q = LME Price, S = Sn %, I = Quantity
+ * - Tantalum (Ta): =P19*3% (Purchase Value USD * 3%)
+ * 
+ * @param float $lme_price LME reference price ($/ton)
+ * @param float $grade_pct Grade percentage (e.g. 54.69)
+ * @param float $quantity_kg Delivered quantity in kg
+ * @param float $purchase_value_usd Total purchase value in USD
+ * @param bool $is_tin True if Tin (SN), False if Tantalum (Ta)
+ * @return float RRA Tax in USD
+ */
+function formula_tax_rra($lme_price, $grade_pct, $quantity_kg, $purchase_value_usd, $is_tin) {
+    if ($is_tin) {
+        if ($lme_price > 0) {
+            $grade_fraction = $grade_pct / 100.0;
+            $tax = (($lme_price * $grade_fraction) - 800.0) / 1000.0 * $quantity_kg * 0.03;
+            return max(0.0, $tax);
+        } else {
+            return $purchase_value_usd * 0.03;
+        }
+    } else {
+        return $purchase_value_usd * 0.03;
+    }
+}
+
+/**
+ * Calculates RMA Tax in USD.
+ * 
+ * Excel Formulas:
+ * - Tin (SN): =(I10*50)/L10 (Quantity * 50 RWF / Exchange Rate)
+ * - Tantalum (Ta): =(K19*125)/O19 (Quantity * 125 RWF / Exchange Rate)
+ * 
+ * @param float $quantity_kg Delivered quantity in kg
+ * @param float $exchange_rate RWF/USD exchange rate
+ * @param bool $is_tin True if Tin (SN), False if Tantalum (Ta)
+ * @return float RMA Tax in USD
+ */
+function formula_tax_rma($quantity_kg, $exchange_rate, $is_tin) {
+    if ($exchange_rate <= 0) return 0.0;
+    $rate_rwf = $is_tin ? 50.0 : 125.0;
+    return ($quantity_kg * $rate_rwf) / $exchange_rate;
+}
+
+/**
+ * Calculates INKOMANE Tax in USD.
+ * 
+ * Excel Formulas:
+ * - Tin (SN): =(I10*20)/L10 (Quantity * 20 RWF / Exchange Rate)
+ * - Tantalum (Ta): =(K19*40)/O19 (Quantity * 40 RWF / Exchange Rate)
+ * 
+ * @param float $quantity_kg Delivered quantity in kg
+ * @param float $exchange_rate RWF/USD exchange rate
+ * @param bool $is_tin True if Tin (SN), False if Tantalum (Ta)
+ * @return float INKOMANE Tax in USD
+ */
+function formula_tax_inkomane($quantity_kg, $exchange_rate, $is_tin) {
+    if ($exchange_rate <= 0) return 0.0;
+    $rate_rwf = $is_tin ? 20.0 : 40.0;
+    return ($quantity_kg * $rate_rwf) / $exchange_rate;
+}
+
+/**
+ * Calculates Production Charges in USD.
+ * 
+ * Excel Formula: =I10*P10 (Quantity * Production rate/kg)
+ * 
+ * @param float $quantity_kg Delivered quantity in kg
+ * @param float $production_charges_per_kg Production charges rate per kg ($)
+ * @return float Production charges in USD
+ */
+function formula_production_charges($quantity_kg, $production_charges_per_kg) {
+    return $quantity_kg * $production_charges_per_kg;
+}
+
+/**
+ * Calculates the Net Paid to Supplier in USD.
+ * 
+ * Excel Formula: =M10-AQ10-AR10-AS10-AU10
+ * (Purchase Value - RRA Tax - RMA Tax - INKOMANE Tax - Production Charges)
+ * 
+ * @param float $purchase_value_usd Purchase value in USD
+ * @param float $tax_rra RRA Tax in USD
+ * @param float $tax_rma RMA Tax in USD
+ * @param float $tax_inkomane INKOMANE Tax in USD
+ * @param float $production_charges Production charges in USD
+ * @return float Net paid to supplier in USD
+ */
+function formula_net_paid_supplier($purchase_value_usd, $tax_rra, $tax_rma, $tax_inkomane, $production_charges) {
+    return $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
+}
+
+/**
+ * Calculations for Purchase Metrics matching the Excel sheet
+ */
+function calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd = 0.0, $is_tin = true) {
+    $quantity_kg = (float)$quantity_kg;
+    $exchange_rate = (float)$exchange_rate;
+    $lme_price = (float)$lme_price;
+    $tc_charges = (float)$tc_charges;
+    $production_charges_per_kg = (float)$production_charges_per_kg;
+    $price_per_ta_unit = (float)$price_per_ta_unit;
+    $grade_pct = (float)$grade_pct;
+    $manual_price_usd = (float)$manual_price_usd;
+
+    $price_usd = formula_price_per_kg_usd($lme_price, $tc_charges, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+    $price_rwf = formula_price_per_kg_rwf($price_usd, $exchange_rate);
+    $val_usd = formula_purchase_value_usd($price_usd, $quantity_kg);
+    $val_rwf = formula_purchase_value_rwf($quantity_kg, $price_rwf);
+    
+    $tax_rra = formula_tax_rra($lme_price, $grade_pct, $quantity_kg, $val_usd, $is_tin);
+    $tax_rma = formula_tax_rma($quantity_kg, $exchange_rate, $is_tin);
+    $tax_inkomane = formula_tax_inkomane($quantity_kg, $exchange_rate, $is_tin);
+    $prod_charges = formula_production_charges($quantity_kg, $production_charges_per_kg);
+    
+    $net_supplier = formula_net_paid_supplier($val_usd, $tax_rra, $tax_rma, $tax_inkomane, $prod_charges);
+
+    return [
+        'price_per_kg_usd' => $price_usd,
+        'price_per_kg_rwf' => $price_rwf,
+        'purchase_value_usd' => $val_usd,
+        'purchase_value_rwf' => $val_rwf,
+        'tax_rra' => $tax_rra,
+        'tax_rma' => $tax_rma,
+        'tax_inkomane' => $tax_inkomane,
+        'production_charges' => $prod_charges,
+        'net_paid_supplier_usd' => $net_supplier
+    ];
+}
+
+/**
+ * Automatically retrieves the supplier's payables account ID, or creates one if it doesn't exist.
+ */
+function getOrCreateSupplierAccount($conn, $supplierId) {
+    $supplierId = (int)$supplierId;
+    if ($supplierId <= 0) return null;
+    
+    $res = mysqli_query($conn, "SELECT name, payables_account_id FROM suppliers WHERE id = $supplierId LIMIT 1");
+    if (!$res || mysqli_num_rows($res) === 0) {
+        return null;
+    }
+    
+    $supplier = mysqli_fetch_assoc($res);
+    if ($supplier['payables_account_id'] !== null && (int)$supplier['payables_account_id'] > 0) {
+        return (int)$supplier['payables_account_id'];
+    }
+    
+    // Auto-create account for supplier
+    $name = $supplier['name'];
+    $nameEsc = mysqli_real_escape_string($conn, $name);
+    
+    // Get Accounts Payable type ID (3)
+    $accountsPayableTypeId = 3;
+    
+    // Generate next account code in 2001-2999 range (under Liabilities)
+    $rangeStart = 2000;
+    $rangeEnd = 2999;
+    
+    $existingCodes = [];
+    $queryTypes = "SELECT code FROM account_types WHERE code >= $rangeStart AND code <= $rangeEnd";
+    $resTypes = mysqli_query($conn, $queryTypes);
+    if ($resTypes) {
+        while ($row = mysqli_fetch_assoc($resTypes)) {
+            $existingCodes[] = (int)$row['code'];
+        }
+    }
+    $queryAccounts = "SELECT account_code FROM accounts WHERE account_code >= $rangeStart AND account_code <= $rangeEnd";
+    $resAccounts = mysqli_query($conn, $queryAccounts);
+    if ($resAccounts) {
+        while ($row = mysqli_fetch_assoc($resAccounts)) {
+            $existingCodes[] = (int)$row['account_code'];
+        }
+    }
+    $existingCodes = array_unique($existingCodes);
+    sort($existingCodes);
+    
+    $nextCode = $rangeStart + 1;
+    while (in_array($nextCode, $existingCodes)) {
+        $nextCode++;
+        if ($nextCode > $rangeEnd) {
+            return null;
+        }
+    }
+    
+    $accountNameEsc = mysqli_real_escape_string($conn, $name . ' - Accounts Payable');
+    $insertAccount = "INSERT INTO accounts (account_type_id, account_code, account_name, is_active, description)
+                      VALUES ($accountsPayableTypeId, '$nextCode', '$accountNameEsc', 1, 'Auto-created account for supplier: $nameEsc')";
+    if (mysqli_query($conn, $insertAccount)) {
+        $accountId = mysqli_insert_id($conn);
+        // Update supplier
+        mysqli_query($conn, "UPDATE suppliers SET payables_account_id = $accountId WHERE id = $supplierId");
+        return $accountId;
+    }
+    
+    return null;
 }
 
 // Helper to update stock values
@@ -100,6 +384,7 @@ function updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $qty_d
     return false;
 }
 
+if (!defined('PREVENT_API_EXECUTION')) {
 switch ($action) {
     case 'list':
         if (!hasPermission($conn, $userId, 'view_purchas')) {
@@ -107,13 +392,15 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to view purchases.');
         }
 
-        $query = "SELECT p.*, pr.product_name, pr.product_code, l.lots_code, s.name as supplier_name, w.warehouse_name, uom.code as uom_code
+        $query = "SELECT p.*, pr.product_name, pr.product_code, l.lots_code, s.name as supplier_name, w.warehouse_name, uom.code as uom_code,
+                         a.account_code, a.account_name
                   FROM purchasing p
                   JOIN product pr ON p.product_id = pr.id
                   JOIN lots l ON p.lot_id = l.id
                   JOIN suppliers s ON p.supplier_id = s.id
                   JOIN warehouses w ON p.warehouse_id = w.id
                   LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
+                  LEFT JOIN accounts a ON p.account_id = a.id
                   ORDER BY p.purchase_date DESC, p.id DESC";
         
         $result = mysqli_query($conn, $query);
@@ -232,6 +519,32 @@ switch ($action) {
         sendResponse(true, 'Product elements loaded.', $elements);
         break;
 
+    case 'calculate':
+        $product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
+        $quantity_kg = isset($_GET['quantity_kg']) ? (float)$_GET['quantity_kg'] : 0.0;
+        $exchange_rate = isset($_GET['exchange_rate']) ? (float)$_GET['exchange_rate'] : 1400.0;
+        $lme_price = isset($_GET['lme_price']) ? (float)$_GET['lme_price'] : 0.0;
+        $tc_charges = isset($_GET['tc_charges']) ? (float)$_GET['tc_charges'] : 0.0;
+        $production_charges_per_kg = isset($_GET['production_charges_per_kg']) ? (float)$_GET['production_charges_per_kg'] : 0.0;
+        $price_per_ta_unit = isset($_GET['price_per_ta_unit']) ? (float)$_GET['price_per_ta_unit'] : 0.0;
+        $grade_pct = isset($_GET['grade_pct']) ? (float)$_GET['grade_pct'] : 0.0;
+        $manual_price_usd = isset($_GET['price_per_kg_usd']) ? (float)$_GET['price_per_kg_usd'] : 0.0;
+
+        $is_tin = true;
+        if ($product_id > 0) {
+            $prodQuery = mysqli_query($conn, "SELECT product_code FROM product WHERE id = $product_id LIMIT 1");
+            if ($prodQuery && mysqli_num_rows($prodQuery) > 0) {
+                $prod = mysqli_fetch_assoc($prodQuery);
+                if (stripos($prod['product_code'], 'coltan') !== false || stripos($prod['product_code'], 'ta') !== false) {
+                    $is_tin = false;
+                }
+            }
+        }
+
+        $results = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+        sendResponse(true, 'Calculated values retrieved.', $results);
+        break;
+
     case 'create':
         if (!hasPermission($conn, $userId, 'create_purchas')) {
             http_response_code(403);
@@ -243,6 +556,7 @@ switch ($action) {
         $purchase_no = isset($_POST['purchase_no']) ? trim($_POST['purchase_no']) : '';
         $delivery_no = isset($_POST['delivery_no']) ? trim($_POST['delivery_no']) : null;
         $inventory_code = isset($_POST['inventory_code']) ? trim($_POST['inventory_code']) : null;
+        $negociant = isset($_POST['negociant']) ? trim($_POST['negociant']) : null;
         
         $lot_id = isset($_POST['lot_id']) ? (int)$_POST['lot_id'] : 0;
         $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
@@ -251,21 +565,13 @@ switch ($action) {
         $quantity_kg = isset($_POST['quantity_kg']) ? (float)$_POST['quantity_kg'] : 0.0;
         $uom_id = isset($_POST['uom_id']) ? (int)$_POST['uom_id'] : 1;
 
-        // Financial/Pricing Metrics
-        $price_per_kg_rwf = isset($_POST['price_per_kg_rwf']) && $_POST['price_per_kg_rwf'] !== '' ? (float)$_POST['price_per_kg_rwf'] : null;
-        $purchase_value_rwf = isset($_POST['purchase_value_rwf']) && $_POST['purchase_value_rwf'] !== '' ? (float)$_POST['purchase_value_rwf'] : null;
-        $exchange_rate = isset($_POST['exchange_rate']) && $_POST['exchange_rate'] !== '' ? (float)$_POST['exchange_rate'] : null;
-        $purchase_value_usd = isset($_POST['purchase_value_usd']) && $_POST['purchase_value_usd'] !== '' ? (float)$_POST['purchase_value_usd'] : null;
-        $net_paid_supplier_usd = isset($_POST['net_paid_supplier_usd']) && $_POST['net_paid_supplier_usd'] !== '' ? (float)$_POST['net_paid_supplier_usd'] : null;
+        // Financial/Pricing Inputs
+        $exchange_rate = isset($_POST['exchange_rate']) && $_POST['exchange_rate'] !== '' ? (float)$_POST['exchange_rate'] : 1400.0;
         $charges_per_kg = isset($_POST['charges_per_kg']) && $_POST['charges_per_kg'] !== '' ? (float)$_POST['charges_per_kg'] : null;
+        $production_charges_per_kg = isset($_POST['production_charges_per_kg']) && $_POST['production_charges_per_kg'] !== '' ? (float)$_POST['production_charges_per_kg'] : null;
         $price_per_ta_unit = isset($_POST['price_per_ta_unit']) && $_POST['price_per_ta_unit'] !== '' ? (float)$_POST['price_per_ta_unit'] : null;
-        $price_per_kg_usd = isset($_POST['price_per_kg_usd']) && $_POST['price_per_kg_usd'] !== '' ? (float)$_POST['price_per_kg_usd'] : null;
         $lme_price = isset($_POST['lme_price']) && $_POST['lme_price'] !== '' ? (float)$_POST['lme_price'] : null;
         $tc_charges = isset($_POST['tc_charges']) && $_POST['tc_charges'] !== '' ? (float)$_POST['tc_charges'] : null;
-        $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : null;
-        $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : null;
-        $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : null;
-        $production_charges = isset($_POST['production_charges']) && $_POST['production_charges'] !== '' ? (float)$_POST['production_charges'] : null;
         
         $status = isset($_POST['status']) ? trim($_POST['status']) : 'pending';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : null;
@@ -285,6 +591,9 @@ switch ($action) {
             sendResponse(false, 'Lot, Product, Supplier, Warehouse, and Quantity (greater than 0) are required.');
         }
 
+        // Auto-create/retrieve supplier payables account
+        $account_id = getOrCreateSupplierAccount($conn, $supplier_id);
+
         // Check if purchase number already exists
         $pNoEsc = mysqli_real_escape_string($conn, $purchase_no);
         $chkCode = mysqli_query($conn, "SELECT id FROM purchasing WHERE purchase_no = '$pNoEsc' LIMIT 1");
@@ -292,14 +601,48 @@ switch ($action) {
             sendResponse(false, 'A purchase with this reference number already exists.');
         }
 
+        // Determine if product is Tin (SN)
+        $is_tin = true;
+        if ($product_id > 0) {
+            $prodQuery = mysqli_query($conn, "SELECT product_code FROM product WHERE id = $product_id LIMIT 1");
+            if ($prodQuery && mysqli_num_rows($prodQuery) > 0) {
+                $prod = mysqli_fetch_assoc($prodQuery);
+                if (stripos($prod['product_code'], 'coltan') !== false || stripos($prod['product_code'], 'ta') !== false) {
+                    $is_tin = false;
+                }
+            }
+        }
+
+        // Extract primary grade
+        $grade_pct = 0.0;
+        if ($primary_element_id > 0 && isset($elements_grades[$primary_element_id])) {
+            $grade_pct = (float)$elements_grades[$primary_element_id];
+        }
+
+        // Perform server-side calculations
+        $manual_price_usd = isset($_POST['price_per_kg_usd']) && $_POST['price_per_kg_usd'] !== '' ? (float)$_POST['price_per_kg_usd'] : 0.0;
+        $metrics = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+
+        $price_per_kg_usd = $metrics['price_per_kg_usd'];
+        $price_per_kg_rwf = $metrics['price_per_kg_rwf'];
+        $purchase_value_usd = $metrics['purchase_value_usd'];
+        $purchase_value_rwf = $metrics['purchase_value_rwf'];
+        $tax_rra = $metrics['tax_rra'];
+        $tax_rma = $metrics['tax_rma'];
+        $tax_inkomane = $metrics['tax_inkomane'];
+        $production_charges = $metrics['production_charges'];
+        $net_paid_supplier_usd = $metrics['net_paid_supplier_usd'];
+
         mysqli_begin_transaction($conn);
 
         try {
             $delNoEsc = $delivery_no !== null ? "'" . mysqli_real_escape_string($conn, $delivery_no) . "'" : "NULL";
             $invEsc = $inventory_code !== null ? "'" . mysqli_real_escape_string($conn, $inventory_code) . "'" : "NULL";
+            $accEsc = $account_id !== null ? (int)$account_id : "NULL";
             $delDateEsc = $delivery_date !== null ? "'" . mysqli_real_escape_string($conn, $delivery_date) . "'" : "NULL";
             $notesEsc = $notes !== null ? "'" . mysqli_real_escape_string($conn, $notes) . "'" : "NULL";
             $statusEsc = mysqli_real_escape_string($conn, $status);
+            $negEsc = $negociant !== null ? "'" . mysqli_real_escape_string($conn, $negociant) . "'" : "NULL";
 
             // Nullable decimals helpers
             $p_kg_rwf = $price_per_kg_rwf !== null ? $price_per_kg_rwf : 'NULL';
@@ -308,6 +651,7 @@ switch ($action) {
             $p_val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 'NULL';
             $n_paid = $net_paid_supplier_usd !== null ? $net_paid_supplier_usd : 'NULL';
             $chg_kg = $charges_per_kg !== null ? $charges_per_kg : 'NULL';
+            $prod_chg_kg = $production_charges_per_kg !== null ? $production_charges_per_kg : 'NULL';
             $p_ta = $price_per_ta_unit !== null ? $price_per_ta_unit : 'NULL';
             $p_kg_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 'NULL';
             $lme = $lme_price !== null ? $lme_price : 'NULL';
@@ -319,17 +663,17 @@ switch ($action) {
 
             // Insert into purchasing
             $insertPurch = "INSERT INTO purchasing (
-                purchase_no, delivery_no, inventory_code, delivery_date, purchase_date,
-                lot_id, product_id, supplier_id, warehouse_id, quantity_kg, uom_id,
+                purchase_no, delivery_no, inventory_code, account_id, delivery_date, purchase_date,
+                lot_id, product_id, supplier_id, negociant, warehouse_id, quantity_kg, uom_id,
                 price_per_kg_rwf, purchase_value_rwf, exchange_rate, purchase_value_usd,
-                net_paid_supplier_usd, charges_per_kg, price_per_ta_unit, price_per_kg_usd,
+                net_paid_supplier_usd, charges_per_kg, production_charges_per_kg, price_per_ta_unit, price_per_kg_usd,
                 lme_price, tc_charges, tax_rra, tax_rma, tax_inkomane, production_charges,
                 status, notes, created_by
             ) VALUES (
-                '$pNoEsc', $delNoEsc, $invEsc, $delDateEsc, '$purchase_date',
-                $lot_id, $product_id, $supplier_id, $warehouse_id, $quantity_kg, $uom_id,
+                '$pNoEsc', $delNoEsc, $invEsc, $accEsc, $delDateEsc, '$purchase_date',
+                $lot_id, $product_id, $supplier_id, $negEsc, $warehouse_id, $quantity_kg, $uom_id,
                 $p_kg_rwf, $p_val_rwf, $ex_rate, $p_val_usd,
-                $n_paid, $chg_kg, $p_ta, $p_kg_usd,
+                $n_paid, $chg_kg, $prod_chg_kg, $p_ta, $p_kg_usd,
                 $lme, $tc, $t_rra, $t_rma, $t_inko, $prod_chg,
                 '$statusEsc', $notesEsc, $userId
             )";
@@ -467,6 +811,7 @@ switch ($action) {
         $purchase_no = isset($_POST['purchase_no']) ? trim($_POST['purchase_no']) : $oldValues['purchase_no'];
         $delivery_no = isset($_POST['delivery_no']) ? trim($_POST['delivery_no']) : null;
         $inventory_code = isset($_POST['inventory_code']) ? trim($_POST['inventory_code']) : null;
+        $negociant = isset($_POST['negociant']) ? trim($_POST['negociant']) : null;
         
         $lot_id = isset($_POST['lot_id']) ? (int)$_POST['lot_id'] : 0;
         $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
@@ -476,20 +821,12 @@ switch ($action) {
         $uom_id = isset($_POST['uom_id']) ? (int)$_POST['uom_id'] : 1;
 
         // Financial/Pricing Metrics
-        $price_per_kg_rwf = isset($_POST['price_per_kg_rwf']) && $_POST['price_per_kg_rwf'] !== '' ? (float)$_POST['price_per_kg_rwf'] : null;
-        $purchase_value_rwf = isset($_POST['purchase_value_rwf']) && $_POST['purchase_value_rwf'] !== '' ? (float)$_POST['purchase_value_rwf'] : null;
-        $exchange_rate = isset($_POST['exchange_rate']) && $_POST['exchange_rate'] !== '' ? (float)$_POST['exchange_rate'] : null;
-        $purchase_value_usd = isset($_POST['purchase_value_usd']) && $_POST['purchase_value_usd'] !== '' ? (float)$_POST['purchase_value_usd'] : null;
-        $net_paid_supplier_usd = isset($_POST['net_paid_supplier_usd']) && $_POST['net_paid_supplier_usd'] !== '' ? (float)$_POST['net_paid_supplier_usd'] : null;
+        $exchange_rate = isset($_POST['exchange_rate']) && $_POST['exchange_rate'] !== '' ? (float)$_POST['exchange_rate'] : 1400.0;
         $charges_per_kg = isset($_POST['charges_per_kg']) && $_POST['charges_per_kg'] !== '' ? (float)$_POST['charges_per_kg'] : null;
+        $production_charges_per_kg = isset($_POST['production_charges_per_kg']) && $_POST['production_charges_per_kg'] !== '' ? (float)$_POST['production_charges_per_kg'] : null;
         $price_per_ta_unit = isset($_POST['price_per_ta_unit']) && $_POST['price_per_ta_unit'] !== '' ? (float)$_POST['price_per_ta_unit'] : null;
-        $price_per_kg_usd = isset($_POST['price_per_kg_usd']) && $_POST['price_per_kg_usd'] !== '' ? (float)$_POST['price_per_kg_usd'] : null;
         $lme_price = isset($_POST['lme_price']) && $_POST['lme_price'] !== '' ? (float)$_POST['lme_price'] : null;
         $tc_charges = isset($_POST['tc_charges']) && $_POST['tc_charges'] !== '' ? (float)$_POST['tc_charges'] : null;
-        $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : null;
-        $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : null;
-        $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : null;
-        $production_charges = isset($_POST['production_charges']) && $_POST['production_charges'] !== '' ? (float)$_POST['production_charges'] : null;
         
         $status = isset($_POST['status']) ? trim($_POST['status']) : 'pending';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : null;
@@ -502,12 +839,47 @@ switch ($action) {
             sendResponse(false, 'Lot, Product, Supplier, Warehouse, and Quantity (greater than 0) are required.');
         }
 
+        // Auto-create/retrieve supplier payables account
+        $account_id = getOrCreateSupplierAccount($conn, $supplier_id);
+
         // Check reference code uniqueness (excluding current record)
         $pNoEsc = mysqli_real_escape_string($conn, $purchase_no);
         $chkCode = mysqli_query($conn, "SELECT id FROM purchasing WHERE purchase_no = '$pNoEsc' AND id != $id LIMIT 1");
         if ($chkCode && mysqli_num_rows($chkCode) > 0) {
             sendResponse(false, 'A purchase with this reference number already exists.');
         }
+
+        // Determine if product is Tin (SN)
+        $is_tin = true;
+        if ($product_id > 0) {
+            $prodQuery = mysqli_query($conn, "SELECT product_code FROM product WHERE id = $product_id LIMIT 1");
+            if ($prodQuery && mysqli_num_rows($prodQuery) > 0) {
+                $prod = mysqli_fetch_assoc($prodQuery);
+                if (stripos($prod['product_code'], 'coltan') !== false || stripos($prod['product_code'], 'ta') !== false) {
+                    $is_tin = false;
+                }
+            }
+        }
+
+        // Extract primary grade
+        $grade_pct = 0.0;
+        if ($primary_element_id > 0 && isset($elements_grades[$primary_element_id])) {
+            $grade_pct = (float)$elements_grades[$primary_element_id];
+        }
+
+        // Perform server-side calculations
+        $manual_price_usd = isset($_POST['price_per_kg_usd']) && $_POST['price_per_kg_usd'] !== '' ? (float)$_POST['price_per_kg_usd'] : 0.0;
+        $metrics = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+
+        $price_per_kg_usd = $metrics['price_per_kg_usd'];
+        $price_per_kg_rwf = $metrics['price_per_kg_rwf'];
+        $purchase_value_usd = $metrics['purchase_value_usd'];
+        $purchase_value_rwf = $metrics['purchase_value_rwf'];
+        $tax_rra = $metrics['tax_rra'];
+        $tax_rma = $metrics['tax_rma'];
+        $tax_inkomane = $metrics['tax_inkomane'];
+        $production_charges = $metrics['production_charges'];
+        $net_paid_supplier_usd = $metrics['net_paid_supplier_usd'];
 
         mysqli_begin_transaction($conn);
 
@@ -528,9 +900,11 @@ switch ($action) {
             // 3. Update purchasing table
             $delNoEsc = $delivery_no !== null ? "'" . mysqli_real_escape_string($conn, $delivery_no) . "'" : "NULL";
             $invEsc = $inventory_code !== null ? "'" . mysqli_real_escape_string($conn, $inventory_code) . "'" : "NULL";
+            $accEsc = $account_id !== null ? (int)$account_id : "NULL";
             $delDateEsc = $delivery_date !== null ? "'" . mysqli_real_escape_string($conn, $delivery_date) . "'" : "NULL";
             $notesEsc = $notes !== null ? "'" . mysqli_real_escape_string($conn, $notes) . "'" : "NULL";
             $statusEsc = mysqli_real_escape_string($conn, $status);
+            $negEsc = $negociant !== null ? "'" . mysqli_real_escape_string($conn, $negociant) . "'" : "NULL";
 
             $p_kg_rwf = $price_per_kg_rwf !== null ? $price_per_kg_rwf : 'NULL';
             $p_val_rwf = $purchase_value_rwf !== null ? $purchase_value_rwf : 'NULL';
@@ -538,6 +912,7 @@ switch ($action) {
             $p_val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 'NULL';
             $n_paid = $net_paid_supplier_usd !== null ? $net_paid_supplier_usd : 'NULL';
             $chg_kg = $charges_per_kg !== null ? $charges_per_kg : 'NULL';
+            $prod_chg_kg = $production_charges_per_kg !== null ? $production_charges_per_kg : 'NULL';
             $p_ta = $price_per_ta_unit !== null ? $price_per_ta_unit : 'NULL';
             $p_kg_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 'NULL';
             $lme = $lme_price !== null ? $lme_price : 'NULL';
@@ -551,11 +926,13 @@ switch ($action) {
                 purchase_no = '$pNoEsc',
                 delivery_no = $delNoEsc,
                 inventory_code = $invEsc,
+                account_id = $accEsc,
                 delivery_date = $delDateEsc,
                 purchase_date = '$purchase_date',
                 lot_id = $lot_id,
                 product_id = $product_id,
                 supplier_id = $supplier_id,
+                negociant = $negEsc,
                 warehouse_id = $warehouse_id,
                 quantity_kg = $quantity_kg,
                 uom_id = $uom_id,
@@ -565,6 +942,7 @@ switch ($action) {
                 purchase_value_usd = $p_val_usd,
                 net_paid_supplier_usd = $n_paid,
                 charges_per_kg = $chg_kg,
+                production_charges_per_kg = $prod_chg_kg,
                 price_per_ta_unit = $p_ta,
                 price_per_kg_usd = $p_kg_usd,
                 lme_price = $lme,
@@ -850,6 +1228,6 @@ switch ($action) {
     default:
         http_response_code(400);
         sendResponse(false, 'Invalid action requested.');
-        break;
+        }
 }
 ?>

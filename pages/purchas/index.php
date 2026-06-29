@@ -250,6 +250,7 @@ if ($result) {
                 <th>Lot</th>
                 <th>Product</th>
                 <th>Supplier</th>
+                <th>Negociant</th>
                 <th>Warehouse</th>
                 <th>Quantity</th>
                 <th>Total Value</th>
@@ -260,7 +261,7 @@ if ($result) {
             </thead>
             <tbody id="purchasesList">
               <tr>
-                <td colspan="11" class="table-empty">Loading purchases data...</td>
+                <td colspan="12" class="table-empty">Loading purchases data...</td>
               </tr>
             </tbody>
           </table>

@@ -269,6 +269,16 @@ switch ($action) {
                     throw new Exception("Failed to update stock balances on lot close: " . mysqli_error($conn));
                 }
 
+                // Roll over other open lots immediately (opening = closing)
+                $rollQuery = "UPDATE stock s
+                              JOIN lots l ON s.lot_id = l.id
+                              SET s.opening = s.closing,
+                                  s.last_rolled_over_at = '$today'
+                              WHERE l.closing_date IS NULL";
+                if (!mysqli_query($conn, $rollQuery)) {
+                    throw new Exception("Failed to roll over open lots stock: " . mysqli_error($conn));
+                }
+
                 $newValues = $oldValues;
                 $newValues['closing_date'] = $today;
                 logAudit($conn, 'UPDATE', 'lots', $oldValues['lots_code'], "Closed lot: " . $oldValues['lots_code'], $oldValues, $newValues);

@@ -425,69 +425,81 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Math Calculations for pricing
+  // AJAX calculations for pricing using server-side PHP formulas
   function calculateTotals() {
     var qty = parseFloat(qtyInput.value) || 0.0;
     var exRate = parseFloat(exRateInput.value) || 1400.0;
-    var priceUsd = parseFloat(priceKgUsd.value) || 0.0;
-    var taxRraVal = parseFloat(rraTax.value) || 0.0;
-    var taxRmaVal = parseFloat(rmaTax.value) || 0.0;
-    var taxInkoVal = parseFloat(inkoTax.value) || 0.0;
+    var productId = productSelect ? productSelect.value : "";
+    var lme = parseFloat(lmePriceInput.value) || 0.0;
+    var tc = parseFloat(tcChargesInput.value) || 0.0;
     
-    // Auto calculate price per kg RWF
-    var priceRwf = priceUsd * exRate;
-    priceKgRwf.value = priceRwf.toFixed(4);
+    var prodChargesPerKgInput = document.getElementById("productionChargesPerKg");
+    var prodChargesRate = prodChargesPerKgInput ? parseFloat(prodChargesPerKgInput.value) || 0.0 : 0.0;
     
-    // Auto calculate purchase values
-    var totalUsd = qty * priceUsd;
-    var totalRwf = totalUsd * exRate;
+    var pricePerTaUnitInput = document.getElementById("pricePerTaUnit");
+    var taUnit = pricePerTaUnitInput ? parseFloat(pricePerTaUnitInput.value) || 0.0 : 0.0;
     
-    valUsd.value = totalUsd.toFixed(2);
-    valRwf.value = totalRwf.toFixed(2);
+    var manualPrice = parseFloat(priceKgUsd.value) || 0.0;
     
-    // Auto calculate Net Paid to Supplier
-    var totalTaxes = taxRraVal + taxRmaVal + taxInkoVal;
-    var netUsd = totalUsd - totalTaxes;
-    netPaidUsd.value = netUsd.toFixed(4);
+    var gradePct = 0.0;
+    if (primaryElementId) {
+      var primaryGradeInput = gradesInputContainer ? gradesInputContainer.querySelector('input[name="el_grade_' + primaryElementId + '"]') : null;
+      if (primaryGradeInput) {
+        gradePct = parseFloat(primaryGradeInput.value) || 0.0;
+      }
+    }
 
-    // Render Preview summary details
-    var previewHtml = '<div class="summary-row"><span>Quantity:</span><span class="summary-val-usd">' + qty.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' kg</span></div>' +
-      '<div class="summary-row"><span>Unit Price:</span><span class="summary-val-usd">$' + priceUsd.toFixed(4) + ' <span class="summary-val-rwf">(' + priceRwf.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
-      '<div class="summary-row"><span>Purchase Value:</span><span class="summary-val-usd">$' + totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span class="summary-val-rwf">(' + totalRwf.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
-      '<div class="summary-row"><span>Total Deductions/Taxes:</span><span class="summary-val-usd" style="color:var(--red)">-$' + totalTaxes.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + '</span></div>' +
-      '<div class="summary-row"><span>Net Payable Amount:</span><span class="summary-val-usd" style="color:var(--green)">$' + netUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span></div>';
-      
-    document.getElementById("pricingSummaryPreview").innerHTML = previewHtml;
+    var url = "purchas_api.php?action=calculate" +
+      "&product_id=" + encodeURIComponent(productId) +
+      "&quantity_kg=" + encodeURIComponent(qty) +
+      "&exchange_rate=" + encodeURIComponent(exRate) +
+      "&lme_price=" + encodeURIComponent(lme) +
+      "&tc_charges=" + encodeURIComponent(tc) +
+      "&production_charges_per_kg=" + encodeURIComponent(prodChargesRate) +
+      "&price_per_ta_unit=" + encodeURIComponent(taUnit) +
+      "&grade_pct=" + encodeURIComponent(gradePct) +
+      "&price_per_kg_usd=" + encodeURIComponent(manualPrice);
+
+    fetch(url)
+      .then(function(res) { return res.json(); })
+      .then(function(result) {
+        if (result.success) {
+          var metrics = result.data;
+          priceKgUsd.value = parseFloat(metrics.price_per_kg_usd).toFixed(4);
+          priceKgRwf.value = parseFloat(metrics.price_per_kg_rwf).toFixed(4);
+          valUsd.value = parseFloat(metrics.purchase_value_usd).toFixed(2);
+          valRwf.value = parseFloat(metrics.purchase_value_rwf).toFixed(2);
+          rraTax.value = parseFloat(metrics.tax_rra).toFixed(4);
+          rmaTax.value = parseFloat(metrics.tax_rma).toFixed(4);
+          inkoTax.value = parseFloat(metrics.tax_inkomane).toFixed(4);
+          prodCharges.value = parseFloat(metrics.production_charges).toFixed(4);
+          netPaidUsd.value = parseFloat(metrics.net_paid_supplier_usd).toFixed(4);
+
+          // Render Preview summary details
+          var totalTaxes = parseFloat(metrics.tax_rra) + parseFloat(metrics.tax_rma) + parseFloat(metrics.tax_inkomane) + parseFloat(metrics.production_charges);
+          var previewHtml = '<div class="summary-row"><span>Quantity:</span><span class="summary-val-usd">' + qty.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' kg</span></div>' +
+            '<div class="summary-row"><span>Unit Price:</span><span class="summary-val-usd">$' + parseFloat(metrics.price_per_kg_usd).toFixed(4) + ' <span class="summary-val-rwf">(' + parseFloat(metrics.price_per_kg_rwf).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
+            '<div class="summary-row"><span>Purchase Value:</span><span class="summary-val-usd">$' + parseFloat(metrics.purchase_value_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span class="summary-val-rwf">(' + parseFloat(metrics.purchase_value_rwf).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
+            '<div class="summary-row"><span>Total Deductions/Taxes/Charges:</span><span class="summary-val-usd" style="color:var(--red)">-$' + totalTaxes.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + '</span></div>' +
+            '<div class="summary-row"><span>Net Payable Amount:</span><span class="summary-val-usd" style="color:var(--green)">$' + parseFloat(metrics.net_paid_supplier_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span></div>';
+            
+          document.getElementById("pricingSummaryPreview").innerHTML = previewHtml;
+        }
+      })
+      .catch(function(err) {
+        console.error("Error calculating pricing:", err);
+      });
   }
 
-  // Attach calculation event listeners
-  [qtyInput, exRateInput, priceKgUsd, rraTax, rmaTax, inkoTax].forEach(function(input) {
+  // Attach calculation event listeners to all pricing/quantity/product-related inputs
+  var prodChargesPerKgInput = document.getElementById("productionChargesPerKg");
+  var pricePerTaUnitInput = document.getElementById("pricePerTaUnit");
+
+  [qtyInput, exRateInput, priceKgUsd, lmePriceInput, tcChargesInput, prodChargesPerKgInput, pricePerTaUnitInput].forEach(function(input) {
     if (input) {
       input.addEventListener("input", calculateTotals);
     }
   });
-
-  // Calculate pricing based on LME & TC charges if provided
-  function calculateLmeFormula() {
-    var lme = parseFloat(lmePriceInput.value) || 0.0;
-    var tc = parseFloat(tcChargesInput.value) || 0.0;
-    
-    // Simple coltan mining formula: price_per_kg_usd = (LME - TC) * (grade_pct / 100)
-    // Find the primary element grade percentage
-    var primaryGradeInput = gradesInputContainer.querySelector('input[name="el_grade_' + primaryElementId + '"]');
-    var gradePct = primaryGradeInput ? parseFloat(primaryGradeInput.value) : 0.0;
-    
-    if (lme > 0 && gradePct > 0) {
-      // Metric Ton is 1000 kg, so price per kg is LME / 1000
-      var baseVal = (lme - tc) / 1000;
-      var calcPrice = baseVal * (gradePct / 100);
-      priceKgUsd.value = calcPrice.toFixed(4);
-      calculateTotals();
-    }
-  }
-
-  if (lmePriceInput) lmePriceInput.addEventListener("input", calculateLmeFormula);
-  if (tcChargesInput) tcChargesInput.addEventListener("input", calculateLmeFormula);
 
   // Next/Prev Buttons
   nextBtn.addEventListener("click", function() {
@@ -640,6 +652,12 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("deliveryDate").value = p.delivery_date;
       document.getElementById("deliveryNo").value = p.delivery_no || "";
       document.getElementById("inventoryCode").value = p.inventory_code || "";
+      if (document.getElementById("negociant")) {
+        document.getElementById("negociant").value = p.negociant || "";
+      }
+      if (document.getElementById("accountId")) {
+        document.getElementById("accountId").value = p.account_id || "";
+      }
       document.getElementById("supplierId").value = p.supplier_id;
       document.getElementById("warehouseId").value = p.warehouse_id;
       document.getElementById("lotId").value = p.lot_id;
@@ -684,6 +702,9 @@ document.addEventListener("DOMContentLoaded", function () {
       rraTax.value = p.tax_rra || "";
       rmaTax.value = p.tax_rma || "";
       inkoTax.value = p.tax_inkomane || "";
+      if (document.getElementById("productionChargesPerKg")) {
+        document.getElementById("productionChargesPerKg").value = p.production_charges_per_kg || "";
+      }
       prodCharges.value = p.production_charges || "";
       lmePriceInput.value = p.lme_price || "";
       tcChargesInput.value = p.tc_charges || "";

@@ -23,6 +23,14 @@ if (empty($_SESSION['purchas_token'])) {
 }
 
 // Load dropdown options
+$accounts = [];
+$accQuery = mysqli_query($conn, "SELECT id, account_code, account_name FROM accounts WHERE is_active = 1 ORDER BY account_code ASC");
+if ($accQuery) {
+    while ($row = mysqli_fetch_assoc($accQuery)) {
+        $accounts[] = $row;
+    }
+}
+
 $suppliers = [];
 $supQuery = mysqli_query($conn, "SELECT id, name FROM suppliers WHERE is_active = 1 ORDER BY name ASC");
 if ($supQuery) {
@@ -255,10 +263,17 @@ if ($id > 0) {
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label for="inventoryCode">Inventory Code / Tag</label>
-            <input type="text" id="inventoryCode" name="inventory_code" class="form-control" placeholder="e.g. TAG-COLTAN-09B">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="inventoryCode">Inventory Code / Tag</label>
+              <input type="text" id="inventoryCode" name="inventory_code" class="form-control" placeholder="e.g. TAG-COLTAN-09B">
+            </div>
+            <div class="form-group">
+              <label for="negociant">Negociant</label>
+              <input type="text" id="negociant" name="negociant" class="form-control" placeholder="e.g. Christine">
+            </div>
           </div>
+          <input type="hidden" id="accountId" name="account_id">
         </div>
 
         <!-- STEP 2: Product & Elements Selection -->
@@ -347,19 +362,19 @@ if ($id > 0) {
           <div class="form-grid-3">
             <div class="form-group">
               <label for="taxRra">RRA Tax (USD)</label>
-              <input type="number" id="taxRra" name="tax_rra" class="form-control" placeholder="0.00" step="any">
+              <input type="number" id="taxRra" name="tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
             </div>
             <div class="form-group">
               <label for="taxRma">RMA Tax (USD)</label>
-              <input type="number" id="taxRma" name="tax_rma" class="form-control" placeholder="0.00" step="any">
+              <input type="number" id="taxRma" name="tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
             </div>
             <div class="form-group">
               <label for="taxInkomane">Inkomane Tax (USD)</label>
-              <input type="number" id="taxInkomane" name="tax_inkomane" class="form-control" placeholder="0.00" step="any">
+              <input type="number" id="taxInkomane" name="tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
             </div>
           </div>
 
-          <div class="form-grid-3">
+          <div class="form-grid-2">
             <div class="form-group">
               <label for="chargesPerKg">Other Charges per kg</label>
               <input type="number" id="chargesPerKg" name="charges_per_kg" class="form-control" placeholder="0.00" step="any">
@@ -368,9 +383,16 @@ if ($id > 0) {
               <label for="pricePerTaUnit">Price per Ta Unit</label>
               <input type="number" id="pricePerTaUnit" name="price_per_ta_unit" class="form-control" placeholder="0.00" step="any">
             </div>
+          </div>
+
+          <div class="form-grid-2">
             <div class="form-group">
-              <label for="productionCharges">Production Charges</label>
-              <input type="number" id="productionCharges" name="production_charges" class="form-control" placeholder="0.00" step="any">
+              <label for="productionChargesPerKg">Production Rate per kg (USD)</label>
+              <input type="number" id="productionChargesPerKg" name="production_charges_per_kg" class="form-control" placeholder="e.g. 3.50" step="any">
+            </div>
+            <div class="form-group">
+              <label for="productionCharges">Production Charges (Total USD)</label>
+              <input type="number" id="productionCharges" name="production_charges" class="form-control" placeholder="0.00" step="any" readonly>
             </div>
           </div>
 

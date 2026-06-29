@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (totalItems === 0) {
       purchasesList.innerHTML =
-        '<tr><td colspan="11" class="table-empty">' +
+        '<tr><td colspan="12" class="table-empty">' +
         (searchInput && searchInput.value.trim()
           ? "No matching purchases found."
           : "No purchases recorded yet.") +
@@ -111,6 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var lotCode = escapeHtml(p.lots_code);
       var productName = escapeHtml(p.product_name);
       var supplierName = escapeHtml(p.supplier_name);
+      var negociantName = escapeHtml(p.negociant || '—');
       var warehouseName = escapeHtml(p.warehouse_name);
       var qty = parseFloat(p.quantity_kg).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + ' ' + escapeHtml(p.uom_code || 'kg');
       var val = p.purchase_value_usd ? '$' + parseFloat(p.purchase_value_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
@@ -150,6 +151,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "<td><span class=\"code-badge\">" + lotCode + "</span></td>" +
         "<td>" + productName + "</td>" +
         "<td>" + supplierName + "</td>" +
+        "<td>" + negociantName + "</td>" +
         "<td>" + warehouseName + "</td>" +
         "<td>" + qty + "</td>" +
         "<td>" + val + "</td>" +
@@ -246,28 +248,38 @@ document.addEventListener("DOMContentLoaded", function () {
       '<div class="detail-modal-item"><div class="detail-modal-label">Purchase Reference</div><div class="detail-modal-val">' + escapeHtml(p.purchase_no) + '</div></div>' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Status</div><div class="detail-modal-val">' + escapeHtml(p.status.toUpperCase()) + '</div></div>' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Purchase Date</div><div class="detail-modal-val">' + escapeHtml(p.purchase_date) + '</div></div>' +
-      '<div class="detail-modal-item"><div class="detail-modal-label">Delivery Date</div><div class="detail-modal-val">' + escapeHtml(p.delivery_date) + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Delivery Date</div><div class="detail-modal-val">' + escapeHtml(p.delivery_date || '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Delivery Note No.</div><div class="detail-modal-val">' + escapeHtml(p.delivery_no || '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Inventory Code / Tag</div><div class="detail-modal-val">' + escapeHtml(p.inventory_code || '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">A/C (Account)</div><div class="detail-modal-val">' + (p.account_code ? escapeHtml(p.account_code) + ' - ' + escapeHtml(p.account_name) : '—') + '</div></div>' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Supplier</div><div class="detail-modal-val">' + escapeHtml(p.supplier_name) + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Negociant</div><div class="detail-modal-val">' + escapeHtml(p.negociant || '—') + '</div></div>' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Warehouse</div><div class="detail-modal-val">' + escapeHtml(p.warehouse_name) + '</div></div>' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Product</div><div class="detail-modal-val">' + escapeHtml(p.product_name) + '</div></div>' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Lot</div><div class="detail-modal-val">' + escapeHtml(p.lots_code) + '</div></div>' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Quantity</div><div class="detail-modal-val">' + parseFloat(p.quantity_kg).toLocaleString() + ' ' + escapeHtml(p.uom_code || 'kg') + '</div></div>' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Exchange Rate</div><div class="detail-modal-val">' + (p.exchange_rate ? parseFloat(p.exchange_rate).toLocaleString() + ' RWF / USD' : '—') + '</div></div>' +
-      '<div class="detail-modal-item"><div class="detail-modal-label">Price per kg (USD)</div><div class="detail-modal-val">' + (p.price_per_kg_usd ? '$' + parseFloat(p.price_per_kg_usd).toLocaleString() : '—') + '</div></div>' +
-      '<div class="detail-modal-item"><div class="detail-modal-label">Price per kg (RWF)</div><div class="detail-modal-val">' + (p.price_per_kg_rwf ? parseFloat(p.price_per_kg_rwf).toLocaleString() + ' RWF' : '—') + '</div></div>' +
-      '<div class="detail-modal-item"><div class="detail-modal-label">Total Value (USD)</div><div class="detail-modal-val">' + (p.purchase_value_usd ? '$' + parseFloat(p.purchase_value_usd).toLocaleString() : '—') + '</div></div>' +
-      '<div class="detail-modal-item"><div class="detail-modal-label">Total Value (RWF)</div><div class="detail-modal-val">' + (p.purchase_value_rwf ? parseFloat(p.purchase_value_rwf).toLocaleString() + ' RWF' : '—') + '</div></div>' +
-      '<div class="detail-modal-item"><div class="detail-modal-label">RRA Tax (USD)</div><div class="detail-modal-val">' + (p.tax_rra ? '$' + parseFloat(p.tax_rra).toLocaleString() : '—') + '</div></div>' +
-      '<div class="detail-modal-item"><div class="detail-modal-label">RMA Tax (USD)</div><div class="detail-modal-val">' + (p.tax_rma ? '$' + parseFloat(p.tax_rma).toLocaleString() : '—') + '</div></div>' +
-      '<div class="detail-modal-item"><div class="detail-modal-label">Inkomane Tax (USD)</div><div class="detail-modal-val">' + (p.tax_inkomane ? '$' + parseFloat(p.tax_inkomane).toLocaleString() : '—') + '</div></div>' +
-      '<div class="detail-modal-item"><div class="detail-modal-label">Net Paid (USD)</div><div class="detail-modal-val" style="color:var(--orange)">' + (p.net_paid_supplier_usd ? '$' + parseFloat(p.net_paid_supplier_usd).toLocaleString() : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">LME Price (USD/Ton)</div><div class="detail-modal-val">' + (p.lme_price ? '$' + parseFloat(p.lme_price).toLocaleString() : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">TC Charges (USD/Ton)</div><div class="detail-modal-val">' + (p.tc_charges ? '$' + parseFloat(p.tc_charges).toLocaleString() : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Price per Ta Unit</div><div class="detail-modal-val">' + (p.price_per_ta_unit ? '$' + parseFloat(p.price_per_ta_unit).toLocaleString() : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Price per kg (USD)</div><div class="detail-modal-val">' + (p.price_per_kg_usd ? '$' + parseFloat(p.price_per_kg_usd).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Price per kg (RWF)</div><div class="detail-modal-val">' + (p.price_per_kg_rwf ? parseFloat(p.price_per_kg_rwf).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' RWF' : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Total Value (USD)</div><div class="detail-modal-val">' + (p.purchase_value_usd ? '$' + parseFloat(p.purchase_value_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Total Value (RWF)</div><div class="detail-modal-val">' + (p.purchase_value_rwf ? parseFloat(p.purchase_value_rwf).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RWF' : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">RRA Tax (USD)</div><div class="detail-modal-val">' + (p.tax_rra ? '$' + parseFloat(p.tax_rra).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">RMA Tax (USD)</div><div class="detail-modal-val">' + (p.tax_rma ? '$' + parseFloat(p.tax_rma).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Inkomane Tax (USD)</div><div class="detail-modal-val">' + (p.tax_inkomane ? '$' + parseFloat(p.tax_inkomane).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Other Charges/kg</div><div class="detail-modal-val">' + (p.charges_per_kg ? '$' + parseFloat(p.charges_per_kg).toLocaleString() : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Production Rate/kg (USD)</div><div class="detail-modal-val">' + (p.production_charges_per_kg ? '$' + parseFloat(p.production_charges_per_kg).toLocaleString() : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Production Charges (Total)</div><div class="detail-modal-val">' + (p.production_charges ? '$' + parseFloat(p.production_charges).toLocaleString() : '—') + '</div></div>' +
+      '<div class="detail-modal-item"><div class="detail-modal-label">Net Paid (USD)</div><div class="detail-modal-val" style="color:var(--orange)">' + (p.net_paid_supplier_usd ? '$' + parseFloat(p.net_paid_supplier_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '—') + '</div></div>' +
       '<div class="detail-modal-item detail-modal-full"><div class="detail-modal-label">Notes</div><div class="detail-modal-val">' + escapeHtml(p.notes || 'No notes.') + '</div></div>' +
       '</div>' +
       '<div style="margin-top: 20px;">' +
       '<div style="font-size: 11px; text-transform: uppercase; color: var(--text3); font-weight: 500; margin-bottom: 8px;">Product Elements Analysis</div>' +
       gradesHtml +
       '</div>';
-      
+
     detailContent.innerHTML = html;
     detailOverlay.style.display = "flex";
   }

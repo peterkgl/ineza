@@ -1,0 +1,277 @@
+/* Sales Module Stylesheet */
+
+.trend-orange {
+  color: var(--orange);
+  background: var(--orange-bg);
+}
+
+/* Status badge variants for sales orders */
+.status-draft {
+  background: rgba(100, 100, 120, 0.12);
+  color: var(--text3);
+  border: 1px solid var(--border);
+}
+
+.status-confirmed {
+  background: var(--blue-bg);
+  color: var(--blue);
+  border: 1px solid rgba(24, 95, 165, 0.15);
+}
+
+.status-shipped {
+  background: var(--purple-bg);
+  color: var(--purple);
+  border: 1px solid rgba(135, 80, 220, 0.15);
+}
+
+.status-paid {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid rgba(40, 167, 69, 0.15);
+}
+
+.status-cancelled {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid rgba(220, 53, 69, 0.15);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+/* Multi-Step Wizard Progress Bar */
+.wizard-progress {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  position: relative;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: 12px;
+}
+
+.wizard-progress::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.wizard-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 3px;
+  background: var(--accent); /* Uses theme primary accent */
+  border-radius: 2px;
+  z-index: 2;
+  transition: width 0.3s ease;
+}
+
+.wizard-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 3;
+  position: relative;
+  cursor: pointer;
+}
+
+.wizard-step-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text3);
+  text-align: center;
+  white-space: nowrap;
+  transition: color 0.3s ease, font-weight 0.3s ease;
+  padding: 4px 8px;
+}
+
+.wizard-step-label .step-num {
+  display: inline-block;
+  margin-right: 4px;
+  opacity: 0.6;
+}
+
+.wizard-step.active .wizard-step-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.wizard-step.completed .wizard-step-label {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Step content visibility */
+.wizard-step-content {
+  display: none;
+}
+
+.wizard-step-content.active {
+  display: block;
+  animation: fadeInStep 0.25s ease-out;
+}
+
+@keyframes fadeInStep {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Line builder box */
+.line-builder-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+/* Form Helper styles */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
+}
+
+/* Summary detail styling */
+.summary-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.summary-box table tr {
+  height: 36px;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-box table tr:last-child {
+  border-bottom: none;
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 90%;
+  max-height: 90vh;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text3);
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
