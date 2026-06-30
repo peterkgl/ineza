@@ -32,15 +32,25 @@ document.addEventListener('DOMContentLoaded', function () {
     return allProducts.filter(function (p) {
       var codeVal = (p.product_code || '').toLowerCase();
       var nameVal = (p.product_name || '').toLowerCase();
-      var categoryVal = (p.category || '').toLowerCase();
       var uomCodeVal = (p.uom_code || '').toLowerCase();
       var uomNameVal = (p.uom_name || '').toLowerCase();
+      var invCodeVal = (p.inventory_account_code || '').toLowerCase();
+      var invNameVal = (p.inventory_account_name || '').toLowerCase();
+      var salCodeVal = (p.sales_account_code || '').toLowerCase();
+      var salNameVal = (p.sales_account_name || '').toLowerCase();
+      var cogCodeVal = (p.cogs_account_code || '').toLowerCase();
+      var cogNameVal = (p.cogs_account_name || '').toLowerCase();
       var statusVal = (p.is_active === 1 ? 'active' : 'inactive').toLowerCase();
       return codeVal.indexOf(query) !== -1 ||
              nameVal.indexOf(query) !== -1 ||
-             categoryVal.indexOf(query) !== -1 ||
              uomCodeVal.indexOf(query) !== -1 ||
              uomNameVal.indexOf(query) !== -1 ||
+             invCodeVal.indexOf(query) !== -1 ||
+             invNameVal.indexOf(query) !== -1 ||
+             salCodeVal.indexOf(query) !== -1 ||
+             salNameVal.indexOf(query) !== -1 ||
+             cogCodeVal.indexOf(query) !== -1 ||
+             cogNameVal.indexOf(query) !== -1 ||
              statusVal.indexOf(query) !== -1;
     });
   }
@@ -94,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     if (totalItems === 0) {
-      productsList.innerHTML = '<tr><td colspan="7" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching products found.' : 'No products configured yet.') + '</td></tr>';
+      productsList.innerHTML = '<tr><td colspan="9" class="table-empty">' + (searchInput && searchInput.value.trim() ? 'No matching products found.' : 'No products configured yet.') + '</td></tr>';
       renderPagination(totalItems, totalPages);
       return;
     }
@@ -108,8 +118,10 @@ document.addEventListener('DOMContentLoaded', function () {
       var globalIndex = startIndex + index + 1;
       var codeVal = escapeHtml(p.product_code);
       var nameVal = escapeHtml(p.product_name);
-      var categoryVal = p.category ? escapeHtml(p.category) : '—';
       var uomVal = escapeHtml(p.uom_code);
+      var invVal = p.inventory_account_code ? '<span class="code-badge">' + escapeHtml(p.inventory_account_code) + '</span>' : '—';
+      var salVal = p.sales_account_code ? '<span class="code-badge">' + escapeHtml(p.sales_account_code) + '</span>' : '—';
+      var cogVal = p.cogs_account_code ? '<span class="code-badge">' + escapeHtml(p.cogs_account_code) + '</span>' : '—';
       
       var statusLabel = p.is_active === 1
         ? '<span class="status-pill pill-green">Active</span>'
@@ -119,8 +131,10 @@ document.addEventListener('DOMContentLoaded', function () {
         '<td>' + globalIndex + '</td>' +
         '<td><span class="code-badge">' + codeVal + '</span></td>' +
         '<td><strong>' + nameVal + '</strong></td>' +
-        '<td>' + categoryVal + '</td>' +
         '<td>' + uomVal + '</td>' +
+        '<td>' + invVal + '</td>' +
+        '<td>' + salVal + '</td>' +
+        '<td>' + cogVal + '</td>' +
         '<td>' + statusLabel + '</td>' +
         '<td style="text-align: right;">' +
           '<div class="action-buttons" style="justify-content: flex-end;">' +
@@ -259,8 +273,10 @@ document.addEventListener('DOMContentLoaded', function () {
     codeInput.style.opacity = '0.7';
 
     document.getElementById('productName').value = p.product_name;
-    document.getElementById('category').value = p.category || '';
     document.getElementById('uomId').value = p.uom_id;
+    document.getElementById('inventoryAccountId').value = p.inventory_account_id || '';
+    document.getElementById('salesAccountId').value = p.sales_account_id || '';
+    document.getElementById('cogsAccountId').value = p.cogs_account_id || '';
     document.getElementById('description').value = p.description || '';
     document.getElementById('productActive').checked = p.is_active === 1;
 
@@ -283,6 +299,9 @@ document.addEventListener('DOMContentLoaded', function () {
     codeInput.style.opacity = '1';
     
     document.getElementById('uomId').value = '';
+    document.getElementById('inventoryAccountId').value = '';
+    document.getElementById('salesAccountId').value = '';
+    document.getElementById('cogsAccountId').value = '';
 
     formTitle.textContent = 'Add New Product';
     saveBtn.textContent = 'Save Product';
@@ -297,8 +316,10 @@ document.addEventListener('DOMContentLoaded', function () {
       var id = productIdInput.value;
       var product_code = document.getElementById('productCode').value.trim();
       var product_name = document.getElementById('productName').value.trim();
-      var category = document.getElementById('category').value.trim();
       var uom_id = document.getElementById('uomId').value;
+      var inventory_account_id = document.getElementById('inventoryAccountId').value;
+      var sales_account_id = document.getElementById('salesAccountId').value;
+      var cogs_account_id = document.getElementById('cogsAccountId').value;
       var description = document.getElementById('description').value.trim();
       var active = document.getElementById('productActive').checked ? '1' : '0';
       var token = productTokenInput.value;
@@ -314,8 +335,10 @@ document.addEventListener('DOMContentLoaded', function () {
       if (id) formData.append('id', id);
       formData.append('product_code', product_code);
       formData.append('product_name', product_name);
-      formData.append('category', category);
       formData.append('uom_id', uom_id);
+      formData.append('inventory_account_id', inventory_account_id);
+      formData.append('sales_account_id', sales_account_id);
+      formData.append('cogs_account_id', cogs_account_id);
       formData.append('description', description);
       formData.append('is_active', active);
       formData.append('token', token);

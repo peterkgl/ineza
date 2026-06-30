@@ -41,9 +41,15 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to view products.');
         }
 
-        $query = "SELECT p.*, uom.code as uom_code, uom.name as uom_name 
+        $query = "SELECT p.*, uom.code as uom_code, uom.name as uom_name,
+                         inv.code as inv_code, inv.name as inv_name,
+                         sal.code as sal_code, sal.name as sal_name,
+                         cog.code as cog_code, cog.name as cog_name
                   FROM product p
                   LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
+                  LEFT JOIN account_types inv ON p.inventory_account_id = inv.id
+                  LEFT JOIN account_types sal ON p.sales_account_id = sal.id
+                  LEFT JOIN account_types cog ON p.cogs_account_id = cog.id
                   ORDER BY p.product_code ASC";
         $result = mysqli_query($conn, $query);
         $products = [];
@@ -54,10 +60,18 @@ switch ($action) {
                     'id' => (int)$row['id'],
                     'product_code' => $row['product_code'],
                     'product_name' => $row['product_name'],
-                    'category' => $row['category'],
                     'uom_id' => (int)$row['uom_id'],
                     'uom_code' => $row['uom_code'],
                     'uom_name' => $row['uom_name'],
+                    'inventory_account_id' => $row['inventory_account_id'] ? (int)$row['inventory_account_id'] : null,
+                    'sales_account_id' => $row['sales_account_id'] ? (int)$row['sales_account_id'] : null,
+                    'cogs_account_id' => $row['cogs_account_id'] ? (int)$row['cogs_account_id'] : null,
+                    'inventory_account_code' => $row['inv_code'],
+                    'inventory_account_name' => $row['inv_name'],
+                    'sales_account_code' => $row['sal_code'],
+                    'sales_account_name' => $row['sal_name'],
+                    'cogs_account_code' => $row['cog_code'],
+                    'cogs_account_name' => $row['cog_name'],
                     'description' => $row['description'],
                     'is_active' => (int)$row['is_active'],
                     'created_at' => $row['created_at'],
@@ -78,10 +92,13 @@ switch ($action) {
 
         $product_code = isset($_POST['product_code']) ? strtoupper(trim($_POST['product_code'])) : '';
         $product_name = isset($_POST['product_name']) ? trim($_POST['product_name']) : '';
-        $category = isset($_POST['category']) ? trim($_POST['category']) : '';
         $uom_id = isset($_POST['uom_id']) ? (int)$_POST['uom_id'] : 1;
         $description = isset($_POST['description']) ? trim($_POST['description']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
+
+        $inventory_account_id = isset($_POST['inventory_account_id']) && $_POST['inventory_account_id'] !== '' ? (int)$_POST['inventory_account_id'] : null;
+        $sales_account_id = isset($_POST['sales_account_id']) && $_POST['sales_account_id'] !== '' ? (int)$_POST['sales_account_id'] : null;
+        $cogs_account_id = isset($_POST['cogs_account_id']) && $_POST['cogs_account_id'] !== '' ? (int)$_POST['cogs_account_id'] : null;
 
         if (empty($product_code) || empty($product_name) || empty($uom_id)) {
             sendResponse(false, 'Product code, product name, and unit of measure are required.');
@@ -97,11 +114,14 @@ switch ($action) {
 
         try {
             $nameEsc = mysqli_real_escape_string($conn, $product_name);
-            $categoryEsc = mysqli_real_escape_string($conn, $category);
             $descEsc = mysqli_real_escape_string($conn, $description);
 
-            $insertProduct = "INSERT INTO product (product_code, product_name, category, uom_id, description, is_active) 
-                              VALUES ('$codeEsc', '$nameEsc', '$categoryEsc', $uom_id, '$descEsc', $is_active)";
+            $invEsc = $inventory_account_id !== null ? $inventory_account_id : "NULL";
+            $salEsc = $sales_account_id !== null ? $sales_account_id : "NULL";
+            $cogEsc = $cogs_account_id !== null ? $cogs_account_id : "NULL";
+
+            $insertProduct = "INSERT INTO product (product_code, product_name, uom_id, inventory_account_id, sales_account_id, cogs_account_id, description, is_active) 
+                              VALUES ('$codeEsc', '$nameEsc', $uom_id, $invEsc, $salEsc, $cogEsc, '$descEsc', $is_active)";
             
             if (mysqli_query($conn, $insertProduct)) {
                 $newId = mysqli_insert_id($conn);
@@ -109,8 +129,10 @@ switch ($action) {
                     'id' => $newId,
                     'product_code' => $product_code,
                     'product_name' => $product_name,
-                    'category' => $category,
                     'uom_id' => $uom_id,
+                    'inventory_account_id' => $inventory_account_id,
+                    'sales_account_id' => $sales_account_id,
+                    'cogs_account_id' => $cogs_account_id,
                     'description' => $description,
                     'is_active' => $is_active
                 ];
@@ -137,10 +159,13 @@ switch ($action) {
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         $product_code = isset($_POST['product_code']) ? strtoupper(trim($_POST['product_code'])) : '';
         $product_name = isset($_POST['product_name']) ? trim($_POST['product_name']) : '';
-        $category = isset($_POST['category']) ? trim($_POST['category']) : '';
         $uom_id = isset($_POST['uom_id']) ? (int)$_POST['uom_id'] : 1;
         $description = isset($_POST['description']) ? trim($_POST['description']) : '';
         $is_active = isset($_POST['is_active']) && $_POST['is_active'] === '0' ? 0 : 1;
+
+        $inventory_account_id = isset($_POST['inventory_account_id']) && $_POST['inventory_account_id'] !== '' ? (int)$_POST['inventory_account_id'] : null;
+        $sales_account_id = isset($_POST['sales_account_id']) && $_POST['sales_account_id'] !== '' ? (int)$_POST['sales_account_id'] : null;
+        $cogs_account_id = isset($_POST['cogs_account_id']) && $_POST['cogs_account_id'] !== '' ? (int)$_POST['cogs_account_id'] : null;
 
         if ($id <= 0 || empty($product_code) || empty($product_name) || empty($uom_id)) {
             sendResponse(false, 'Valid ID, product code, product name, and unit of measure are required.');
@@ -163,14 +188,19 @@ switch ($action) {
 
         try {
             $nameEsc = mysqli_real_escape_string($conn, $product_name);
-            $categoryEsc = mysqli_real_escape_string($conn, $category);
             $descEsc = mysqli_real_escape_string($conn, $description);
+
+            $invEsc = $inventory_account_id !== null ? $inventory_account_id : "NULL";
+            $salEsc = $sales_account_id !== null ? $sales_account_id : "NULL";
+            $cogEsc = $cogs_account_id !== null ? $cogs_account_id : "NULL";
 
             $updateProduct = "UPDATE product SET 
                               product_code = '$codeEsc', 
                               product_name = '$nameEsc', 
-                              category = '$categoryEsc', 
                               uom_id = $uom_id, 
+                              inventory_account_id = $invEsc,
+                              sales_account_id = $salEsc,
+                              cogs_account_id = $cogEsc,
                               description = '$descEsc',
                               is_active = $is_active, 
                               updated_at = CURRENT_TIMESTAMP 
@@ -181,8 +211,10 @@ switch ($action) {
                     'id' => $id,
                     'product_code' => $product_code,
                     'product_name' => $product_name,
-                    'category' => $category,
                     'uom_id' => $uom_id,
+                    'inventory_account_id' => $inventory_account_id,
+                    'sales_account_id' => $sales_account_id,
+                    'cogs_account_id' => $cogs_account_id,
                     'description' => $description,
                     'is_active' => $is_active
                 ];
