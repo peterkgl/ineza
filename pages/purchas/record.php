@@ -340,11 +340,11 @@ if ($id > 0) {
           <div class="form-grid-2">
             <div class="form-group">
               <label for="pricePerKgUsd">Price per kg (USD) *</label>
-              <input type="number" id="pricePerKgUsd" name="price_per_kg_usd" class="form-control" placeholder="0.00" step="any" required>
+              <input type="number" id="pricePerKgUsd" name="price_per_kg_usd" class="form-control" placeholder="600" step="any" required>
             </div>
             <div class="form-group">
               <label for="pricePerKgRwf">Price per kg (RWF)</label>
-              <input type="number" id="pricePerKgRwf" name="price_per_kg_rwf" class="form-control" placeholder="0.00" step="any" readonly>
+              <input type="number" id="pricePerKgRwf" name="price_per_kg_rwf" class="form-control" placeholder="600" step="any">
             </div>
           </div>
 
@@ -375,19 +375,19 @@ if ($id > 0) {
           </div>
 
           <div class="form-grid-2">
-            <div class="form-group">
+            <!-- <div class="form-group">
               <label for="chargesPerKg">Other Charges per kg</label>
               <input type="number" id="chargesPerKg" name="charges_per_kg" class="form-control" placeholder="0.00" step="any">
-            </div>
-            <div class="form-group">
+            </div> -->
+            <!-- <div class="form-group">
               <label for="pricePerTaUnit">Price per Ta Unit</label>
               <input type="number" id="pricePerTaUnit" name="price_per_ta_unit" class="form-control" placeholder="0.00" step="any">
-            </div>
+            </div> -->
           </div>
 
           <div class="form-grid-2">
             <div class="form-group">
-              <label for="productionChargesPerKg">Production Rate per kg (USD)</label>
+              <label for="productionChargesPerKg">Production Charges per kg (USD)</label>
               <input type="number" id="productionChargesPerKg" name="production_charges_per_kg" class="form-control" placeholder="e.g. 3.50" step="any">
             </div>
             <div class="form-group">

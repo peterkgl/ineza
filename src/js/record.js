@@ -465,8 +465,14 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(function(result) {
         if (result.success) {
           var metrics = result.data;
-          priceKgUsd.value = parseFloat(metrics.price_per_kg_usd).toFixed(4);
-          priceKgRwf.value = parseFloat(metrics.price_per_kg_rwf).toFixed(4);
+          if (document.activeElement !== priceKgUsd) {
+            var usdVal = parseFloat(metrics.price_per_kg_usd);
+            priceKgUsd.value = (isNaN(usdVal) || usdVal === 0) ? "" : usdVal;
+          }
+          if (document.activeElement !== priceKgRwf) {
+            var rwfVal = parseFloat(metrics.price_per_kg_rwf);
+            priceKgRwf.value = (isNaN(rwfVal) || rwfVal === 0) ? "" : rwfVal;
+          }
           valUsd.value = parseFloat(metrics.purchase_value_usd).toFixed(2);
           valRwf.value = parseFloat(metrics.purchase_value_rwf).toFixed(2);
           rraTax.value = parseFloat(metrics.tax_rra).toFixed(4);
@@ -500,6 +506,40 @@ document.addEventListener("DOMContentLoaded", function () {
       input.addEventListener("input", calculateTotals);
     }
   });
+
+  if (priceKgUsd) {
+    priceKgUsd.addEventListener("focus", function() {
+      var val = parseFloat(priceKgUsd.value);
+      if (val === 0 || isNaN(val) || priceKgUsd.value === "0" || priceKgUsd.value === "0.00" || priceKgUsd.value === "0.0000") {
+        priceKgUsd.value = "";
+      }
+    });
+  }
+
+  if (priceKgRwf) {
+    priceKgRwf.addEventListener("focus", function() {
+      var val = parseFloat(priceKgRwf.value);
+      if (val === 0 || isNaN(val) || priceKgRwf.value === "0" || priceKgRwf.value === "0.00" || priceKgRwf.value === "0.0000") {
+        priceKgRwf.value = "";
+      }
+    });
+
+    priceKgRwf.addEventListener("input", function() {
+      if (document.activeElement === priceKgRwf) {
+        var rwfVal = parseFloat(priceKgRwf.value);
+        if (isNaN(rwfVal) || rwfVal === 0) {
+          priceKgUsd.value = "";
+          calculateTotals();
+        } else {
+          var exRate = parseFloat(exRateInput.value) || 1400.0;
+          if (exRate > 0) {
+            priceKgUsd.value = parseFloat((rwfVal / exRate).toFixed(4));
+            calculateTotals();
+          }
+        }
+      }
+    });
+  }
 
   // Next/Prev Buttons
   nextBtn.addEventListener("click", function() {
@@ -693,8 +733,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Step 4: Pricing & Financials
       exRateInput.value = p.exchange_rate || 1400.0;
-      priceKgUsd.value = p.price_per_kg_usd || "";
-      priceKgRwf.value = p.price_per_kg_rwf || "";
+      priceKgUsd.value = (p.price_per_kg_usd && parseFloat(p.price_per_kg_usd) !== 0) ? parseFloat(p.price_per_kg_usd) : "";
+      priceKgRwf.value = (p.price_per_kg_rwf && parseFloat(p.price_per_kg_rwf) !== 0) ? parseFloat(p.price_per_kg_rwf) : "";
       valUsd.value = p.purchase_value_usd || "";
       valRwf.value = p.purchase_value_rwf || "";
       chargesKg.value = p.charges_per_kg || "";

@@ -38,30 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/**
- * ============================================================================
- * INEZA AFRICAN MINING - SYSTEM FORMULAS
- * These functions implement the exact Excel calculations used in the workbook
- * (specifically sheets "Purchase Logs_SN" and "Purchase Logs_Ta").
- * ============================================================================
- */
 
-/**
- * Calculates the purchase price per kg in USD.
- * 
- * Excel Formulas:
- * - Tin (SN): =((Q10*S10)-O10)/1000
- *   where Q = LME Price, S = Sn % (grade fraction), O = TC Charges
- * - Tantalum (Ta): =grade_pct * price_per_ta_unit
- * 
- * @param float $lme_price LME reference price ($/ton)
- * @param float $tc_charges Treatment charges ($/ton)
- * @param float $price_per_ta_unit Price per Ta unit ($/kg/percent)
- * @param float $grade_pct Grade percentage (e.g. 54.69)
- * @param float $manual_price_usd Fallback price if calculated is not used
- * @param bool $is_tin True if Tin (SN), False if Tantalum (Ta)
- * @return float Price per kg in USD
- */
 function formula_price_per_kg_usd($lme_price, $tc_charges, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin) {
     if ($is_tin) {
         if ($lme_price > 0) {
@@ -79,60 +56,18 @@ function formula_price_per_kg_usd($lme_price, $tc_charges, $price_per_ta_unit, $
     }
 }
 
-/**
- * Calculates the purchase price per kg in RWF.
- * 
- * Excel Formula: =R10*L10 (Price per Kg USD * Exchange Rate)
- * 
- * @param float $price_per_kg_usd Price per kg in USD
- * @param float $exchange_rate RWF/USD exchange rate
- * @return float Price per kg in RWF
- */
 function formula_price_per_kg_rwf($price_per_kg_usd, $exchange_rate) {
     return $price_per_kg_usd * $exchange_rate;
 }
 
-/**
- * Calculates the total purchase value in USD.
- * 
- * Excel Formula: =R10*I10 (Price per Kg USD * Delivered Quantity Kg)
- * 
- * @param float $price_per_kg_usd Price per kg in USD
- * @param float $quantity_kg Delivered quantity in kg
- * @return float Purchase value in USD
- */
 function formula_purchase_value_usd($price_per_kg_usd, $quantity_kg) {
     return $price_per_kg_usd * $quantity_kg;
 }
 
-/**
- * Calculates the total purchase value in RWF.
- * 
- * Excel Formula: =I10*J10 (Delivered Quantity Kg * Price per Kg RWF)
- * 
- * @param float $quantity_kg Delivered quantity in kg
- * @param float $price_per_kg_rwf Price per kg in RWF
- * @return float Purchase value in RWF
- */
 function formula_purchase_value_rwf($quantity_kg, $price_per_kg_rwf) {
     return $quantity_kg * $price_per_kg_rwf;
 }
 
-/**
- * Calculates Government Taxes Retained (RRA Withholding Tax, 3%).
- * 
- * Excel Formulas:
- * - Tin (SN): =((Q10*S10)-800)/1000*I10*3%
- *   where Q = LME Price, S = Sn %, I = Quantity
- * - Tantalum (Ta): =P19*3% (Purchase Value USD * 3%)
- * 
- * @param float $lme_price LME reference price ($/ton)
- * @param float $grade_pct Grade percentage (e.g. 54.69)
- * @param float $quantity_kg Delivered quantity in kg
- * @param float $purchase_value_usd Total purchase value in USD
- * @param bool $is_tin True if Tin (SN), False if Tantalum (Ta)
- * @return float RRA Tax in USD
- */
 function formula_tax_rra($lme_price, $grade_pct, $quantity_kg, $purchase_value_usd, $is_tin) {
     if ($is_tin) {
         if ($lme_price > 0) {
@@ -147,68 +82,22 @@ function formula_tax_rra($lme_price, $grade_pct, $quantity_kg, $purchase_value_u
     }
 }
 
-/**
- * Calculates RMA Tax in USD.
- * 
- * Excel Formulas:
- * - Tin (SN): =(I10*50)/L10 (Quantity * 50 RWF / Exchange Rate)
- * - Tantalum (Ta): =(K19*125)/O19 (Quantity * 125 RWF / Exchange Rate)
- * 
- * @param float $quantity_kg Delivered quantity in kg
- * @param float $exchange_rate RWF/USD exchange rate
- * @param bool $is_tin True if Tin (SN), False if Tantalum (Ta)
- * @return float RMA Tax in USD
- */
+
 function formula_tax_rma($quantity_kg, $exchange_rate, $is_tin) {
     if ($exchange_rate <= 0) return 0.0;
     $rate_rwf = $is_tin ? 50.0 : 125.0;
     return ($quantity_kg * $rate_rwf) / $exchange_rate;
 }
 
-/**
- * Calculates INKOMANE Tax in USD.
- * 
- * Excel Formulas:
- * - Tin (SN): =(I10*20)/L10 (Quantity * 20 RWF / Exchange Rate)
- * - Tantalum (Ta): =(K19*40)/O19 (Quantity * 40 RWF / Exchange Rate)
- * 
- * @param float $quantity_kg Delivered quantity in kg
- * @param float $exchange_rate RWF/USD exchange rate
- * @param bool $is_tin True if Tin (SN), False if Tantalum (Ta)
- * @return float INKOMANE Tax in USD
- */
 function formula_tax_inkomane($quantity_kg, $exchange_rate, $is_tin) {
     if ($exchange_rate <= 0) return 0.0;
     $rate_rwf = $is_tin ? 20.0 : 40.0;
     return ($quantity_kg * $rate_rwf) / $exchange_rate;
 }
 
-/**
- * Calculates Production Charges in USD.
- * 
- * Excel Formula: =I10*P10 (Quantity * Production rate/kg)
- * 
- * @param float $quantity_kg Delivered quantity in kg
- * @param float $production_charges_per_kg Production charges rate per kg ($)
- * @return float Production charges in USD
- */
 function formula_production_charges($quantity_kg, $production_charges_per_kg) {
     return $quantity_kg * $production_charges_per_kg;
 }
-
-/**
- * Calculates the Net Paid to Supplier in USD.
- * 
- * Excel Formula: =M10-AQ10-AR10-AS10-AU10
- * (Purchase Value - RRA Tax - RMA Tax - INKOMANE Tax - Production Charges)
- * 
- * @param float $purchase_value_usd Purchase value in USD
- * @param float $tax_rra RRA Tax in USD
- * @param float $tax_rma RMA Tax in USD
- * @param float $tax_inkomane INKOMANE Tax in USD
- * @param float $production_charges Production charges in USD
- * @return float Net paid to supplier in USD
- */
 function formula_net_paid_supplier($purchase_value_usd, $tax_rra, $tax_rma, $tax_inkomane, $production_charges) {
     return $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
 }
