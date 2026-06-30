@@ -48,7 +48,7 @@ if ($whQuery) {
 }
 
 $lots = [];
-$lotQuery = mysqli_query($conn, "SELECT id, lots_code FROM lots WHERE closing_date IS NULL ORDER BY lots_code ASC");
+$lotQuery = mysqli_query($conn, "SELECT id, lots_code, product_id FROM lots WHERE closing_date IS NULL ORDER BY lots_code ASC");
 if ($lotQuery) {
     while ($row = mysqli_fetch_assoc($lotQuery)) {
         $lots[] = $row;
@@ -138,6 +138,21 @@ if ($id > 0) {
 
         $purchaseRecord['grades'] = $grades;
         $purchaseRecord['primary_element_id'] = $primaryElementId;
+
+        // Ensure the purchase's lot is in the lots list (even if closed)
+        $hasLot = false;
+        foreach ($lots as $l) {
+            if ($l['id'] == $purchaseRecord['lot_id']) {
+                $hasLot = true;
+                break;
+            }
+        }
+        if (!$hasLot) {
+            $currLotQuery = mysqli_query($conn, "SELECT id, lots_code, product_id FROM lots WHERE id = {$purchaseRecord['lot_id']} LIMIT 1");
+            if ($currLotQuery && mysqli_num_rows($currLotQuery) > 0) {
+                $lots[] = mysqli_fetch_assoc($currLotQuery);
+            }
+        }
     }
 }
 ?>
@@ -258,7 +273,7 @@ if ($id > 0) {
               <select id="lotId" name="lot_id" class="form-control" required>
                 <option value="">-- Select Lot --</option>
                 <?php foreach ($lots as $l): ?>
-                  <option value="<?php echo $l['id']; ?>"><?php echo htmlspecialchars($l['lots_code']); ?></option>
+                  <option value="<?php echo $l['id']; ?>" data-product-id="<?php echo $l['product_id']; ?>"><?php echo htmlspecialchars($l['lots_code']); ?></option>
                 <?php endforeach; ?>
               </select>
             </div>

@@ -11,6 +11,16 @@ if (!hasPermission($conn, $userId, 'view_stock_movement')) {
 }
 
 $selectedProductId = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
+$selectedLotId = isset($_GET['lot_id']) ? (int)$_GET['lot_id'] : 0;
+
+// Fetch filtered lot code if present
+$filteredLotCode = "";
+if ($selectedLotId > 0) {
+    $lotRes = mysqli_query($conn, "SELECT lots_code FROM lots WHERE id = $selectedLotId LIMIT 1");
+    if ($lotRes && mysqli_num_rows($lotRes) > 0) {
+        $filteredLotCode = mysqli_fetch_assoc($lotRes)['lots_code'];
+    }
+}
 
 // Fetch all active products for the dropdown filter
 $products = [];
@@ -23,8 +33,15 @@ if ($prodQuery) {
 
 // Build the movement query
 $whereClause = "";
+$conditions = [];
 if ($selectedProductId > 0) {
-    $whereClause = "WHERE sm.product_id = $selectedProductId";
+    $conditions[] = "sm.product_id = $selectedProductId";
+}
+if ($selectedLotId > 0) {
+    $conditions[] = "sm.lot_id = $selectedLotId";
+}
+if (!empty($conditions)) {
+    $whereClause = "WHERE " . implode(" AND ", $conditions);
 }
 
 $query = "SELECT sm.*, 
@@ -112,7 +129,12 @@ if ($result) {
           </svg>
           Stock Movements Log
         </h1>
-        <div class="page-sub">Track all inflows, outflows, and adjustments for physical inventory.</div>
+        <div class="page-sub">
+          Track all inflows, outflows, and adjustments for physical inventory.
+          <?php if (!empty($filteredLotCode)): ?>
+            <span class="status-pill pill-purple" style="font-weight: 600; margin-left: 8px; font-size: 11px;">Lot: <?php echo htmlspecialchars($filteredLotCode); ?></span>
+          <?php endif; ?>
+        </div>
       </div>
       <div class="page-actions">
         <a href="index.php" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
@@ -127,12 +149,16 @@ if ($result) {
         <div class="card-title">Historical Log</div>
         <div style="display: flex; gap: 8px; align-items: center;">
           <label for="productFilter" style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text2);">Filter Product:</label>
-          <select id="productFilter" class="form-control" style="max-width: 220px; padding: 5px 8px; font-size: 12px; margin: 0;" onchange="filterProduct(this.value)">
-            <option value="0">All Products</option>
+          <select id="productFilter" class="form-control" style="max-width: 220px; padding: 5px 8px; font-size: 12px; margin: 0;" onchange="filterProduct(this.value)" <?php echo $selectedProductId > 0 ? 'disabled' : ''; ?>>
+            <?php if ($selectedProductId === 0): ?>
+              <option value="0">All Products</option>
+            <?php endif; ?>
             <?php foreach ($products as $p): ?>
-              <option value="<?php echo $p['id']; ?>" <?php echo ($selectedProductId === (int)$p['id']) ? 'selected' : ''; ?>>
-                <?php echo htmlspecialchars($p['product_name'] . ' (' . $p['product_code'] . ')'); ?>
-              </option>
+              <?php if ($selectedProductId === 0 || $selectedProductId === (int)$p['id']): ?>
+                <option value="<?php echo $p['id']; ?>" <?php echo ($selectedProductId === (int)$p['id']) ? 'selected' : ''; ?>>
+                  <?php echo htmlspecialchars($p['product_name'] . ' (' . $p['product_code'] . ')'); ?>
+                </option>
+              <?php endif; ?>
             <?php endforeach; ?>
           </select>
         </div>
@@ -209,7 +235,7 @@ if ($result) {
                       $typeBadge = '<span class="status-pill">' . htmlspecialchars($m['movement_type']) . '</span>';
                   }
                 ?>
-                <tr class="clickable-row" onclick="window.location='movement_details.php?id=<?php echo $m['id']; ?>'">
+                <tr class="clickable-row" onclick="window.location='movement_details.php?id=<?php echo $m['id']; ?><?php echo $selectedProductId > 0 ? '&product_id=' . $selectedProductId : ''; ?><?php echo $selectedLotId > 0 ? '&lot_id=' . $selectedLotId : ''; ?>'">
                   <td style="white-space: nowrap;"><?php echo $date; ?></td>
                   <td><?php echo $typeBadge; ?></td>
                   <td class="td-bold"><?php echo $prod; ?></td>
@@ -223,7 +249,7 @@ if ($result) {
                   <td style="font-weight: 500; font-size: 11px;"><?php echo $ref; ?></td>
                   <td style="color: var(--text2);"><?php echo $creator; ?></td>
                   <td style="text-align: center;" onclick="event.stopPropagation();">
-                    <a href="movement_details.php?id=<?php echo $m['id']; ?>" class="btn-icon-link" title="View Details">
+                    <a href="movement_details.php?id=<?php echo $m['id']; ?><?php echo $selectedProductId > 0 ? '&product_id=' . $selectedProductId : ''; ?><?php echo $selectedLotId > 0 ? '&lot_id=' . $selectedLotId : ''; ?>" class="btn-icon-link" title="View Details">
                       <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                     </a>
                   </td>

@@ -203,7 +203,7 @@ if ($result) {
                   <td style="text-align: right; color: var(--text2);"><?php echo $avgCost; ?></td>
                   <td style="text-align: right; font-weight: 600; color: var(--green);"><?php echo $totVal; ?></td>
                   <td style="text-align: center;">
-                    <a href="movements.php?product_id=<?php echo $row['product_id']; ?>" 
+                    <a href="movements.php?product_id=<?php echo $row['product_id']; ?>&lot_id=<?php echo $row['lot_id']; ?>" 
                        class="btn-sm" 
                        style="padding: 4px 8px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
                       Stock Movement

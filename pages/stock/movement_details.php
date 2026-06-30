@@ -11,9 +11,17 @@ if (!hasPermission($conn, $userId, 'view_stock_movement')) {
 }
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$selectedProductId = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
+$selectedLotId = isset($_GET['lot_id']) ? (int)$_GET['lot_id'] : 0;
+
+// Construct redirect URL dynamically to preserve parameters
+$redirectParams = [];
+if ($selectedProductId > 0) $redirectParams[] = "product_id=" . $selectedProductId;
+if ($selectedLotId > 0) $redirectParams[] = "lot_id=" . $selectedLotId;
+$redirectUrl = "movements.php" . (!empty($redirectParams) ? "?" . implode("&", $redirectParams) : "");
 
 if ($id <= 0) {
-    header("Location: movements.php");
+    header("Location: " . $redirectUrl);
     exit();
 }
 
@@ -38,7 +46,7 @@ $query = "SELECT sm.*,
 
 $result = mysqli_query($conn, $query);
 if (!$result || mysqli_num_rows($result) === 0) {
-    header("Location: movements.php");
+    header("Location: " . $redirectUrl);
     exit();
 }
 
@@ -162,7 +170,7 @@ if ($movement['reference_type'] === 'purchasing' && $movement['reference_id'] > 
         <div class="page-sub">Comprehensive ledger and source document audit trail.</div>
       </div>
       <div class="page-actions">
-        <a href="movements.php" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+        <a href="<?php echo htmlspecialchars($redirectUrl); ?>" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
           <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none;"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           Back to Movements
         </a>

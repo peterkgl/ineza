@@ -367,11 +367,16 @@ switch ($action) {
             sendResponse(false, 'Valid product ID is required.');
         }
 
-        $query = "SELECT pe.id, pe.element_code, pe.element_name, pe.symbol, pec.is_primary_grade
-                  FROM product_element_composition pec
-                  JOIN product_element pe ON pec.product_element_id = pe.id
-                  WHERE pec.product_id = $productId AND pe.is_active = 1
-                  ORDER BY pec.display_order ASC, pe.element_code ASC";
+        // Load all active elements from product_element table
+        // LEFT JOIN product_element_composition to check is_primary_grade and if it's default composition element
+        $query = "SELECT pe.id, pe.element_code, pe.element_name, pe.symbol, 
+                         COALESCE(pec.is_primary_grade, 0) as is_primary_grade,
+                         IF(pec.id IS NOT NULL, 1, 0) as is_default_composition
+                  FROM product_element pe
+                  LEFT JOIN product_element_composition pec 
+                    ON pe.id = pec.product_element_id AND pec.product_id = $productId
+                  WHERE pe.is_active = 1
+                  ORDER BY pe.element_code ASC";
         $result = mysqli_query($conn, $query);
         $elements = [];
 
@@ -382,26 +387,9 @@ switch ($action) {
                     'element_code' => $row['element_code'],
                     'element_name' => $row['element_name'],
                     'symbol' => $row['symbol'],
-                    'is_primary_grade' => (int)$row['is_primary_grade']
+                    'is_primary_grade' => (int)$row['is_primary_grade'],
+                    'is_default_composition' => (int)$row['is_default_composition']
                 ];
-            }
-        } else {
-            // Fallback to loading all active product elements
-            $fallbackQuery = "SELECT id, element_code, element_name, symbol, 0 as is_primary_grade
-                              FROM product_element
-                              WHERE is_active = 1
-                              ORDER BY element_code ASC";
-            $fallbackResult = mysqli_query($conn, $fallbackQuery);
-            if ($fallbackResult) {
-                while ($row = mysqli_fetch_assoc($fallbackResult)) {
-                    $elements[] = [
-                        'id' => (int)$row['id'],
-                        'element_code' => $row['element_code'],
-                        'element_name' => $row['element_name'],
-                        'symbol' => $row['symbol'],
-                        'is_primary_grade' => 0
-                    ];
-                }
             }
         }
 
@@ -587,18 +575,23 @@ switch ($action) {
                 throw new Exception("Failed to insert purchase item: " . mysqli_error($conn));
             }
 
-            // Insert grades & sync product composition
-            // First clear and rebuild composition elements if they are updated
-            if (!empty($elements_grades)) {
-                // Delete existing composition to sync
-                mysqli_query($conn, "DELETE FROM product_element_composition WHERE product_id = $product_id");
+            // Sync primary element in product_element_composition
+            if ($primary_element_id > 0) {
+                mysqli_query($conn, "UPDATE product_element_composition SET is_primary_grade = 0 WHERE product_id = $product_id");
+                $chkComp = mysqli_query($conn, "SELECT id FROM product_element_composition WHERE product_id = $product_id AND product_element_id = $primary_element_id LIMIT 1");
+                if ($chkComp && mysqli_num_rows($chkComp) > 0) {
+                    mysqli_query($conn, "UPDATE product_element_composition SET is_primary_grade = 1 WHERE product_id = $product_id AND product_element_id = $primary_element_id");
+                } else {
+                    mysqli_query($conn, "INSERT INTO product_element_composition (product_id, product_element_id, is_primary_grade, display_order) VALUES ($product_id, $primary_element_id, 1, 0)");
+                }
+            }
 
-                $displayOrder = 0;
+            // Insert grades into purchasing_element_grade
+            if (!empty($elements_grades)) {
                 foreach ($elements_grades as $elementId => $gradePct) {
                     $elementId = (int)$elementId;
                     $gradePctVal = !empty($gradePct) ? (float)$gradePct : 0.0;
                     $gradeNotesVal = isset($element_notes[$elementId]) ? mysqli_real_escape_string($conn, $element_notes[$elementId]) : '';
-                    $isPrimary = ($elementId === $primary_element_id) ? 1 : 0;
 
                     // Insert grade
                     $insertGrade = "INSERT INTO purchasing_element_grade (
@@ -607,19 +600,12 @@ switch ($action) {
                         $purchasingId, $elementId, $gradePctVal, '$gradeNotesVal'
                     )";
                     if (!mysqli_query($conn, $insertGrade)) {
-                        throw new Exception("Failed to save grade for element $elementId: " . mysqli_error($conn));
+                        $err = mysqli_error($conn);
+                        if (strpos($err, 'Duplicate entry') !== false) {
+                            throw new Exception("Duplicate chemical element selected. Each element can only be added once per purchase.");
+                        }
+                        throw new Exception("Failed to save grade for element $elementId: " . $err);
                     }
-
-                    // Rebuild composition
-                    $insertComp = "INSERT INTO product_element_composition (
-                        product_id, product_element_id, is_primary_grade, display_order
-                    ) VALUES (
-                        $product_id, $elementId, $isPrimary, $displayOrder
-                    )";
-                    if (!mysqli_query($conn, $insertComp)) {
-                        throw new Exception("Failed to save composition for element $elementId: " . mysqli_error($conn));
-                    }
-                    $displayOrder++;
                 }
             }
 
@@ -672,7 +658,11 @@ switch ($action) {
 
         } catch (Exception $e) {
             mysqli_rollback($conn);
-            sendResponse(false, 'Failed to create purchase: ' . $e->getMessage());
+            $msg = $e->getMessage();
+            if (strpos($msg, 'Duplicate entry') !== false) {
+                $msg = "Duplicate chemical element selected. Each element can only be added once per purchase.";
+            }
+            sendResponse(false, $msg);
         }
         break;
 
@@ -868,16 +858,23 @@ switch ($action) {
             // 5. Delete old grades & rebuild
             mysqli_query($conn, "DELETE FROM purchasing_element_grade WHERE purchasing_id = $id");
 
-            if (!empty($elements_grades)) {
-                // Sync compositions
-                mysqli_query($conn, "DELETE FROM product_element_composition WHERE product_id = $product_id");
+            // Sync primary element in product_element_composition
+            if ($primary_element_id > 0) {
+                mysqli_query($conn, "UPDATE product_element_composition SET is_primary_grade = 0 WHERE product_id = $product_id");
+                $chkComp = mysqli_query($conn, "SELECT id FROM product_element_composition WHERE product_id = $product_id AND product_element_id = $primary_element_id LIMIT 1");
+                if ($chkComp && mysqli_num_rows($chkComp) > 0) {
+                    mysqli_query($conn, "UPDATE product_element_composition SET is_primary_grade = 1 WHERE product_id = $product_id AND product_element_id = $primary_element_id");
+                } else {
+                    mysqli_query($conn, "INSERT INTO product_element_composition (product_id, product_element_id, is_primary_grade, display_order) VALUES ($product_id, $primary_element_id, 1, 0)");
+                }
+            }
 
-                $displayOrder = 0;
+            // Insert new grades
+            if (!empty($elements_grades)) {
                 foreach ($elements_grades as $elementId => $gradePct) {
                     $elementId = (int)$elementId;
                     $gradePctVal = !empty($gradePct) ? (float)$gradePct : 0.0;
                     $gradeNotesVal = isset($element_notes[$elementId]) ? mysqli_real_escape_string($conn, $element_notes[$elementId]) : '';
-                    $isPrimary = ($elementId === $primary_element_id) ? 1 : 0;
 
                     // Insert grade
                     $insertGrade = "INSERT INTO purchasing_element_grade (
@@ -886,19 +883,12 @@ switch ($action) {
                         $id, $elementId, $gradePctVal, '$gradeNotesVal'
                     )";
                     if (!mysqli_query($conn, $insertGrade)) {
-                        throw new Exception("Failed to save grade for element $elementId: " . mysqli_error($conn));
+                        $err = mysqli_error($conn);
+                        if (strpos($err, 'Duplicate entry') !== false) {
+                            throw new Exception("Duplicate chemical element selected. Each element can only be added once per purchase.");
+                        }
+                        throw new Exception("Failed to save grade for element $elementId: " . $err);
                     }
-
-                    // Rebuild composition
-                    $insertComp = "INSERT INTO product_element_composition (
-                        product_id, product_element_id, is_primary_grade, display_order
-                    ) VALUES (
-                        $product_id, $elementId, $isPrimary, $displayOrder
-                    )";
-                    if (!mysqli_query($conn, $insertComp)) {
-                        throw new Exception("Failed to save composition for element $elementId: " . mysqli_error($conn));
-                    }
-                    $displayOrder++;
                 }
             }
 
@@ -951,7 +941,11 @@ switch ($action) {
 
         } catch (Exception $e) {
             mysqli_rollback($conn);
-            sendResponse(false, 'Failed to update purchase: ' . $e->getMessage());
+            $msg = $e->getMessage();
+            if (strpos($msg, 'Duplicate entry') !== false) {
+                $msg = "Duplicate chemical element selected. Each element can only be added once per purchase.";
+            }
+            sendResponse(false, $msg);
         }
         break;
 

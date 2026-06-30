@@ -818,16 +818,18 @@
 
 /* Custom Alert Messages */
 .alert-msg {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: var(--radius, 8px);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 8px;
   font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 16px;
+  line-height: 1.5;
+  margin-bottom: 20px;
   animation: alertFadeIn 0.3s ease;
-  width: auto;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
 @keyframes alertFadeIn {
@@ -848,11 +850,11 @@
 }
 
 .alert-msg svg.alert-icon {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   stroke: currentColor;
   fill: none;
-  stroke-width: 2.2;
+  stroke-width: 2;
   flex-shrink: 0;
   margin-top: 1px;
 }

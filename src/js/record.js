@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
   
   // Step 2 & 3 Dynamic Elements Data
   var productSelect = document.getElementById("productId");
+  var lotSelect = document.getElementById("lotId");
   var uomSelect = document.getElementById("uomId");
   var qtyInput = document.getElementById("quantityKg");
   var elementsListContainer = document.getElementById("elementsListContainer");
@@ -251,6 +252,55 @@ document.addEventListener("DOMContentLoaded", function () {
     return checked;
   }
 
+  // Dynamic Product selection filtering based on selected Lot
+  function filterProductsByLot(isInit) {
+    if (!lotSelect || !productSelect) return;
+    
+    var selectedOpt = lotSelect.options[lotSelect.selectedIndex];
+    var lotProductId = selectedOpt ? selectedOpt.getAttribute("data-product-id") : "";
+    
+    var productOptions = productSelect.options;
+    var matchedOption = null;
+    
+    for (var i = 0; i < productOptions.length; i++) {
+      var opt = productOptions[i];
+      var prodId = opt.value;
+      
+      if (!prodId) {
+        opt.style.display = lotProductId ? "none" : "block";
+        continue;
+      }
+      
+      if (lotProductId) {
+        if (prodId == lotProductId) {
+          opt.style.display = "block";
+          matchedOption = opt;
+        } else {
+          opt.style.display = "none";
+        }
+      } else {
+        opt.style.display = "block";
+      }
+    }
+    
+    // Automatically select matching product, trigger change if not during init
+    if (matchedOption) {
+      productSelect.value = matchedOption.value;
+      if (!isInit) {
+        productSelect.dispatchEvent(new Event("change"));
+      }
+    } else if (!isInit) {
+      productSelect.value = "";
+      productSelect.dispatchEvent(new Event("change"));
+    }
+  }
+
+  if (lotSelect) {
+    lotSelect.addEventListener("change", function() {
+      filterProductsByLot(false);
+    });
+  }
+
   // Populate dynamic element checkboxes
   function fetchProductElements(productId, callback) {
     elementsListContainer.innerHTML = '<div style="color:var(--text3); font-size:12px; padding:10px;">Loading elements...</div>';
@@ -260,6 +310,16 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(function(result) {
         if (result.success) {
           productElements = result.data;
+          
+          // Pre-check elements in default composition if selectedElements is empty (new purchase)
+          if (Object.keys(selectedElements).length === 0) {
+            productElements.forEach(function(el) {
+              if (el.is_default_composition === 1) {
+                selectedElements[el.id] = true;
+              }
+            });
+          }
+          
           renderProductElements();
           if (callback) callback();
         } else {
@@ -614,7 +674,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (result.success) {
         // Show local success feedback
         formAlertPlaceholder.innerHTML = '<div class="alert-msg success">' +
-          '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '<svg class="alert-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' +
           '<span>' + escapeHtml(result.message) + '</span>' +
           '</div>';
         setTimeout(function() {
@@ -623,7 +683,7 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         // Show error message
         formAlertPlaceholder.innerHTML = '<div class="alert-msg error">' +
-          '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+          '<svg class="alert-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
           '<span>' + escapeHtml(result.message) + '</span>' +
           '</div>';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -701,6 +761,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("supplierId").value = p.supplier_id;
       document.getElementById("warehouseId").value = p.warehouse_id;
       document.getElementById("lotId").value = p.lot_id;
+      filterProductsByLot(true);
       
       // Step 2: Product & Elements
       productSelect.value = p.product_id;
@@ -757,6 +818,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("purchaseDate").value = new Date().toISOString().split('T')[0];
       document.getElementById("deliveryDate").value = "";
       exRateInput.value = 1400.0;
+      filterProductsByLot(true);
     }
     
     setStep(1);
