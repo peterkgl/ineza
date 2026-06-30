@@ -18,8 +18,11 @@ $canCreate = hasPermission($conn, $userId, 'create_lot');
 $canEdit = hasPermission($conn, $userId, 'edit_lot');
 $canDelete = hasPermission($conn, $userId, 'delete_lot');
 
-// Fetch lots
-$query = "SELECT l.* FROM lots l ORDER BY l.opening_date DESC";
+// Fetch lots with product details
+$query = "SELECT l.*, p.product_name, p.product_code 
+          FROM lots l 
+          LEFT JOIN product p ON l.product_id = p.id 
+          ORDER BY l.opening_date DESC";
 $result = mysqli_query($conn, $query);
 $lotsData = [];
 if ($result) {
@@ -27,10 +30,21 @@ if ($result) {
         $lotsData[] = [
             'id' => (int)$row['id'],
             'lots_code' => $row['lots_code'],
+            'product_id' => (int)$row['product_id'],
+            'product_name' => $row['product_name'] ? ($row['product_name'] . ' (' . $row['product_code'] . ')') : '—',
             'opening_date' => $row['opening_date'],
             'closing_date' => $row['closing_date'],
             'status' => $row['closing_date'] ? 'CLOSED' : 'OPEN'
         ];
+    }
+}
+
+// Fetch active products for form dropdown
+$products = [];
+$prodQuery = mysqli_query($conn, "SELECT id, product_code, product_name FROM product WHERE is_active = 1 ORDER BY product_name ASC");
+if ($prodQuery) {
+    while ($row = mysqli_fetch_assoc($prodQuery)) {
+        $products[] = $row;
     }
 }
 
@@ -154,6 +168,7 @@ foreach ($lotsData as $l) {
               <tr>
                 <th style="width: 50px;">#</th>
                 <th>Lot Code</th>
+                <th>Product</th>
                 <th>Opening Date</th>
                 <th>Closing Date</th>
                 <th>Status</th>
@@ -163,13 +178,14 @@ foreach ($lotsData as $l) {
             <tbody id="lotsList">
               <?php if (empty($lotsData)): ?>
                 <tr>
-                  <td colspan="6" class="table-empty">No lots configured yet.</td>
+                  <td colspan="7" class="table-empty">No lots configured yet.</td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($lotsData as $index => $l): ?>
                   <?php
                     $globalIndex = $index + 1;
                     $lotCodeVal = htmlspecialchars($l['lots_code']);
+                    $productNameVal = htmlspecialchars($l['product_name']);
                     $openingDateVal = $l['opening_date'] ? htmlspecialchars($l['opening_date']) : '—';
                     $closingDateVal = $l['closing_date'] ? htmlspecialchars($l['closing_date']) : '—';
                     $isOpen = !$l['closing_date'];
@@ -178,6 +194,7 @@ foreach ($lotsData as $l) {
                   <tr>
                     <td><?php echo $globalIndex; ?></td>
                     <td><strong><?php echo $lotCodeVal; ?></strong></td>
+                    <td><?php echo $productNameVal; ?></td>
                     <td><?php echo $openingDateVal; ?></td>
                     <td><?php echo $closingDateVal; ?></td>
                     <td><?php echo $statusLabel; ?></td>
@@ -229,6 +246,16 @@ foreach ($lotsData as $l) {
           <div class="form-group">
             <label for="lotCode">Lot Code *</label>
             <input type="text" id="lotCode" name="lots_code" class="form-control" placeholder="e.g. Lot 1-Ta" required>
+          </div>
+
+          <div class="form-group">
+            <label for="productId">Product *</label>
+            <select id="productId" name="product_id" class="form-control" required>
+              <option value="">-- Select Product --</option>
+              <?php foreach ($products as $p): ?>
+                <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['product_name']); ?> (<?php echo htmlspecialchars($p['product_code']); ?>)</option>
+              <?php endforeach; ?>
+            </select>
           </div>
 
           <div class="form-group">
@@ -286,16 +313,20 @@ foreach ($lotsData as $l) {
     <div class="confirm-body" style="text-align: left;">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
         <div>
+          <div style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;">Product</div>
+          <div id="detailsProduct" style="font-size: 14px; font-weight: 500; margin-top: 4px;"></div>
+        </div>
+        <div>
+          <div style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;">Status</div>
+          <div id="detailsStatus" style="font-size: 14px; font-weight: 500; margin-top: 4px;"></div>
+        </div>
+        <div>
           <div style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;">Opening Date</div>
           <div id="detailsOpeningDate" style="font-size: 14px; font-weight: 500; margin-top: 4px;"></div>
         </div>
         <div>
           <div style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;">Closing Date</div>
           <div id="detailsClosingDate" style="font-size: 14px; font-weight: 500; margin-top: 4px;"></div>
-        </div>
-        <div>
-          <div style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;">Status</div>
-          <div id="detailsStatus" style="font-size: 14px; font-weight: 500; margin-top: 4px;"></div>
         </div>
       </div>
       

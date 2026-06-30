@@ -28,7 +28,8 @@ document.addEventListener("DOMContentLoaded", function () {
       var matchQuery = true;
       if (query) {
         var lotCodeVal = (l.lots_code || "").toLowerCase();
-        matchQuery = lotCodeVal.indexOf(query) !== -1;
+        var productVal = (l.product_name || "").toLowerCase();
+        matchQuery = lotCodeVal.indexOf(query) !== -1 || productVal.indexOf(query) !== -1;
       }
 
       var matchStatus = true;
@@ -90,7 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (totalItems === 0) {
       lotsList.innerHTML =
-        '<tr><td colspan="6" class="table-empty">' +
+        '<tr><td colspan="7" class="table-empty">' +
         (searchInput && searchInput.value.trim()
           ? "No matching lots found."
           : "No lots configured yet.") +
@@ -102,6 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
     filtered.forEach(function (l, index) {
       var globalIndex = index + 1;
       var lotCode = escapeHtml(l.lots_code);
+      var productName = escapeHtml(l.product_name || "—");
       var openingDate = l.opening_date ? escapeHtml(l.opening_date) : "\u2014";
       var closingDate = l.closing_date ? escapeHtml(l.closing_date) : "\u2014";
       var isOpen = !l.closing_date;
@@ -145,6 +147,9 @@ document.addEventListener("DOMContentLoaded", function () {
         "<td><strong>" +
         lotCode +
         "</strong></td>" +
+        "<td>" +
+        productName +
+        "</td>" +
         "<td>" +
         openingDate +
         "</td>" +
@@ -298,6 +303,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     lotIdInput.value = l.id;
     document.getElementById("lotCode").value = l.lots_code;
+    document.getElementById("productId").value = l.product_id || "";
     document.getElementById("lotOpeningDate").value = l.opening_date || "";
     document.getElementById("lotClosingDate").value = l.closing_date || "";
 
@@ -316,6 +322,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!lotForm) return;
     lotForm.reset();
     lotIdInput.value = "";
+    document.getElementById("productId").value = "";
     document.getElementById("lotOpeningDate").value = new Date()
       .toISOString()
       .substring(0, 10);
@@ -332,12 +339,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
       var id = lotIdInput.value;
       var lotsCode = document.getElementById("lotCode").value.trim();
+      var productId = document.getElementById("productId").value;
       var openingDate = document.getElementById("lotOpeningDate").value;
       var closingDate = document.getElementById("lotClosingDate").value.trim();
       var token = lotTokenInput.value;
 
       if (!lotsCode) {
         showAlert(formAlertPlaceholder, "error", "Lot code is required.");
+        return;
+      }
+      if (!productId) {
+        showAlert(formAlertPlaceholder, "error", "Product selection is required.");
         return;
       }
       if (!openingDate) {
@@ -365,6 +377,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (id) formData.append("id", id);
       formData.append("lots_code", lotsCode);
+      formData.append("product_id", productId);
       formData.append("opening_date", openingDate);
       if (closingDate) {
         formData.append("closing_date", closingDate);
@@ -512,6 +525,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (result.success) {
           var data = result.data;
           document.getElementById("detailsLotCode").textContent = data.lot.lots_code;
+          document.getElementById("detailsProduct").textContent = data.lot.product_name || "—";
           document.getElementById("detailsOpeningDate").textContent = data.lot.opening_date || "—";
           document.getElementById("detailsClosingDate").textContent = data.lot.closing_date || "—";
           

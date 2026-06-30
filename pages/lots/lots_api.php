@@ -41,7 +41,10 @@ switch ($action) {
             sendResponse(false, 'Forbidden: You do not have permission to view lots.');
         }
 
-        $query = "SELECT l.* FROM lots l ORDER BY l.opening_date DESC";
+        $query = "SELECT l.*, p.product_name, p.product_code 
+                  FROM lots l 
+                  LEFT JOIN product p ON l.product_id = p.id 
+                  ORDER BY l.opening_date DESC";
         $result = mysqli_query($conn, $query);
         $lots = [];
 
@@ -50,6 +53,8 @@ switch ($action) {
                 $lots[] = [
                     'id' => (int)$row['id'],
                     'lots_code' => $row['lots_code'],
+                    'product_id' => (int)$row['product_id'],
+                    'product_name' => $row['product_name'] ? ($row['product_name'] . ' (' . $row['product_code'] . ')') : '—',
                     'opening_date' => $row['opening_date'],
                     'closing_date' => $row['closing_date'],
                     'status' => $row['closing_date'] ? 'CLOSED' : 'OPEN'
@@ -68,11 +73,12 @@ switch ($action) {
         }
 
         $lots_code = isset($_POST['lots_code']) ? trim($_POST['lots_code']) : '';
+        $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
         $opening_date = isset($_POST['opening_date']) ? trim($_POST['opening_date']) : '';
         $closing_date = isset($_POST['closing_date']) ? trim($_POST['closing_date']) : null;
 
-        if (empty($lots_code) || empty($opening_date)) {
-            sendResponse(false, 'Lot code and opening date are required.');
+        if (empty($lots_code) || empty($opening_date) || $product_id <= 0) {
+            sendResponse(false, 'Lot code, product, and opening date are required.');
         }
 
         // Check if lot code already exists
@@ -85,19 +91,24 @@ switch ($action) {
         mysqli_begin_transaction($conn);
         try {
             $closingVal = $closing_date ? "'" . mysqli_real_escape_string($conn, $closing_date) . "'" : 'NULL';
-            $insertQuery = "INSERT INTO lots (lots_code, opening_date, closing_date) VALUES ('$codeEsc', '" . mysqli_real_escape_string($conn, $opening_date) . "', $closingVal)";
+            $insertQuery = "INSERT INTO lots (lots_code, product_id, opening_date, closing_date) VALUES ('$codeEsc', $product_id, '" . mysqli_real_escape_string($conn, $opening_date) . "', $closingVal)";
             
             if (mysqli_query($conn, $insertQuery)) {
                 $newId = mysqli_insert_id($conn);
                 $newValues = [
                     'id' => $newId,
                     'lots_code' => $lots_code,
+                    'product_id' => $product_id,
                     'opening_date' => $opening_date,
                     'closing_date' => $closing_date
                 ];
 
-                // Carry over balances from the most recently closed lot
-                $oldLotQuery = "SELECT id, lots_code FROM lots WHERE closing_date IS NOT NULL ORDER BY closing_date DESC, id DESC LIMIT 1";
+                // Carry over balances from the most recently closed lot of the same product
+                $oldLotQuery = "SELECT id, lots_code FROM lots 
+                                WHERE product_id = $product_id 
+                                  AND closing_date IS NOT NULL 
+                                  AND statuss = 1 
+                                ORDER BY closing_date DESC, id DESC LIMIT 1";
                 $oldLotResult = mysqli_query($conn, $oldLotQuery);
                 if ($oldLotResult && mysqli_num_rows($oldLotResult) > 0) {
                     $oldLotRow = mysqli_fetch_assoc($oldLotResult);
@@ -112,7 +123,7 @@ switch ($action) {
                     if ($stockResult) {
                         while ($stRow = mysqli_fetch_assoc($stockResult)) {
                             $warehouse_id = (int)$stRow['warehouse_id'];
-                            $product_id = (int)$stRow['product_id'];
+                            $prod_id = (int)$stRow['product_id'];
                             $uom_id = (int)$stRow['uom_id'];
                             $carried_qty = (float)$stRow['closing'];
                             $avg_cost_usd = (float)$stRow['avg_cost_per_kg_usd'];
@@ -129,7 +140,7 @@ switch ($action) {
                                                 total_value_usd, total_value_rwf, 
                                                 opening, closing, last_rolled_over_at
                                             ) VALUES (
-                                                $warehouse_id, $product_id, $newId, $uom_id, 
+                                                $warehouse_id, $prod_id, $newId, $uom_id, 
                                                 0, 0, $carried_qty, 
                                                 $avg_cost_usd, $avg_cost_rwf, 
                                                 $tot_val_usd, $tot_val_rwf, 
@@ -147,7 +158,7 @@ switch ($action) {
                                               reference_type, reference_id, movement_date, notes, created_by, 
                                               opening, closing
                                           ) VALUES (
-                                              'OPENING_STOCK', $warehouse_id, $product_id, $newId, $uom_id, 
+                                              'OPENING_STOCK', $warehouse_id, $prod_id, $newId, $uom_id, 
                                               $carried_qty, $avg_cost_usd, $avg_cost_rwf, $tot_val_usd, $tot_val_rwf, 
                                               'lots', $newId, '$opening_date', '$notes', $userId, 
                                               $carried_qty, $carried_qty
@@ -156,6 +167,12 @@ switch ($action) {
                                 throw new Exception("Failed to insert opening stock movement: " . mysqli_error($conn));
                             }
                         }
+                    }
+
+                    // Update the old lot's status to 0 because its closing stock has now been transferred to the new lot.
+                    $updateOldLotStatus = mysqli_query($conn, "UPDATE lots SET statuss = 0 WHERE id = $oldLotId");
+                    if (!$updateOldLotStatus) {
+                        throw new Exception("Failed to update old closed lot status to 0: " . mysqli_error($conn));
                     }
                 }
 
@@ -180,11 +197,12 @@ switch ($action) {
 
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         $lots_code = isset($_POST['lots_code']) ? trim($_POST['lots_code']) : '';
+        $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
         $opening_date = isset($_POST['opening_date']) ? trim($_POST['opening_date']) : '';
         $closing_date = isset($_POST['closing_date']) ? trim($_POST['closing_date']) : null;
 
-        if ($id <= 0 || empty($lots_code) || empty($opening_date)) {
-            sendResponse(false, 'Valid ID, lot code, and opening date are required.');
+        if ($id <= 0 || empty($lots_code) || empty($opening_date) || $product_id <= 0) {
+            sendResponse(false, 'Valid ID, lot code, product, and opening date are required.');
         }
 
         // Fetch current lot values
@@ -212,6 +230,7 @@ switch ($action) {
             $closingVal = $closing_date ? "'" . mysqli_real_escape_string($conn, $closing_date) . "'" : 'NULL';
             $updateQuery = "UPDATE lots SET 
                                 lots_code = '$codeEsc',
+                                product_id = $product_id,
                                 opening_date = '" . mysqli_real_escape_string($conn, $opening_date) . "',
                                 closing_date = $closingVal
                             WHERE id = $id";
@@ -220,6 +239,7 @@ switch ($action) {
                 $newValues = [
                     'id' => $id,
                     'lots_code' => $lots_code,
+                    'product_id' => $product_id,
                     'opening_date' => $opening_date,
                     'closing_date' => $closing_date
                 ];
@@ -252,6 +272,7 @@ switch ($action) {
             sendResponse(false, 'Lot not found.');
         }
         $oldValues = mysqli_fetch_assoc($chkLot);
+        $product_id = (int)$oldValues['product_id'];
 
         // Check if lot is already closed
         if ($oldValues['closing_date']) {
@@ -267,6 +288,94 @@ switch ($action) {
                 $updateStockQuery = "UPDATE stock SET opening = qty_on_hand, closing = qty_on_hand WHERE lot_id = $id";
                 if (!mysqli_query($conn, $updateStockQuery)) {
                     throw new Exception("Failed to update stock balances on lot close: " . mysqli_error($conn));
+                }
+
+                // Check if another open lot exists for the same product
+                $nextLotQuery = "SELECT id, lots_code, opening_date FROM lots 
+                                 WHERE product_id = $product_id 
+                                   AND closing_date IS NULL 
+                                   AND id != $id 
+                                 ORDER BY opening_date ASC, id ASC LIMIT 1";
+                $nextLotResult = mysqli_query($conn, $nextLotQuery);
+                if ($nextLotResult && mysqli_num_rows($nextLotResult) > 0) {
+                    $nextLotRow = mysqli_fetch_assoc($nextLotResult);
+                    $nextLotId = (int)$nextLotRow['id'];
+                    $nextLotCode = $nextLotRow['lots_code'];
+                    $nextLotOpeningDate = $nextLotRow['opening_date'];
+
+                    // Fetch active stocks from the closed lot (where closing > 0)
+                    $stockQuery = "SELECT warehouse_id, product_id, uom_id, closing, avg_cost_per_kg_usd, avg_cost_per_kg_rwf, total_value_usd, total_value_rwf 
+                                   FROM stock 
+                                   WHERE lot_id = $id AND closing > 0";
+                    $stockResult = mysqli_query($conn, $stockQuery);
+                    if ($stockResult) {
+                        while ($stRow = mysqli_fetch_assoc($stockResult)) {
+                            $warehouse_id = (int)$stRow['warehouse_id'];
+                            $prod_id = (int)$stRow['product_id'];
+                            $uom_id = (int)$stRow['uom_id'];
+                            $carried_qty = (float)$stRow['closing'];
+                            $avg_cost_usd = (float)$stRow['avg_cost_per_kg_usd'];
+                            $avg_cost_rwf = (float)$stRow['avg_cost_per_kg_rwf'];
+                            $tot_val_usd = (float)$stRow['total_value_usd'];
+                            $tot_val_rwf = (float)$stRow['total_value_rwf'];
+
+                            // Check if stock record exists in the next lot
+                            $chkStock = mysqli_query($conn, "SELECT id FROM stock WHERE warehouse_id = $warehouse_id AND product_id = $prod_id AND lot_id = $nextLotId LIMIT 1");
+                            if ($chkStock && mysqli_num_rows($chkStock) > 0) {
+                                $stockRow = mysqli_fetch_assoc($chkStock);
+                                $stockId = (int)$stockRow['id'];
+                                $updateStock = "UPDATE stock SET 
+                                                    qty_adjusted = qty_adjusted + $carried_qty,
+                                                    opening = opening + $carried_qty,
+                                                    closing = closing + $carried_qty,
+                                                    last_rolled_over_at = '$today'
+                                                WHERE id = $stockId";
+                                if (!mysqli_query($conn, $updateStock)) {
+                                    throw new Exception("Failed to update stock in next lot: " . mysqli_error($conn));
+                                }
+                            } else {
+                                $insertStock = "INSERT INTO stock (
+                                                    warehouse_id, product_id, lot_id, uom_id, 
+                                                    qty_purchased, qty_sold, qty_adjusted, 
+                                                    avg_cost_per_kg_usd, avg_cost_per_kg_rwf, 
+                                                    total_value_usd, total_value_rwf, 
+                                                    opening, closing, last_rolled_over_at
+                                                ) VALUES (
+                                                    $warehouse_id, $prod_id, $nextLotId, $uom_id, 
+                                                    0, 0, $carried_qty, 
+                                                    $avg_cost_usd, $avg_cost_rwf, 
+                                                    $tot_val_usd, $tot_val_rwf, 
+                                                    $carried_qty, $carried_qty, '$today'
+                                                )";
+                                if (!mysqli_query($conn, $insertStock)) {
+                                    throw new Exception("Failed to insert stock in next lot: " . mysqli_error($conn));
+                                }
+                            }
+
+                            // Insert OPENING_STOCK movement record
+                            $notes = "Opening balance carried over from lot " . mysqli_real_escape_string($conn, $oldValues['lots_code']);
+                            $insertMvt = "INSERT INTO stock_movement (
+                                              movement_type, warehouse_id, product_id, lot_id, uom_id, 
+                                              qty_kg, unit_cost_usd, unit_cost_rwf, total_value_usd, total_value_rwf, 
+                                              reference_type, reference_id, movement_date, notes, created_by, 
+                                              opening, closing
+                                          ) VALUES (
+                                              'OPENING_STOCK', $warehouse_id, $prod_id, $nextLotId, $uom_id, 
+                                              $carried_qty, $avg_cost_usd, $avg_cost_rwf, $tot_val_usd, $tot_val_rwf, 
+                                              'lots', $nextLotId, '$nextLotOpeningDate', '$notes', $userId, 
+                                              $carried_qty, $carried_qty
+                                          )";
+                            if (!mysqli_query($conn, $insertMvt)) {
+                                throw new Exception("Failed to insert opening stock movement: " . mysqli_error($conn));
+                            }
+                        }
+                    }
+
+                    // Update the closed lot's status to 0
+                    $updateStatus = mysqli_query($conn, "UPDATE lots SET statuss = 0 WHERE id = $id");
+                    if (!$updateStatus) {
+                        throw new Exception("Failed to update closed lot status to 0: " . mysqli_error($conn));
+                    }
                 }
 
                 // Roll over other open lots immediately (opening = closing)
@@ -358,7 +467,10 @@ switch ($action) {
             sendResponse(false, 'Invalid ID.');
         }
 
-        $chkLot = mysqli_query($conn, "SELECT * FROM lots WHERE id = $id LIMIT 1");
+        $chkLot = mysqli_query($conn, "SELECT l.*, p.product_name, p.product_code 
+                                       FROM lots l 
+                                       LEFT JOIN product p ON l.product_id = p.id 
+                                       WHERE l.id = $id LIMIT 1");
         if (!$chkLot || mysqli_num_rows($chkLot) === 0) {
             sendResponse(false, 'Lot not found.');
         }
@@ -389,6 +501,8 @@ switch ($action) {
             'lot' => [
                 'id' => (int)$lot['id'],
                 'lots_code' => $lot['lots_code'],
+                'product_id' => (int)$lot['product_id'],
+                'product_name' => $lot['product_name'] ? ($lot['product_name'] . ' (' . $lot['product_code'] . ')') : '—',
                 'opening_date' => $lot['opening_date'],
                 'closing_date' => $lot['closing_date'],
                 'status' => $lot['closing_date'] ? 'CLOSED' : 'OPEN'
