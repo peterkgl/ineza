@@ -120,14 +120,30 @@ $showSales = hasPermission($conn, $sidebarUserId, 'view_sales');
     <?php endif; ?>
   <?php endif; ?>
 
-  <?php if ($showCurrencies): ?>
+  <?php if ($showCurrencies || $showAccounts): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Finance</div>
-    <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'currencies') !== false || strpos($_SERVER['SCRIPT_NAME'], 'Currencies') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>Currencies/index" id="nav-currencies">
-      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      Currencies
-      <span class="nav-badge">Base</span>
-    </a>
+    <?php if ($showCurrencies): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'currencies') !== false || strpos($_SERVER['SCRIPT_NAME'], 'Currencies') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>Currencies/index" id="nav-currencies">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Currencies
+        <span class="nav-badge">Base</span>
+      </a>
+    <?php endif; ?>
+    <?php if ($showAccounts): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'equity_report') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>equity_report/index" id="nav-equity-report">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Equity Statement
+      </a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'comprehensive_income') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>comprehensive_income/index" id="nav-comprehensive-income">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Income Statement
+      </a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'statement_of_cash_flow') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>statement_of_cash_flow/index" id="nav-statement-of-cash-flow">
+        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Cash Flow Statement
+      </a>
+    <?php endif; ?>
   <?php endif; ?>
 
   <?php if ($showAccountTypes || $showAccounts): ?>
