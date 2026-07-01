@@ -16,6 +16,18 @@ document.addEventListener("DOMContentLoaded", function () {
   var confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
 
   var activeDeleteId = null;
+  var activeCloseLot = null;
+  var closeLotModalOverlay = document.getElementById("closeLotModalOverlay");
+  var closeLotCodeDisplay = document.getElementById("closeLotCodeDisplay");
+  var closeLotYesBtn = document.getElementById("closeLotYesBtn");
+  var closeLotCancelBtn = document.getElementById("closeLotCancelBtn");
+  var closeLotCancelBtn2 = document.getElementById("closeLotCancelBtn2");
+  var closeLotContinueBtn = document.getElementById("closeLotContinueBtn");
+  var closeLotStep1 = document.getElementById("closeLotStep1");
+  var closeLotStep2 = document.getElementById("closeLotStep2");
+  var closeLotValidationMsg = document.getElementById("closeLotValidationMsg");
+  var closeLotTableContainer = document.getElementById("closeLotTableContainer");
+  var closeLotOpenLotsList = document.getElementById("closeLotOpenLotsList");
   var allLots = [];
   var searchInput = document.getElementById("searchInput");
   var statusFilter = document.getElementById("statusFilter");
@@ -253,7 +265,13 @@ document.addEventListener("DOMContentLoaded", function () {
           return x.id === id;
         });
         if (l) {
-          closeLot(l.id);
+          activeCloseLot = l;
+          closeLotCodeDisplay.textContent = l.lots_code;
+          
+          // Reset modal to Step 1
+          closeLotStep1.style.display = "block";
+          closeLotStep2.style.display = "none";
+          closeLotModalOverlay.style.display = "flex";
         }
       });
     });
@@ -467,6 +485,67 @@ document.addEventListener("DOMContentLoaded", function () {
         activeDeleteId = null;
       });
   });
+
+  // Confirm close lot handlers
+  function closeCloseLotModal() {
+    closeLotModalOverlay.style.display = "none";
+    activeCloseLot = null;
+  }
+
+  if (closeLotCancelBtn) {
+    closeLotCancelBtn.addEventListener("click", closeCloseLotModal);
+  }
+  if (closeLotCancelBtn2) {
+    closeLotCancelBtn2.addEventListener("click", closeCloseLotModal);
+  }
+
+  if (closeLotYesBtn) {
+    closeLotYesBtn.addEventListener("click", function () {
+      if (!activeCloseLot) return;
+
+      // Get all other open lots for the same product
+      var otherOpenLots = allLots.filter(function (x) {
+        return x.product_id === activeCloseLot.product_id && !x.closing_date && x.id !== activeCloseLot.id;
+      });
+
+      if (otherOpenLots.length > 0) {
+        // Show validation message and the list table
+        closeLotValidationMsg.innerHTML = 'Other open lots for the same product (<strong>' + escapeHtml(activeCloseLot.product_name) + '</strong>):';
+
+        var html = '';
+        otherOpenLots.forEach(function (ol) {
+          var lotCode = escapeHtml(ol.lots_code);
+          var openingDate = ol.opening_date ? escapeHtml(ol.opening_date) : '—';
+          html += '<tr>' +
+            '<td><strong>' + lotCode + '</strong></td>' +
+            '<td>' + openingDate + '</td>' +
+            '</tr>';
+        });
+        closeLotOpenLotsList.innerHTML = html;
+        closeLotTableContainer.style.display = 'block';
+      } else {
+        // No other open lots
+        closeLotValidationMsg.innerHTML = '<span style="color:var(--text3);">No open lots were found for this product.</span>';
+        closeLotOpenLotsList.innerHTML = '';
+        closeLotTableContainer.style.display = 'none';
+      }
+
+      // Switch view to Step 2
+      closeLotStep1.style.display = "none";
+      closeLotStep2.style.display = "block";
+    });
+  }
+
+  if (closeLotContinueBtn) {
+    closeLotContinueBtn.addEventListener("click", function () {
+      if (!activeCloseLot) return;
+      var targetId = activeCloseLot.id;
+      // Close the modal first
+      closeCloseLotModal();
+      // Call the API function
+      closeLot(targetId);
+    });
+  }
 
   if (cancelBtn) cancelBtn.addEventListener("click", resetForm);
   if (refreshBtn) {

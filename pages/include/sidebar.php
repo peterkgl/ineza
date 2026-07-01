@@ -133,7 +133,7 @@ $showSales = hasPermission($conn, $sidebarUserId, 'view_sales');
     <?php if ($showAccounts): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'equity_report') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>equity_report/index" id="nav-equity-report">
         <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        Equity Statement
+        Changes in Equity
       </a>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'comprehensive_income') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>comprehensive_income/index" id="nav-comprehensive-income">
         <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>

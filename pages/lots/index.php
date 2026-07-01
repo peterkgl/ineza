@@ -353,6 +353,52 @@ foreach ($lotsData as $l) {
   </div>
 </div>
 
+<!-- Modal: Close Lot Validation -->
+<div class="confirm-modal-overlay" id="closeLotModalOverlay" style="display: none;">
+  <div class="confirm-modal" style="max-width: 480px; width: 90%;">
+    <div class="confirm-title" id="closeLotModalTitle">
+      <svg viewBox="0 0 24 24" style="stroke: var(--orange);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Close Lot
+    </div>
+    
+    <!-- Step 1: Confirmation Question -->
+    <div id="closeLotStep1">
+      <div class="confirm-body">
+        Are you sure you want to close lot <strong id="closeLotCodeDisplay"></strong>?
+      </div>
+      <div class="confirm-footer">
+        <button class="btn-sm" id="closeLotCancelBtn">Cancel</button>
+        <button class="btn-sm btn-primary" id="closeLotYesBtn" style="background:var(--orange); border-color:var(--orange);">Yes</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Open Lots Validation -->
+    <div id="closeLotStep2" style="display: none;">
+      <div class="confirm-body">
+        <div id="closeLotValidationMsg" style="margin-bottom: 12px; line-height: 1.4;"></div>
+        <div id="closeLotTableContainer" class="table-container" style="max-height: 200px; overflow-y: auto; display: none;">
+          <table class="data-table" style="font-size: 12px; width: 100%;">
+            <thead>
+              <tr>
+                <th>Lot Code</th>
+                <th>Opening Date</th>
+              </tr>
+            </thead>
+            <tbody id="closeLotOpenLotsList">
+              <!-- Dynamic list of open lots -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="confirm-footer" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 16px;">
+        <button class="btn-sm" id="closeLotCancelBtn2">Cancel</button>
+        <button class="btn-sm btn-primary" id="closeLotContinueBtn">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script>
   window.initialLotsData = <?php echo json_encode($lotsData); ?>;
 </script>
