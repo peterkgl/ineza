@@ -28,15 +28,39 @@ if ($uomResult) {
     }
 }
 
-// Load account types for dropdowns (id >= 0)
-$accountQuery = "SELECT id, code, name FROM account_types WHERE id >= 0 ORDER BY code ASC";
-$accountResult = mysqli_query($conn, $accountQuery);
-$accountOptionsHtml = "<option value=''>-- Select Account --</option>";
-if ($accountResult) {
-    while ($row = mysqli_fetch_assoc($accountResult)) {
-        $accountOptionsHtml .= "<option value='{$row['id']}'>" . htmlspecialchars($row['code']) . " - " . htmlspecialchars($row['name']) . "</option>";
+// load inventory accounts
+
+$accountQueryInventory = "SELECT account_code,account_name FROM accounts WHERE account_type_id = '4' ORDER BY account_code ASC";
+$accountResultInventory = mysqli_query($conn, $accountQueryInventory);
+$accountOptionsHtmlInventory = "<option value=''>-- Select Account --</option>";
+if ($accountResultInventory) {
+    while ($row = mysqli_fetch_assoc($accountResultInventory)) {
+        $accountOptionsHtmlInventory .= "<option value='{$row['account_code']}'>" . htmlspecialchars($row['account_code']) . " - " . htmlspecialchars($row['account_name']) . "</option>";
     }
 }
+
+// load sales account
+
+$accountQuerySales = "SELECT account_code,account_name FROM accounts WHERE account_type_id = '37' ORDER BY account_code ASC";
+$accountResultSales = mysqli_query($conn, $accountQuerySales);
+$accountOptionsHtmlSales = "<option value=''>-- Select Account --</option>";
+if ($accountResultSales) {
+    while ($row = mysqli_fetch_assoc($accountResultSales)) {
+        $accountOptionsHtmlSales .= "<option value='{$row['account_code']}'>" . htmlspecialchars($row['account_code']) . " - " . htmlspecialchars($row['account_name']) . "</option>";
+    }
+}
+
+// load cogs accounts
+
+$accountQueryCOGS = "SELECT account_code,account_name FROM accounts WHERE account_type_id = '41' ORDER BY account_code ASC";
+$accountResultCOGS = mysqli_query($conn, $accountQueryCOGS);
+$accountOptionsHtmlCOGS = "<option value=''>-- Select Account --</option>";
+if ($accountResultCOGS) {
+    while ($row = mysqli_fetch_assoc($accountResultCOGS)) {
+        $accountOptionsHtmlCOGS .= "<option value='{$row['account_code']}'>" . htmlspecialchars($row['account_code']) . " - " . htmlspecialchars($row['account_name']) . "</option>";
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -261,21 +285,21 @@ if ($accountResult) {
           <div class="form-group">
             <label for="inventoryAccountId">Inventory Account</label>
             <select id="inventoryAccountId" name="inventory_account_id" class="form-control">
-              <?php echo $accountOptionsHtml; ?>
+              <?php echo $accountOptionsHtmlInventory; ?>
             </select>
           </div>
 
           <div class="form-group">
             <label for="salesAccountId">Sales Account</label>
             <select id="salesAccountId" name="sales_account_id" class="form-control">
-              <?php echo $accountOptionsHtml; ?>
+              <?php echo $accountOptionsHtmlSales; ?>
             </select>
           </div>
 
           <div class="form-group">
             <label for="cogsAccountId">COGS Account</label>
             <select id="cogsAccountId" name="cogs_account_id" class="form-control">
-              <?php echo $accountOptionsHtml; ?>
+              <?php echo $accountOptionsHtmlCOGS; ?>
             </select>
           </div>
 
