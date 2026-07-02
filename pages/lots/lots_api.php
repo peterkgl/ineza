@@ -144,24 +144,24 @@ switch ($action) {
                                                 0, 0, $carried_qty, 
                                                 $avg_cost_usd, $avg_cost_rwf, 
                                                 $tot_val_usd, $tot_val_rwf, 
-                                                $carried_qty, $carried_qty, '$today'
+                                                0.0, $carried_qty, '$today'
                                             )";
                             if (!mysqli_query($conn, $insertStock)) {
                                 throw new Exception("Failed to carry over stock to new lot: " . mysqli_error($conn));
                             }
 
-                            // Insert OPENING_STOCK movement record
-                            $notes = "Opening balance carried over from lot " . mysqli_real_escape_string($conn, $oldLotCode);
+                            // Insert CARRYOVER_IN movement record
+                            $notes = "Stock carried over from closed lot '" . mysqli_real_escape_string($conn, $oldLotCode) . "' to newly created lot '" . mysqli_real_escape_string($conn, $lots_code) . "'. Quantity: " . $carried_qty . " kg. Added to Closing quantity.";
                             $insertMvt = "INSERT INTO stock_movement (
                                               movement_type, warehouse_id, product_id, lot_id, uom_id, 
                                               qty_kg, unit_cost_usd, unit_cost_rwf, total_value_usd, total_value_rwf, 
                                               reference_type, reference_id, movement_date, notes, created_by, 
                                               opening, closing
                                           ) VALUES (
-                                              'OPENING_STOCK', $warehouse_id, $prod_id, $newId, $uom_id, 
+                                              'CARRYOVER_IN', $warehouse_id, $prod_id, $newId, $uom_id, 
                                               $carried_qty, $avg_cost_usd, $avg_cost_rwf, $tot_val_usd, $tot_val_rwf, 
                                               'lots', $newId, '$opening_date', '$notes', $userId, 
-                                              $carried_qty, $carried_qty
+                                              0.0, $carried_qty
                                           )";
                             if (!mysqli_query($conn, $insertMvt)) {
                                 throw new Exception("Failed to insert opening stock movement: " . mysqli_error($conn));
@@ -320,19 +320,27 @@ switch ($action) {
                             $tot_val_rwf = (float)$stRow['total_value_rwf'];
 
                             // Check if stock record exists in the next lot
-                            $chkStock = mysqli_query($conn, "SELECT id FROM stock WHERE warehouse_id = $warehouse_id AND product_id = $prod_id AND lot_id = $nextLotId LIMIT 1");
+                            $chkStock = mysqli_query($conn, "SELECT id, opening, closing FROM stock WHERE warehouse_id = $warehouse_id AND product_id = $prod_id AND lot_id = $nextLotId LIMIT 1");
                             if ($chkStock && mysqli_num_rows($chkStock) > 0) {
                                 $stockRow = mysqli_fetch_assoc($chkStock);
                                 $stockId = (int)$stockRow['id'];
+                                $current_opening = (float)$stockRow['opening'];
+                                $current_closing = (float)$stockRow['closing'];
+                                $new_closing = $current_closing + $carried_qty;
+
                                 $updateStock = "UPDATE stock SET 
                                                     qty_adjusted = qty_adjusted + $carried_qty,
-                                                    closing = closing + $carried_qty,
+                                                    closing = $new_closing,
                                                     last_rolled_over_at = '$today'
                                                 WHERE id = $stockId";
                                 if (!mysqli_query($conn, $updateStock)) {
                                     throw new Exception("Failed to update stock in next lot: " . mysqli_error($conn));
                                 }
                             } else {
+                                $current_opening = 0.0;
+                                $current_closing = 0.0;
+                                $new_closing = $carried_qty;
+
                                 $insertStock = "INSERT INTO stock (
                                                     warehouse_id, product_id, lot_id, uom_id, 
                                                     qty_purchased, qty_sold, qty_adjusted, 
@@ -344,28 +352,28 @@ switch ($action) {
                                                     0, 0, $carried_qty, 
                                                     $avg_cost_usd, $avg_cost_rwf, 
                                                     $tot_val_usd, $tot_val_rwf, 
-                                                    $carried_qty, $carried_qty, '$today'
+                                                    0.0, $new_closing, '$today'
                                                 )";
                                 if (!mysqli_query($conn, $insertStock)) {
                                     throw new Exception("Failed to insert stock in next lot: " . mysqli_error($conn));
                                 }
                             }
 
-                            // Insert OPENING_STOCK movement record
-                            $notes = "Opening balance carried over from lot " . mysqli_real_escape_string($conn, $oldValues['lots_code']);
+                            // Insert CARRYOVER_IN movement record
+                            $notes = "Stock carried over from closed lot '" . mysqli_real_escape_string($conn, $oldValues['lots_code']) . "' to open lot '" . mysqli_real_escape_string($conn, $nextLotCode) . "'. Quantity: " . $carried_qty . " kg. Added to Closing quantity.";
                             $insertMvt = "INSERT INTO stock_movement (
                                               movement_type, warehouse_id, product_id, lot_id, uom_id, 
                                               qty_kg, unit_cost_usd, unit_cost_rwf, total_value_usd, total_value_rwf, 
                                               reference_type, reference_id, movement_date, notes, created_by, 
                                               opening, closing
                                           ) VALUES (
-                                              'OPENING_STOCK', $warehouse_id, $prod_id, $nextLotId, $uom_id, 
+                                              'CARRYOVER_IN', $warehouse_id, $prod_id, $nextLotId, $uom_id, 
                                               $carried_qty, $avg_cost_usd, $avg_cost_rwf, $tot_val_usd, $tot_val_rwf, 
-                                              'lots', $nextLotId, '$nextLotOpeningDate', '$notes', $userId, 
-                                              $carried_qty, $carried_qty
+                                              'lots', $nextLotId, '$today', '$notes', $userId, 
+                                              $current_opening, $new_closing
                                           )";
                             if (!mysqli_query($conn, $insertMvt)) {
-                                throw new Exception("Failed to insert opening stock movement: " . mysqli_error($conn));
+                                throw new Exception("Failed to insert carryover stock movement: " . mysqli_error($conn));
                             }
                         }
                     }

@@ -730,6 +730,7 @@ CREATE TABLE `purchasing` (
   `production_charges_per_kg` decimal(12,4) DEFAULT NULL,
   `price_per_ta_unit` decimal(12,4) DEFAULT NULL COMMENT 'Price per Ta unit (coltan)',
   `price_per_kg_usd` decimal(12,4) DEFAULT NULL COMMENT '$ price per Kg',
+  `pricing_method` enum('lme','manual') NOT NULL DEFAULT 'lme',
   `lme_price` decimal(14,4) DEFAULT NULL COMMENT 'LME reference price (Tin)',
   `tc_charges` decimal(12,4) DEFAULT NULL COMMENT 'Treatment/refining charges',
   `tax_rra` decimal(14,4) DEFAULT NULL COMMENT 'RRA tax withheld',

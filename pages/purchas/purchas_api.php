@@ -3,9 +3,6 @@ require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/permissions.php';
 
-if (php_sapi_name() === 'cli') {
-    $_SESSION['user_id'] = 1;
-}
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -496,19 +493,32 @@ switch ($action) {
             $grade_pct = (float)$elements_grades[$primary_element_id];
         }
 
-        // Perform server-side calculations
+        // Perform server-side calculations based on pricing method
+        $pricing_method = isset($_POST['pricing_method']) ? trim($_POST['pricing_method']) : 'lme';
         $manual_price_usd = isset($_POST['price_per_kg_usd']) && $_POST['price_per_kg_usd'] !== '' ? (float)$_POST['price_per_kg_usd'] : 0.0;
-        $metrics = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
 
-        $price_per_kg_usd = $metrics['price_per_kg_usd'];
-        $price_per_kg_rwf = $metrics['price_per_kg_rwf'];
-        $purchase_value_usd = $metrics['purchase_value_usd'];
-        $purchase_value_rwf = $metrics['purchase_value_rwf'];
-        $tax_rra = $metrics['tax_rra'];
-        $tax_rma = $metrics['tax_rma'];
-        $tax_inkomane = $metrics['tax_inkomane'];
-        $production_charges = $metrics['production_charges'];
-        $net_paid_supplier_usd = $metrics['net_paid_supplier_usd'];
+        if ($pricing_method === 'manual') {
+            $price_per_kg_usd = $manual_price_usd;
+            $price_per_kg_rwf = $price_per_kg_usd * $exchange_rate;
+            $purchase_value_usd = $price_per_kg_usd * $quantity_kg;
+            $purchase_value_rwf = $price_per_kg_rwf * $quantity_kg;
+            $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : 0.0;
+            $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : 0.0;
+            $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : 0.0;
+            $production_charges = $quantity_kg * $production_charges_per_kg;
+            $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
+        } else {
+            $metrics = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+            $price_per_kg_usd = $metrics['price_per_kg_usd'];
+            $price_per_kg_rwf = $metrics['price_per_kg_rwf'];
+            $purchase_value_usd = $metrics['purchase_value_usd'];
+            $purchase_value_rwf = $metrics['purchase_value_rwf'];
+            $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : $metrics['tax_rra'];
+            $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : $metrics['tax_rma'];
+            $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : $metrics['tax_inkomane'];
+            $production_charges = $metrics['production_charges'];
+            $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
+        }
 
         mysqli_begin_transaction($conn);
 
@@ -538,19 +548,21 @@ switch ($action) {
             $t_inko = $tax_inkomane !== null ? $tax_inkomane : 'NULL';
             $prod_chg = $production_charges !== null ? $production_charges : 'NULL';
 
+            $methodEsc = mysqli_real_escape_string($conn, $pricing_method);
+
             // Insert into purchasing
             $insertPurch = "INSERT INTO purchasing (
                 purchase_no, delivery_no, inventory_code, account_id, delivery_date, purchase_date,
                 lot_id, product_id, supplier_id, negociant, warehouse_id, quantity_kg, uom_id,
                 price_per_kg_rwf, purchase_value_rwf, exchange_rate, purchase_value_usd,
-                net_paid_supplier_usd, charges_per_kg, production_charges_per_kg, price_per_ta_unit, price_per_kg_usd,
+                net_paid_supplier_usd, charges_per_kg, production_charges_per_kg, price_per_ta_unit, price_per_kg_usd, pricing_method,
                 lme_price, tc_charges, tax_rra, tax_rma, tax_inkomane, production_charges,
                 status, notes, created_by
             ) VALUES (
                 '$pNoEsc', $delNoEsc, $invEsc, $accEsc, $delDateEsc, '$purchase_date',
                 $lot_id, $product_id, $supplier_id, $negEsc, $warehouse_id, $quantity_kg, $uom_id,
                 $p_kg_rwf, $p_val_rwf, $ex_rate, $p_val_usd,
-                $n_paid, $chg_kg, $prod_chg_kg, $p_ta, $p_kg_usd,
+                $n_paid, $chg_kg, $prod_chg_kg, $p_ta, $p_kg_usd, '$methodEsc',
                 $lme, $tc, $t_rra, $t_rma, $t_inko, $prod_chg,
                 '$statusEsc', $notesEsc, $userId
             )";
@@ -746,19 +758,32 @@ switch ($action) {
             $grade_pct = (float)$elements_grades[$primary_element_id];
         }
 
-        // Perform server-side calculations
+        // Perform server-side calculations based on pricing method
+        $pricing_method = isset($_POST['pricing_method']) ? trim($_POST['pricing_method']) : 'lme';
         $manual_price_usd = isset($_POST['price_per_kg_usd']) && $_POST['price_per_kg_usd'] !== '' ? (float)$_POST['price_per_kg_usd'] : 0.0;
-        $metrics = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
 
-        $price_per_kg_usd = $metrics['price_per_kg_usd'];
-        $price_per_kg_rwf = $metrics['price_per_kg_rwf'];
-        $purchase_value_usd = $metrics['purchase_value_usd'];
-        $purchase_value_rwf = $metrics['purchase_value_rwf'];
-        $tax_rra = $metrics['tax_rra'];
-        $tax_rma = $metrics['tax_rma'];
-        $tax_inkomane = $metrics['tax_inkomane'];
-        $production_charges = $metrics['production_charges'];
-        $net_paid_supplier_usd = $metrics['net_paid_supplier_usd'];
+        if ($pricing_method === 'manual') {
+            $price_per_kg_usd = $manual_price_usd;
+            $price_per_kg_rwf = $price_per_kg_usd * $exchange_rate;
+            $purchase_value_usd = $price_per_kg_usd * $quantity_kg;
+            $purchase_value_rwf = $price_per_kg_rwf * $quantity_kg;
+            $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : 0.0;
+            $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : 0.0;
+            $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : 0.0;
+            $production_charges = $quantity_kg * $production_charges_per_kg;
+            $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
+        } else {
+            $metrics = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+            $price_per_kg_usd = $metrics['price_per_kg_usd'];
+            $price_per_kg_rwf = $metrics['price_per_kg_rwf'];
+            $purchase_value_usd = $metrics['purchase_value_usd'];
+            $purchase_value_rwf = $metrics['purchase_value_rwf'];
+            $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : $metrics['tax_rra'];
+            $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : $metrics['tax_rma'];
+            $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : $metrics['tax_inkomane'];
+            $production_charges = $metrics['production_charges'];
+            $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
+        }
 
         mysqli_begin_transaction($conn);
 
@@ -801,6 +826,8 @@ switch ($action) {
             $t_inko = $tax_inkomane !== null ? $tax_inkomane : 'NULL';
             $prod_chg = $production_charges !== null ? $production_charges : 'NULL';
 
+            $methodEsc = mysqli_real_escape_string($conn, $pricing_method);
+
             $updatePurch = "UPDATE purchasing SET
                 purchase_no = '$pNoEsc',
                 delivery_no = $delNoEsc,
@@ -824,6 +851,7 @@ switch ($action) {
                 production_charges_per_kg = $prod_chg_kg,
                 price_per_ta_unit = $p_ta,
                 price_per_kg_usd = $p_kg_usd,
+                pricing_method = '$methodEsc',
                 lme_price = $lme,
                 tc_charges = $tc,
                 tax_rra = $t_rra,

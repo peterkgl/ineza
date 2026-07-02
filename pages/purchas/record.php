@@ -337,6 +337,18 @@ if ($id > 0) {
 
         <!-- STEP 4: Pricing & Financials -->
         <div class="wizard-step-content" id="step4">
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label style="font-weight: 600; font-size: 13px; color: var(--text);">Pricing Method</label>
+            <div style="display: flex; gap: 24px; margin-top: 6px; align-items: center;">
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text2);">
+                <input type="radio" id="pricingMethodLme" name="pricing_method" value="lme" checked style="width: 16px; height: 16px; accent-color: var(--primary);"> LME Price Formula
+              </label>
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text2);">
+                <input type="radio" id="pricingMethodManual" name="pricing_method" value="manual" style="width: 16px; height: 16px; accent-color: var(--primary);"> Manual Pricing
+              </label>
+            </div>
+          </div>
+
           <div class="form-grid-3">
             <div class="form-group">
               <label for="exchangeRate">Exchange Rate (RWF/USD)</label>
@@ -377,15 +389,15 @@ if ($id > 0) {
           <div class="form-grid-3">
             <div class="form-group">
               <label for="taxRra">RRA Tax (USD)</label>
-              <input type="number" id="taxRra" name="tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
+              <input type="number" id="taxRra" name="tax_rra" class="form-control" placeholder="0.00" step="any">
             </div>
             <div class="form-group">
               <label for="taxRma">RMA Tax (USD)</label>
-              <input type="number" id="taxRma" name="tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
+              <input type="number" id="taxRma" name="tax_rma" class="form-control" placeholder="0.00" step="any">
             </div>
             <div class="form-group">
               <label for="taxInkomane">Inkomane Tax (USD)</label>
-              <input type="number" id="taxInkomane" name="tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
+              <input type="number" id="taxInkomane" name="tax_inkomane" class="form-control" placeholder="0.00" step="any">
             </div>
           </div>
 

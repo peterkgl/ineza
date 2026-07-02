@@ -37,6 +37,40 @@ document.addEventListener("DOMContentLoaded", function () {
   var prodCharges = document.getElementById("productionCharges");
   var lmePriceInput = document.getElementById("lmePrice");
   var tcChargesInput = document.getElementById("tcCharges");
+  var pricingMethodRadios = document.getElementsByName("pricing_method");
+
+  function getPricingMethod() {
+    var selected = document.querySelector('input[name="pricing_method"]:checked');
+    return selected ? selected.value : 'lme';
+  }
+
+  function updatePricingMethodUI() {
+    var method = getPricingMethod();
+    if (method === 'manual') {
+      priceKgUsd.removeAttribute("readonly");
+      priceKgRwf.removeAttribute("readonly");
+      lmePriceInput.setAttribute("disabled", "true");
+      tcChargesInput.setAttribute("disabled", "true");
+    } else {
+      priceKgUsd.setAttribute("readonly", "true");
+      priceKgRwf.setAttribute("readonly", "true");
+      lmePriceInput.removeAttribute("disabled");
+      tcChargesInput.removeAttribute("disabled");
+    }
+  }
+
+  function handlePricingMethodChange() {
+    updatePricingMethodUI();
+    var method = getPricingMethod();
+    if (method === 'lme') {
+      [rraTax, rmaTax, inkoTax].forEach(function(input) {
+        if (input) {
+          input.removeAttribute("data-overridden");
+        }
+      });
+    }
+    calculateTotals();
+  }
 
   // Inline Validation Helpers
   function showFieldError(input, message) {
@@ -487,6 +521,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // AJAX calculations for pricing using server-side PHP formulas
   function calculateTotals() {
+    var method = getPricingMethod();
     var qty = parseFloat(qtyInput.value) || 0.0;
     var exRate = parseFloat(exRateInput.value) || 1400.0;
     var productId = productSelect ? productSelect.value : "";
@@ -499,7 +534,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var pricePerTaUnitInput = document.getElementById("pricePerTaUnit");
     var taUnit = pricePerTaUnitInput ? parseFloat(pricePerTaUnitInput.value) || 0.0 : 0.0;
     
-    var manualPrice = parseFloat(priceKgUsd.value) || 0.0;
+    var priceUsd = parseFloat(priceKgUsd.value) || 0.0;
     
     var gradePct = 0.0;
     if (primaryElementId) {
@@ -509,61 +544,133 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    var url = "purchas_api.php?action=calculate" +
-      "&product_id=" + encodeURIComponent(productId) +
-      "&quantity_kg=" + encodeURIComponent(qty) +
-      "&exchange_rate=" + encodeURIComponent(exRate) +
-      "&lme_price=" + encodeURIComponent(lme) +
-      "&tc_charges=" + encodeURIComponent(tc) +
-      "&production_charges_per_kg=" + encodeURIComponent(prodChargesRate) +
-      "&price_per_ta_unit=" + encodeURIComponent(taUnit) +
-      "&grade_pct=" + encodeURIComponent(gradePct) +
-      "&price_per_kg_usd=" + encodeURIComponent(manualPrice);
+    if (method === 'manual') {
+      var priceRwf = priceUsd * exRate;
+      if (document.activeElement !== priceKgRwf) {
+        priceKgRwf.value = priceRwf > 0 ? parseFloat(priceRwf.toFixed(4)) : "";
+      }
+      
+      var purchaseValueUsd = priceUsd * qty;
+      var purchaseValueRwf = priceRwf * qty;
+      
+      valUsd.value = purchaseValueUsd.toFixed(2);
+      valRwf.value = purchaseValueRwf.toFixed(2);
+      
+      var taxRraVal = parseFloat(rraTax.value) || 0.0;
+      var taxRmaVal = parseFloat(rmaTax.value) || 0.0;
+      var taxInkoVal = parseFloat(inkoTax.value) || 0.0;
+      
+      var prodChargesVal = qty * prodChargesRate;
+      prodCharges.value = prodChargesVal.toFixed(4);
+      
+      var totalTaxes = taxRraVal + taxRmaVal + taxInkoVal + prodChargesVal;
+      var netPaidUsdVal = purchaseValueUsd - totalTaxes;
+      
+      netPaidUsd.value = netPaidUsdVal.toFixed(4);
+      
+      var previewHtml = '<div class="summary-row"><span>Quantity:</span><span class="summary-val-usd">' + qty.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' kg</span></div>' +
+        '<div class="summary-row"><span>Unit Price:</span><span class="summary-val-usd">$' + priceUsd.toFixed(4) + ' <span class="summary-val-rwf">(' + priceRwf.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
+        '<div class="summary-row"><span>Purchase Value:</span><span class="summary-val-usd">$' + purchaseValueUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span class="summary-val-rwf">(' + purchaseValueRwf.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
+        '<div class="summary-row"><span>Total Deductions/Taxes/Charges:</span><span class="summary-val-usd" style="color:var(--red)">-$' + totalTaxes.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + '</span></div>' +
+        '<div class="summary-row"><span>Net Payable Amount:</span><span class="summary-val-usd" style="color:var(--green)">$' + netPaidUsdVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span></div>';
+        
+      document.getElementById("pricingSummaryPreview").innerHTML = previewHtml;
+      
+    } else {
+      var url = "purchas_api.php?action=calculate" +
+        "&product_id=" + encodeURIComponent(productId) +
+        "&quantity_kg=" + encodeURIComponent(qty) +
+        "&exchange_rate=" + encodeURIComponent(exRate) +
+        "&lme_price=" + encodeURIComponent(lme) +
+        "&tc_charges=" + encodeURIComponent(tc) +
+        "&production_charges_per_kg=" + encodeURIComponent(prodChargesRate) +
+        "&price_per_ta_unit=" + encodeURIComponent(taUnit) +
+        "&grade_pct=" + encodeURIComponent(gradePct) +
+        "&price_per_kg_usd=" + encodeURIComponent(priceUsd);
 
-    fetch(url)
-      .then(function(res) { return res.json(); })
-      .then(function(result) {
-        if (result.success) {
-          var metrics = result.data;
-          if (document.activeElement !== priceKgUsd) {
-            var usdVal = parseFloat(metrics.price_per_kg_usd);
-            priceKgUsd.value = (isNaN(usdVal) || usdVal === 0) ? "" : usdVal;
-          }
-          if (document.activeElement !== priceKgRwf) {
-            var rwfVal = parseFloat(metrics.price_per_kg_rwf);
-            priceKgRwf.value = (isNaN(rwfVal) || rwfVal === 0) ? "" : rwfVal;
-          }
-          valUsd.value = parseFloat(metrics.purchase_value_usd).toFixed(2);
-          valRwf.value = parseFloat(metrics.purchase_value_rwf).toFixed(2);
-          rraTax.value = parseFloat(metrics.tax_rra).toFixed(4);
-          rmaTax.value = parseFloat(metrics.tax_rma).toFixed(4);
-          inkoTax.value = parseFloat(metrics.tax_inkomane).toFixed(4);
-          prodCharges.value = parseFloat(metrics.production_charges).toFixed(4);
-          netPaidUsd.value = parseFloat(metrics.net_paid_supplier_usd).toFixed(4);
-
-          // Render Preview summary details
-          var totalTaxes = parseFloat(metrics.tax_rra) + parseFloat(metrics.tax_rma) + parseFloat(metrics.tax_inkomane) + parseFloat(metrics.production_charges);
-          var previewHtml = '<div class="summary-row"><span>Quantity:</span><span class="summary-val-usd">' + qty.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' kg</span></div>' +
-            '<div class="summary-row"><span>Unit Price:</span><span class="summary-val-usd">$' + parseFloat(metrics.price_per_kg_usd).toFixed(4) + ' <span class="summary-val-rwf">(' + parseFloat(metrics.price_per_kg_rwf).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
-            '<div class="summary-row"><span>Purchase Value:</span><span class="summary-val-usd">$' + parseFloat(metrics.purchase_value_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span class="summary-val-rwf">(' + parseFloat(metrics.purchase_value_rwf).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
-            '<div class="summary-row"><span>Total Deductions/Taxes/Charges:</span><span class="summary-val-usd" style="color:var(--red)">-$' + totalTaxes.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + '</span></div>' +
-            '<div class="summary-row"><span>Net Payable Amount:</span><span class="summary-val-usd" style="color:var(--green)">$' + parseFloat(metrics.net_paid_supplier_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span></div>';
+      fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(result) {
+          if (result.success) {
+            var metrics = result.data;
+            if (document.activeElement !== priceKgUsd) {
+              var usdVal = parseFloat(metrics.price_per_kg_usd);
+              priceKgUsd.value = (isNaN(usdVal) || usdVal === 0) ? "" : usdVal;
+            }
+            if (document.activeElement !== priceKgRwf) {
+              var rwfVal = parseFloat(metrics.price_per_kg_rwf);
+              priceKgRwf.value = (isNaN(rwfVal) || rwfVal === 0) ? "" : rwfVal;
+            }
             
-          document.getElementById("pricingSummaryPreview").innerHTML = previewHtml;
-        }
-      })
-      .catch(function(err) {
-        console.error("Error calculating pricing:", err);
-      });
+            var purchaseValueUsd = parseFloat(metrics.purchase_value_usd);
+            var purchaseValueRwf = parseFloat(metrics.purchase_value_rwf);
+            
+            valUsd.value = purchaseValueUsd.toFixed(2);
+            valRwf.value = purchaseValueRwf.toFixed(2);
+            
+            var taxRraVal = rraTax.hasAttribute("data-overridden") ? parseFloat(rraTax.value) || 0.0 : parseFloat(metrics.tax_rra);
+            var taxRmaVal = rmaTax.hasAttribute("data-overridden") ? parseFloat(rmaTax.value) || 0.0 : parseFloat(metrics.tax_rma);
+            var taxInkoVal = inkoTax.hasAttribute("data-overridden") ? parseFloat(inkoTax.value) || 0.0 : parseFloat(metrics.tax_inkomane);
+            
+            if (!rraTax.hasAttribute("data-overridden")) {
+              rraTax.value = taxRraVal.toFixed(4);
+            }
+            if (!rmaTax.hasAttribute("data-overridden")) {
+              rmaTax.value = taxRmaVal.toFixed(4);
+            }
+            if (!inkoTax.hasAttribute("data-overridden")) {
+              inkoTax.value = taxInkoVal.toFixed(4);
+            }
+            
+            var prodChargesVal = parseFloat(metrics.production_charges);
+            prodCharges.value = prodChargesVal.toFixed(4);
+            
+            var totalTaxes = taxRraVal + taxRmaVal + taxInkoVal + prodChargesVal;
+            var netPaidUsdVal = purchaseValueUsd - totalTaxes;
+            
+            netPaidUsd.value = netPaidUsdVal.toFixed(4);
+
+            var previewHtml = '<div class="summary-row"><span>Quantity:</span><span class="summary-val-usd">' + qty.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' kg</span></div>' +
+              '<div class="summary-row"><span>Unit Price:</span><span class="summary-val-usd">$' + parseFloat(priceKgUsd.value || metrics.price_per_kg_usd).toFixed(4) + ' <span class="summary-val-rwf">(' + parseFloat(priceKgRwf.value || metrics.price_per_kg_rwf).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
+              '<div class="summary-row"><span>Purchase Value:</span><span class="summary-val-usd">$' + purchaseValueUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span class="summary-val-rwf">(' + purchaseValueRwf.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
+              '<div class="summary-row"><span>Total Deductions/Taxes/Charges:</span><span class="summary-val-usd" style="color:var(--red)">-$' + totalTaxes.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + '</span></div>' +
+              '<div class="summary-row"><span>Net Payable Amount:</span><span class="summary-val-usd" style="color:var(--green)">$' + netPaidUsdVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span></div>';
+              
+            document.getElementById("pricingSummaryPreview").innerHTML = previewHtml;
+          }
+        })
+        .catch(function(err) {
+          console.error("Error calculating pricing:", err);
+        });
+    }
   }
 
   // Attach calculation event listeners to all pricing/quantity/product-related inputs
   var prodChargesPerKgInput = document.getElementById("productionChargesPerKg");
   var pricePerTaUnitInput = document.getElementById("pricePerTaUnit");
 
-  [qtyInput, exRateInput, priceKgUsd, lmePriceInput, tcChargesInput, prodChargesPerKgInput, pricePerTaUnitInput].forEach(function(input) {
+  [qtyInput, exRateInput, priceKgUsd, priceKgRwf, lmePriceInput, tcChargesInput, prodChargesPerKgInput, pricePerTaUnitInput].forEach(function(input) {
     if (input) {
       input.addEventListener("input", calculateTotals);
+    }
+  });
+
+  if (pricingMethodRadios) {
+    pricingMethodRadios.forEach(function(radio) {
+      radio.addEventListener("change", handlePricingMethodChange);
+    });
+  }
+
+  [rraTax, rmaTax, inkoTax].forEach(function(input) {
+    if (input) {
+      input.addEventListener("input", function() {
+        if (input.value === "") {
+          input.removeAttribute("data-overridden");
+        } else {
+          input.setAttribute("data-overridden", "true");
+        }
+        calculateTotals();
+      });
     }
   });
 
@@ -811,6 +918,57 @@ document.addEventListener("DOMContentLoaded", function () {
       tcChargesInput.value = p.tc_charges || "";
       document.getElementById("pricePerTaUnit").value = p.price_per_ta_unit || "";
       
+      var method = p.pricing_method || 'lme';
+      var methodRadio = document.querySelector('input[name="pricing_method"][value="' + method + '"]');
+      if (methodRadio) {
+        methodRadio.checked = true;
+      }
+      updatePricingMethodUI();
+
+      if (method === 'lme') {
+        var qty = parseFloat(p.quantity_kg) || 0.0;
+        var exRate = parseFloat(p.exchange_rate) || 1400.0;
+        var lme = parseFloat(p.lme_price) || 0.0;
+        var tc = parseFloat(p.tc_charges) || 0.0;
+        var prodChargesPerKg = parseFloat(p.production_charges_per_kg) || 0.0;
+        var taUnit = parseFloat(p.price_per_ta_unit) || 0.0;
+        var manualPrice = parseFloat(p.price_per_kg_usd) || 0.0;
+        var gradePct = 0.0;
+        if (p.primary_element_id && p.grades) {
+          var pg = p.grades.find(function(g) { return g.product_element_id === p.primary_element_id; });
+          if (pg) gradePct = parseFloat(pg.grade_pct) || 0.0;
+        }
+
+        var url = "purchas_api.php?action=calculate" +
+          "&product_id=" + encodeURIComponent(p.product_id) +
+          "&quantity_kg=" + encodeURIComponent(qty) +
+          "&exchange_rate=" + encodeURIComponent(exRate) +
+          "&lme_price=" + encodeURIComponent(lme) +
+          "&tc_charges=" + encodeURIComponent(tc) +
+          "&production_charges_per_kg=" + encodeURIComponent(prodChargesPerKg) +
+          "&price_per_ta_unit=" + encodeURIComponent(taUnit) +
+          "&grade_pct=" + encodeURIComponent(gradePct) +
+          "&price_per_kg_usd=" + encodeURIComponent(manualPrice);
+
+        fetch(url)
+          .then(function(res) { return res.json(); })
+          .then(function(result) {
+            if (result.success) {
+              var metrics = result.data;
+              var tolerance = 0.0001;
+              if (Math.abs((parseFloat(p.tax_rra) || 0.0) - (parseFloat(metrics.tax_rra) || 0.0)) > tolerance) {
+                rraTax.setAttribute("data-overridden", "true");
+              }
+              if (Math.abs((parseFloat(p.tax_rma) || 0.0) - (parseFloat(metrics.tax_rma) || 0.0)) > tolerance) {
+                rmaTax.setAttribute("data-overridden", "true");
+              }
+              if (Math.abs((parseFloat(p.tax_inkomane) || 0.0) - (parseFloat(metrics.tax_inkomane) || 0.0)) > tolerance) {
+                inkoTax.setAttribute("data-overridden", "true");
+              }
+            }
+          });
+      }
+
       document.getElementById("status").value = p.status;
       document.getElementById("notes").value = p.notes || "";
     } else {
@@ -818,6 +976,11 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("purchaseDate").value = new Date().toISOString().split('T')[0];
       document.getElementById("deliveryDate").value = "";
       exRateInput.value = 1400.0;
+      var methodRadio = document.querySelector('input[name="pricing_method"][value="lme"]');
+      if (methodRadio) {
+        methodRadio.checked = true;
+      }
+      updatePricingMethodUI();
       filterProductsByLot(true);
     }
     
