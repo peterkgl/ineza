@@ -61,7 +61,7 @@ $query = "SELECT sm.*,
           LEFT JOIN lots l ON sm.lot_id = l.id
           LEFT JOIN product pr ON sm.product_id = pr.id
           $whereClause
-          ORDER BY sm.movement_date DESC, sm.id DESC";
+          ORDER BY sm.movement_date ASC, sm.id ASC";
 
 $result = mysqli_query($conn, $query);
 $movements = [];
