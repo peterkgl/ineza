@@ -77,6 +77,95 @@ switch ($action) {
         }
         break;
 
+    case 'adjust':
+        // Check permission
+        if (!hasPermission($conn, $userId, 'view_stock')) {
+            http_response_code(403);
+            sendResponse(false, 'Forbidden: You do not have permission to adjust stock.');
+        }
+
+        $stock_id = isset($_POST['stock_id']) ? (int)$_POST['stock_id'] : 0;
+        $adjustment_type = isset($_POST['adjustment_type']) ? trim($_POST['adjustment_type']) : '';
+        $quantity = isset($_POST['quantity']) ? (float)$_POST['quantity'] : 0.0;
+        $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
+
+        if ($stock_id <= 0 || !in_array($adjustment_type, ['loss', 'gain']) || $quantity <= 0) {
+            sendResponse(false, 'Valid Stock ID, adjustment type (loss/gain), and quantity (> 0) are required.');
+        }
+
+        // Fetch current stock values
+        $stockQuery = mysqli_query($conn, "SELECT * FROM stock WHERE id = $stock_id LIMIT 1");
+        if (!$stockQuery || mysqli_num_rows($stockQuery) === 0) {
+            sendResponse(false, 'Stock record not found.');
+        }
+        $stock = mysqli_fetch_assoc($stockQuery);
+
+        $uom_id = (int)$stock['uom_id'];
+        $warehouse_id = (int)$stock['warehouse_id'];
+        $product_id = (int)$stock['product_id'];
+        $lot_id = (int)$stock['lot_id'];
+        $current_closing = (float)$stock['closing'];
+        $current_adjusted = (float)$stock['qty_adjusted'];
+        $current_opening = (float)$stock['opening'];
+
+        mysqli_begin_transaction($conn);
+        try {
+            if ($adjustment_type === 'loss') {
+                $new_adjusted = $current_adjusted - $quantity;
+                $new_closing = $current_closing - $quantity;
+                $movement_type = 'ADJUSTMENT_OUT';
+            } else { // gain
+                $new_adjusted = $current_adjusted + $quantity;
+                $new_closing = $current_closing + $quantity;
+                $movement_type = 'ADJUSTMENT_IN';
+            }
+
+            if ($new_closing < 0) {
+                $new_closing = 0.0; // Avoid negative closing stock
+            }
+
+            // Update the stock table: Only Closing and Adjusted value are updated. Opening is NOT changed.
+            $updateStock = "UPDATE stock SET 
+                                qty_adjusted = $new_adjusted,
+                                closing = $new_closing
+                            WHERE id = $stock_id";
+            if (!mysqli_query($conn, $updateStock)) {
+                throw new Exception("Failed to update stock: " . mysqli_error($conn));
+            }
+
+            // Save adjustment as a new record in the Stock Movement table
+            $today = date('Y-m-d');
+            $notesEsc = mysqli_real_escape_string($conn, $notes ? $notes : "Manual adjustment: " . ucfirst($adjustment_type));
+            $insertMvt = "INSERT INTO stock_movement (
+                              movement_type, warehouse_id, product_id, lot_id, uom_id, 
+                              qty_kg, movement_date, notes, created_by, 
+                              opening, closing
+                          ) VALUES (
+                              '$movement_type', $warehouse_id, $product_id, $lot_id, $uom_id, 
+                              $quantity, '$today', '$notesEsc', $userId, 
+                              $current_opening, $new_closing
+                          )";
+            if (!mysqli_query($conn, $insertMvt)) {
+                throw new Exception("Failed to insert stock movement: " . mysqli_error($conn));
+            }
+
+            logAudit($conn, 'UPDATE', 'stock', "Adjustment: " . ucfirst($adjustment_type), "Adjusted stock id $stock_id by $quantity kg (" . ucfirst($adjustment_type) . ")", $stock, [
+                'id' => $stock_id,
+                'qty_adjusted' => $new_adjusted,
+                'closing' => $new_closing
+            ]);
+
+            mysqli_commit($conn);
+            sendResponse(true, "Stock adjusted successfully.", [
+                'qty_adjusted' => $new_adjusted,
+                'closing' => $new_closing
+            ]);
+        } catch (Exception $e) {
+            mysqli_rollback($conn);
+            sendResponse(false, "Failed to adjust stock: " . $e->getMessage());
+        }
+        break;
+
     default:
         http_response_code(400);
         sendResponse(false, 'Invalid action requested.');

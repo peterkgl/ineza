@@ -284,8 +284,8 @@ switch ($action) {
             $today = date('Y-m-d');
             $update = mysqli_query($conn, "UPDATE lots SET closing_date = '$today' WHERE id = $id");
             if ($update) {
-                // Set opening and closing stock balances to the final stock qty_on_hand
-                $updateStockQuery = "UPDATE stock SET opening = qty_on_hand, closing = qty_on_hand WHERE lot_id = $id";
+                // Set closing stock balance to the final stock qty_on_hand
+                $updateStockQuery = "UPDATE stock SET closing = qty_on_hand WHERE lot_id = $id";
                 if (!mysqli_query($conn, $updateStockQuery)) {
                     throw new Exception("Failed to update stock balances on lot close: " . mysqli_error($conn));
                 }
@@ -326,7 +326,6 @@ switch ($action) {
                                 $stockId = (int)$stockRow['id'];
                                 $updateStock = "UPDATE stock SET 
                                                     qty_adjusted = qty_adjusted + $carried_qty,
-                                                    opening = opening + $carried_qty,
                                                     closing = closing + $carried_qty,
                                                     last_rolled_over_at = '$today'
                                                 WHERE id = $stockId";
@@ -378,11 +377,10 @@ switch ($action) {
                     }
                 }
 
-                // Roll over other open lots immediately (opening = closing)
+                // Roll over other open lots immediately (update last_rolled_over_at)
                 $rollQuery = "UPDATE stock s
                               JOIN lots l ON s.lot_id = l.id
-                              SET s.opening = s.closing,
-                                  s.last_rolled_over_at = '$today'
+                              SET s.last_rolled_over_at = '$today'
                               WHERE l.closing_date IS NULL";
                 if (!mysqli_query($conn, $rollQuery)) {
                     throw new Exception("Failed to roll over open lots stock: " . mysqli_error($conn));
