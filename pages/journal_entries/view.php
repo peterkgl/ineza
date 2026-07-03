@@ -6,12 +6,12 @@ require_once __DIR__ . '/../../config/permissions.php';
 $userId = $_SESSION['user_id'] ?? 0;
 
 // Access check
-if (!hasPermission($conn, $userId, 'view_accounts')) {
+if (!hasPermission($conn, $userId, 'view_journal_entries')) {
     header("Location: ../dashboard");
     exit();
 }
 
-$canCancel = hasPermission($conn, $userId, 'delete_account');
+$canCancel = hasPermission($conn, $userId, 'cancel_journal_entry');
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
@@ -50,8 +50,8 @@ if ($linesResult) {
     }
 }
 
-if (empty($_SESSION['account_token'])) {
-    $_SESSION['account_token'] = bin2hex(random_bytes(32));
+if (empty($_SESSION['journal_entries_token'])) {
+    $_SESSION['journal_entries_token'] = bin2hex(random_bytes(32));
 }
 ?>
 <!DOCTYPE html>
@@ -196,7 +196,7 @@ document.getElementById('cancelEntryBtn').addEventListener('click', function() {
     if (confirm("Are you sure you want to cancel and void this journal entry? This will flag the transaction as CANCELLED and update audit trails. This action is irreversible.")) {
         const formData = new FormData();
         formData.append('id', <?php echo $entry['id']; ?>);
-        formData.append('token', '<?php echo $_SESSION['account_token']; ?>');
+        formData.append('token', '<?php echo $_SESSION['journal_entries_token']; ?>');
 
         fetch('api.php?action=cancel', {
             method: 'POST',

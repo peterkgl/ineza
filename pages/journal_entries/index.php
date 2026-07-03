@@ -5,13 +5,13 @@ require_once __DIR__ . '/../../config/permissions.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 
-// Access permission check (view_accounts fits journal entries view)
-if (!hasPermission($conn, $userId, 'view_accounts')) {
+// Access permission check
+if (!hasPermission($conn, $userId, 'view_journal_entries')) {
     header("Location: ../dashboard");
     exit();
 }
 
-$canCreate = hasPermission($conn, $userId, 'create_account');
+$canCreate = hasPermission($conn, $userId, 'create_journal_entry');
 
 // Fetch Stats
 $statsQuery = "SELECT 

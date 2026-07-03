@@ -12,8 +12,8 @@ if (!isset($_SESSION['user_id'])) {
 $userId = (int)$_SESSION['user_id'];
 $action = isset($_GET['action']) ? trim($_GET['action']) : '';
 
-if (empty($_SESSION['account_token'])) {
-    $_SESSION['account_token'] = bin2hex(random_bytes(32));
+if (empty($_SESSION['journal_entries_token'])) {
+    $_SESSION['journal_entries_token'] = bin2hex(random_bytes(32));
 }
 
 function sendResponse($success, $message, $data = null) {
@@ -21,14 +21,14 @@ function sendResponse($success, $message, $data = null) {
         'success' => $success,
         'message' => $message,
         'data' => $data,
-        'token' => $_SESSION['account_token']
+        'token' => $_SESSION['journal_entries_token']
     ]);
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postToken = isset($_POST['token']) ? $_POST['token'] : '';
-    if (empty($postToken) || $postToken !== $_SESSION['account_token']) {
+    if (empty($postToken) || $postToken !== $_SESSION['journal_entries_token']) {
         http_response_code(400);
         sendResponse(false, 'Transaction token mismatch or session expired. Please refresh the page and try again.');
     }
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 switch ($action) {
     case 'generate_no':
-        if (!hasPermission($conn, $userId, 'view_accounts')) {
+        if (!hasPermission($conn, $userId, 'view_journal_entries')) {
             http_response_code(403);
             sendResponse(false, 'Forbidden: You do not have permission.');
         }
@@ -63,7 +63,7 @@ switch ($action) {
         break;
 
     case 'create':
-        if (!hasPermission($conn, $userId, 'create_account')) { // Aligning with accounts permissions
+        if (!hasPermission($conn, $userId, 'create_journal_entry')) {
             http_response_code(403);
             sendResponse(false, 'Forbidden: You do not have permission.');
         }
@@ -195,7 +195,7 @@ switch ($action) {
         break;
 
     case 'cancel':
-        if (!hasPermission($conn, $userId, 'delete_account')) { // Aligning with accounts delete permissions
+        if (!hasPermission($conn, $userId, 'cancel_journal_entry')) {
             http_response_code(403);
             sendResponse(false, 'Forbidden: You do not have permission.');
         }

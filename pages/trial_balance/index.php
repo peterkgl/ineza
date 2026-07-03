@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../config/permissions.php';
 $userId = $_SESSION['user_id'] ?? 0;
 
 // Permission Check
-if (!hasPermission($conn, $userId, 'view_accounts')) {
+if (!hasPermission($conn, $userId, 'view_trial_balance')) {
     header("Location: ../dashboard");
     exit();
 }

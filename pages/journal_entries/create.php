@@ -5,14 +5,14 @@ require_once __DIR__ . '/../../config/permissions.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 
-// Access permission check (create_account is aligned with journal entry creation)
-if (!hasPermission($conn, $userId, 'create_account')) {
+// Access permission check
+if (!hasPermission($conn, $userId, 'create_journal_entry')) {
     header("Location: ../dashboard");
     exit();
 }
 
-if (empty($_SESSION['account_token'])) {
-    $_SESSION['account_token'] = bin2hex(random_bytes(32));
+if (empty($_SESSION['journal_entries_token'])) {
+    $_SESSION['journal_entries_token'] = bin2hex(random_bytes(32));
 }
 
 // Fetch Active Accounts
@@ -86,7 +86,7 @@ if ($currResult) {
     <div class="journal-container">
       <div class="journal-card">
         <form id="journalForm">
-          <input type="hidden" name="token" value="<?php echo $_SESSION['account_token']; ?>">
+          <input type="hidden" name="token" value="<?php echo $_SESSION['journal_entries_token']; ?>">
 
           <!-- Header details -->
           <div class="form-grid">
