@@ -49,7 +49,6 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; margin-right: 8px;"><path d="M12 22V2M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Statement of Financial Position
         </h1>
-        <div class="page-sub">DETROIT CROWNED GOLDEN BUSINESS "CGB" Ltd — Financial Years 2020 – 2022</div>
       </div>
       <div class="page-actions">
         <button class="btn-sm" id="exportCsvBtn">
@@ -119,7 +118,7 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
       
       <div class="equity-year-card">
         <div class="equity-banner">
-          <div style="font-size: 11px; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500; margin-bottom: 2px;">DETROIT CROWNED GOLDEN BUSINESS "CGB" Ltd</div>
+          
           <h3>Statement of financial position</h3>
           <p>As at 31 December 2022</p>
         </div>

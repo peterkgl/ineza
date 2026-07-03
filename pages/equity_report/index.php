@@ -114,12 +114,23 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
       </div>
     </div>
 
-    <!-- ===== YEAR FILTER TABS ===== -->
-    <div class="equity-filters">
-      <button class="filter-tab active" data-year="all">All Years</button>
-      <button class="filter-tab" data-year="2022">2022 Fiscal Year</button>
-      <button class="filter-tab" data-year="2021">2021 Fiscal Year</button>
-      <button class="filter-tab" data-year="2020">2020 Fiscal Year</button>
+    <!-- ===== YEAR FILTER SEARCHABLE DROPDOWN ===== -->
+    <div class="year-filter-container">
+      <span class="dropdown-label">Select Fiscal Year</span>
+      <div class="custom-dropdown">
+        <button type="button" class="dropdown-trigger" id="dropdownTriggerBtn">Fiscal Year 2022</button>
+        <div class="dropdown-menu">
+          <div class="dropdown-search-wrapper">
+            <input type="text" class="dropdown-search" placeholder="Search year..." autocomplete="off">
+          </div>
+          <div class="dropdown-options-list">
+            <div class="dropdown-option selected" data-value="2022">Fiscal Year 2022</div>
+            <div class="dropdown-option" data-value="2021">Fiscal Year 2021</div>
+            <div class="dropdown-option" data-value="2020">Fiscal Year 2020</div>
+            <div class="no-results">No years found</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ===== TABLES CONTAINER ===== -->
@@ -271,32 +282,106 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
 <script src="../../src/js/sidebar.js"></script></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Year filter logic
-    const tabs = document.querySelectorAll('.filter-tab');
-    const cards = document.querySelectorAll('.equity-year-card');
+    // Custom Searchable Dropdown Year Filter Logic
+    const dropdown = document.querySelector('.custom-dropdown');
+    const trigger = document.querySelector('.dropdown-trigger');
+    const searchInput = document.querySelector('.dropdown-search');
+    const options = document.querySelectorAll('.dropdown-option');
+    const noResults = document.querySelector('.no-results');
+    const yearSections = document.querySelectorAll('.equity-year-card');
 
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            // Remove active class from all tabs
-            tabs.forEach(t => t.classList.remove('active'));
-            // Add active class to clicked tab
-            this.classList.add('active');
+    // Default load: show only the active year (2022) and hide others
+    const initialYear = '2022';
+    yearSections.forEach(section => {
+        if (section.getAttribute('data-year-section') === initialYear) {
+            section.style.display = 'block';
+        } else {
+            section.style.display = 'none';
+        }
+    });
 
-            const year = this.getAttribute('data-year');
+    // Toggle Dropdown Panel
+    trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+        if (dropdown.classList.contains('open')) {
+            searchInput.value = '';
+            // Reset options visibility
+            options.forEach(opt => opt.style.display = 'block');
+            noResults.style.display = 'none';
+            searchInput.focus();
+        }
+    });
 
-            cards.forEach(card => {
-                if (year === 'all') {
-                    card.style.display = 'block';
+    // Search Options Filter
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        options.forEach(opt => {
+            const text = opt.textContent.toLowerCase();
+            if (text.includes(query)) {
+                opt.style.display = 'block';
+                visibleCount++;
+            } else {
+                opt.style.display = 'none';
+            }
+        });
+
+        if (visibleCount === 0) {
+            noResults.style.display = 'block';
+        } else {
+            noResults.style.display = 'none';
+        }
+    });
+
+    // Option Selection
+    options.forEach(opt => {
+        opt.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Remove selection class and set on selected
+            options.forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+
+            // Update trigger text
+            const selectedText = this.textContent.trim();
+            const selectedYear = this.getAttribute('data-value');
+            trigger.textContent = selectedText;
+
+            // Close dropdown
+            dropdown.classList.remove('open');
+
+            // Show selected section, hide others
+            yearSections.forEach(section => {
+                if (section.getAttribute('data-year-section') === selectedYear) {
+                    section.style.display = 'block';
+                    section.style.opacity = '0';
+                    setTimeout(() => {
+                        section.style.opacity = '1';
+                        section.style.transition = 'opacity 0.25s ease-in-out';
+                    }, 50);
                 } else {
-                    if (card.getAttribute('data-year-section') === year) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
+                    section.style.display = 'none';
                 }
             });
         });
     });
+
+    // Click outside to close
+    document.addEventListener('click', function() {
+        if (dropdown) {
+            dropdown.classList.remove('open');
+        }
+    });
+
+    // Stop propagation inside dropdown menu so it doesn't close when typing or clicking inside
+    const dropdownMenu = dropdown ? dropdown.querySelector('.dropdown-menu') : null;
+    if (dropdownMenu) {
+        dropdownMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
 
     // CSV Exporter logic
     document.getElementById('exportCsvBtn').addEventListener('click', function() {
