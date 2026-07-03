@@ -1,0 +1,173 @@
+/* ===================================================
+   INEZA AFRICAN MINING — Notes report Styles
+   =================================================== */
+
+.note-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 14px;
+}
+
+/* Card layout for each note */
+.note-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+}
+
+.note-card:hover {
+  border-color: var(--border-hover);
+}
+
+/* Notes Table Styling */
+.note-table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.note-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.note-table th,
+.note-table td {
+  padding: 10px 18px;
+  text-align: right;
+  border: 1px solid var(--border);
+}
+
+.note-table th:first-child,
+.note-table td:first-child {
+  text-align: left;
+  padding-left: 20px;
+}
+
+/* Note Header Row (e.g., "1 Revenue") */
+.note-table tr.note-header-row td {
+  background-color: var(--bg);
+  font-weight: 600;
+  color: var(--green);
+  text-align: left;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  font-size: 13.5px;
+  border-bottom: 2px solid var(--border);
+}
+
+.note-table tr.note-header-row td .note-num {
+  display: inline-block;
+  font-weight: 700;
+  margin-right: 8px;
+  color: var(--green);
+}
+
+/* Years column headers */
+.note-table tr.year-header-row th {
+  font-weight: 600;
+  color: var(--green);
+  font-size: 12.5px;
+  border-bottom: none;
+  background-color: var(--bg);
+}
+
+.note-table tr.currency-header-row th {
+  font-size: 11.5px;
+  color: var(--green);
+  opacity: 0.85;
+  padding-top: 2px;
+  padding-bottom: 8px;
+  border-top: none;
+  background-color: var(--bg);
+}
+
+.note-table td {
+  color: var(--text);
+}
+
+/* Numeric alignment and styling */
+.note-table td.num-val {
+  font-family: 'Inter', monospace;
+  font-size: 12.5px;
+  font-weight: 500;
+  width: 18%;
+}
+
+.note-table td.row-label {
+  color: var(--text);
+  font-weight: 400;
+}
+
+/* Note Total/Summary Row */
+.note-table tr.total-row td {
+  font-weight: 600;
+  color: var(--green);
+  background-color: var(--bg);
+  border-top: 1.5px solid var(--border-hover);
+  border-bottom: 4px double var(--text);
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+
+[data-theme="dark"] .note-table tr.total-row td {
+  border-bottom-color: var(--text2);
+}
+
+.note-table tr:hover td:not([colspan]) {
+  background: var(--table-hover);
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11px !important;
+  }
+  .sidebar, .topbar, .page-actions, .stats-grid {
+    display: none !important;
+  }
+  .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .content {
+    padding: 0 !important;
+  }
+  .note-card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+  }
+  .note-table th, 
+  .note-table td {
+    border: 1px solid #ccc !important;
+  }
+  .note-table tr.note-header-row td {
+    background-color: #f5f5f5 !important;
+    color: #0c5945 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .note-table tr.year-header-row th,
+  .note-table tr.currency-header-row th {
+    background-color: #f5f5f5 !important;
+    color: #0c5945 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .note-table tr.total-row td {
+    color: #0c5945 !important;
+    background-color: #f9f9f9 !important;
+    border-top: 1px solid #000 !important;
+    border-bottom: 3px double #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
