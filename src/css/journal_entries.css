@@ -1,0 +1,250 @@
+/* ===================================================
+   INEZA AFRICAN MINING — Journal Entries Styles
+   =================================================== */
+
+.journal-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 14px;
+}
+
+/* Card layout */
+.journal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.journal-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.journal-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.draft {
+  background-color: var(--blue-bg);
+  color: var(--blue);
+}
+
+.status-badge.posted {
+  background-color: var(--green-bg);
+  color: var(--green);
+}
+
+.status-badge.cancelled {
+  background-color: var(--red-bg);
+  color: var(--red);
+}
+
+/* Table styling */
+.journal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.journal-table th,
+.journal-table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--table-border);
+}
+
+.journal-table th {
+  font-weight: 600;
+  color: var(--text2);
+  background-color: var(--bg);
+  border-bottom: 1.5px solid var(--border);
+}
+
+.journal-table td {
+  color: var(--text);
+}
+
+.journal-table tr:hover td {
+  background: var(--table-hover);
+}
+
+.journal-table td.num-val {
+  font-family: 'Inter', monospace;
+  font-size: 12.5px;
+  text-align: right;
+}
+
+.journal-table th.num-val {
+  text-align: right;
+}
+
+/* Form Styles */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.form-control:focus {
+  border-color: var(--orange);
+}
+
+.form-control:disabled {
+  background-color: var(--bg);
+  color: var(--text2);
+  cursor: not-allowed;
+}
+
+/* Dynamic Line Table Form */
+.line-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.line-table th,
+.line-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.line-table th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  text-align: left;
+}
+
+.line-table td {
+  vertical-align: middle;
+}
+
+/* Balance Box */
+.balance-summary-box {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.balance-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.balance-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.balance-row.total {
+  font-weight: 600;
+  border-top: 1px solid var(--border-hover);
+  padding-top: 8px;
+}
+
+.balance-row.difference {
+  font-weight: 700;
+  color: var(--red);
+}
+
+.balance-row.difference.balanced {
+  color: var(--green);
+}
+
+/* Actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.btn-danger-outline {
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--red);
+  background: transparent;
+  color: var(--red);
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-danger-outline:hover {
+  background: var(--red-bg);
+}
+
+/* Print View Styles */
+@media print {
+  .sidebar, .topbar, .page-actions, .form-actions, .btn-sm {
+    display: none !important;
+  }
+  .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .content {
+    padding: 0 !important;
+  }
+  .journal-card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
