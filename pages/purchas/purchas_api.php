@@ -663,6 +663,176 @@ switch ($action) {
                 'purchase_value_usd' => $purchase_value_usd
             ];
             logAudit($conn, 'CREATE', 'purchasing', $purchase_no, "Recorded mining purchase: $purchase_no", null, $newValues);
+
+            // insert into journal_entries
+            // journal entry no
+
+            $date = isset($_GET['date']) ? trim($_GET['date']) : date('Y-m-d');
+
+            if (empty($date) || !strtotime($date)) {
+                $date = date('Y-m-d');
+            }
+
+            $dateStr  = date('Ymd', strtotime($date));
+            $prefix   = "JE-" . $dateStr . "-";
+            $description = "Purchase recorded: " . $purchase_no;
+
+            // Insert journal entry and lines. Use numeric values for calculations
+            // and let exceptions bubble up so the outer transaction can rollback.
+
+            // Generate Journal Number
+            $stmt = mysqli_prepare($conn, "
+                SELECT COUNT(*) AS cnt
+                FROM journal_entries
+                WHERE journal_no LIKE CONCAT(?, '%')
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_bind_param($stmt, "s", $prefix);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $count = mysqli_fetch_assoc($result)['cnt'];
+            mysqli_stmt_close($stmt);
+
+            $journalNo = $prefix . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+
+            // Get Inventory Account
+            $stmt = mysqli_prepare($conn, "
+                SELECT inventory_account_id
+                FROM product
+                WHERE id = ?
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_bind_param($stmt, "i", $product_id);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $product = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$product) {
+                throw new Exception("Product not found.");
+            }
+            $inventoryAccount = $product['inventory_account_id'];
+
+            // Get Supplier Account
+            $stmt = mysqli_prepare($conn, "
+                SELECT accounts.id
+                FROM suppliers
+                INNER JOIN accounts
+                    ON accounts.id = suppliers.payables_account_id
+                WHERE suppliers.id = ?
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_bind_param($stmt, "i", $supplier_id);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $supplier = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$supplier) {
+                throw new Exception("Supplier account not found.");
+            }
+            $supplierAccount = $supplier['id'];
+
+            // Insert Journal Header
+            $status = "AUTO POSTED";
+            $stmt = mysqli_prepare($conn, "
+                INSERT INTO journal_entries
+                (journal_no, entry_date, description, statuss, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?, NOW())
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_bind_param(
+                $stmt,
+                "ssssi",
+                $journalNo,
+                $purchase_date,
+                $description,
+                $status,
+                $userId
+            );
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception(mysqli_error($conn));
+            }
+            $journalEntryId = mysqli_insert_id($conn);
+            mysqli_stmt_close($stmt);
+
+            // Ensure we use numeric exchange rate and net paid values (not SQL 'NULL' strings)
+            $ex_rate_num = isset($exchange_rate) ? (float)$exchange_rate : 0.0;
+            $n_paid_num = isset($net_paid_supplier_usd) ? (float)$net_paid_supplier_usd : 0.0;
+            $amountBase = $n_paid_num * $ex_rate_num;
+            $currencyId = 2;
+
+            // Prepare Journal Line Statement
+            $stmt = mysqli_prepare($conn, "
+                INSERT INTO journal_entry_lines
+                (
+                    journal_entry_id,
+                    account_id,
+                    debit,
+                    credit,
+                    currency_id,
+                    exchange_rate,
+                    amount_currency,
+                    amount_base,
+                    description
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+
+            // Debit Inventory
+            $debit = $n_paid_num;
+            $credit = 0.0;
+
+            mysqli_stmt_bind_param(
+                $stmt,
+                "iiddiddds",
+                $journalEntryId,
+                $inventoryAccount,
+                $debit,
+                $credit,
+                $currencyId,
+                $ex_rate_num,
+                $n_paid_num,
+                $amountBase,
+                $description
+            );
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception(mysqli_error($conn));
+            }
+
+            // Credit Supplier
+            $debit = 0.0;
+            $credit = $n_paid_num;
+
+            mysqli_stmt_bind_param(
+                $stmt,
+                "iiddiddds",
+                $journalEntryId,
+                $supplierAccount,
+                $debit,
+                $credit,
+                $currencyId,
+                $ex_rate_num,
+                $n_paid_num,
+                $amountBase,
+                $description
+            );
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception(mysqli_error($conn));
+            }
+
+            mysqli_stmt_close($stmt);
             
             $_SESSION['purchas_token'] = bin2hex(random_bytes(32));
             mysqli_commit($conn);

@@ -172,14 +172,14 @@ if ($accountResultCOGS) {
             <tbody id="productsList">
               <?php
               $query = "SELECT p.*, uom.code as uom_code, uom.name as uom_name,
-                               inv.code as inv_code, inv.name as inv_name,
-                               sal.code as sal_code, sal.name as sal_name,
-                               cog.code as cog_code, cog.name as cog_name
+                               inv.account_code as inv_code, inv.account_name as inv_name,
+                               sal.account_code as sal_code, sal.account_name as sal_name,
+                               cog.account_code as cog_code, cog.account_name as cog_name
                         FROM product p
                         LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
-                        LEFT JOIN account_types inv ON p.inventory_account_id = inv.id
-                        LEFT JOIN account_types sal ON p.sales_account_id = sal.id
-                        LEFT JOIN account_types cog ON p.cogs_account_id = cog.id
+                        LEFT JOIN accounts inv ON p.inventory_account_id = inv.account_code
+                        LEFT JOIN accounts sal ON p.sales_account_id = sal.account_code
+                        LEFT JOIN accounts cog ON p.cogs_account_id = cog.account_code
                         ORDER BY p.product_code ASC";
               $result = mysqli_query($conn, $query);
               $productsData = [];

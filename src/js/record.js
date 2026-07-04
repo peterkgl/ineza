@@ -805,7 +805,7 @@ document.addEventListener("DOMContentLoaded", function () {
       console.error("Error saving purchase:", err);
       formAlertPlaceholder.innerHTML = '<div class="alert-msg error">' +
         '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
-        '<span>An error occurred while saving the purchase transaction.</span>' +
+        '<span>' + escapeHtml(err) + '</span>' +
         '</div>';
     });
   }

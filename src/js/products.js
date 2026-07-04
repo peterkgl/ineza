@@ -119,9 +119,9 @@ document.addEventListener('DOMContentLoaded', function () {
       var codeVal = escapeHtml(p.product_code);
       var nameVal = escapeHtml(p.product_name);
       var uomVal = escapeHtml(p.uom_code);
-      var invVal = p.inventory_account_code ? '<span class="code-badge">' + escapeHtml(p.inventory_account_code) + '</span>' : '—';
-      var salVal = p.sales_account_code ? '<span class="code-badge">' + escapeHtml(p.sales_account_code) + '</span>' : '—';
-      var cogVal = p.cogs_account_code ? '<span class="code-badge">' + escapeHtml(p.cogs_account_code) + '</span>' : '—';
+      var invVal = p.inventory_account_name ? '<span class="code-badge">' + escapeHtml(p.inventory_account_name) + '</span>' : '—';
+      var salVal = p.sales_account_name ? '<span class="code-badge">' + escapeHtml(p.sales_account_name) + '</span>' : '—';
+      var cogVal = p.cogs_account_name ? '<span class="code-badge">' + escapeHtml(p.cogs_account_name) + '</span>' : '—';
       
       var statusLabel = p.is_active === 1
         ? '<span class="status-pill pill-green">Active</span>'
