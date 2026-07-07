@@ -171,7 +171,7 @@ if ($id > 0) {
 <script>
   (function() {
     var savedTheme = localStorage.getItem('theme');
-    var currentTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var currentTheme = savedTheme || 'light';
     document.documentElement.setAttribute('data-theme', currentTheme);
   })();
 </script>

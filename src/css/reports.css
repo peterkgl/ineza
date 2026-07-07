@@ -1,0 +1,185 @@
+/* ===================================================
+   INEZA AFRICAN MINING — Excel Reports Unified Styles
+   =================================================== */
+
+.report-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.report-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.report-toolbar {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--bg);
+}
+
+.search-wrap {
+  position: relative;
+  max-width: 320px;
+  flex: 1;
+}
+
+.search-wrap input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  font-size: 12.5px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.search-wrap input:focus {
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 3px rgba(232, 83, 26, 0.06);
+}
+
+.search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  stroke: var(--text3);
+  fill: none;
+  stroke-width: 2;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input {
+  cursor: pointer;
+  accent-color: var(--orange);
+}
+
+.table-wrapper {
+  overflow: auto;
+  max-height: calc(100vh - 240px);
+  background: var(--card);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar styling for .table-wrapper */
+.table-wrapper::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #E0DDD8;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #C0BBB4;
+}
+
+[data-theme="dark"] .table-wrapper::-webkit-scrollbar-thumb {
+  background: #3A3A3C;
+}
+
+[data-theme="dark"] .table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #48484A;
+}
+
+.excel-table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+  font-size: 12px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+}
+
+.excel-table td {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.excel-table tr:hover td {
+  background-color: var(--table-hover) !important;
+}
+
+/* Highlight matches in search */
+.highlight {
+  background-color: rgba(232, 83, 26, 0.2) !important;
+  color: var(--text) !important;
+  font-weight: 600;
+  border-radius: 2px;
+  padding: 1px 2px;
+}
+
+/* Dark theme specific fixes for cell borders */
+[data-theme="dark"] .excel-table td {
+  border-color: #2c2c2e;
+}
+
+/* Print View Styles */
+@media print {
+  .sidebar, .navbar, .report-toolbar, .page-actions, .btn-sm {
+    display: none !important;
+  }
+  .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+  .content {
+    padding: 0 !important;
+  }
+  .report-card {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .table-wrapper {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .excel-table {
+    width: 100% !important;
+    font-size: 10px !important;
+  }
+}
+

@@ -32,8 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var themeToggleBtn = document.getElementById('themeToggleBtn');
   if (themeToggleBtn) {
     var savedTheme = localStorage.getItem('theme');
-    var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var currentTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+    var currentTheme = savedTheme || 'light';
 
     document.documentElement.setAttribute('data-theme', currentTheme);
 

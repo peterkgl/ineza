@@ -199,6 +199,49 @@ $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger')
     <?php endif; ?>
   <?php endif; ?>
 
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">Mining Reports</div>
+  <details class="nav-group" <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_') !== false) ? 'open' : ''; ?> style="outline: none;">
+    <summary class="nav-item" style="list-style: none; display: flex; justify-content: space-between; align-items: center; cursor: pointer; outline: none;">
+      <span style="display: flex; align-items: center; gap: 9px;">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        System All reports
+      </span>
+      <svg class="chevron" viewBox="0 0 24 24" style="width: 12px; height: 12px; transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+    <div class="nav-group-items" style="padding-left: 10px; margin-top: 2px; max-height: 300px; overflow-y: auto;">
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_bank_recon_usd') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_bank_recon_usd/index">Bank Recon USD</a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_bank_recon_rwf') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_bank_recon_rwf/index">Bank Recon RWF</a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_monthly_transactions') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_monthly_transactions/index">Monthly Transactions</a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_cash_count_hq') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_cash_count_hq/index">Cash Count HQ</a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_petty_cash_rub') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_petty_cash_rub/index">Petty Cash Rubaya</a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_cash_count_rub') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_cash_count_rub/index">Cash Count Rubaya</a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_purchase_logs_ta') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_purchase_logs_ta/index">Tantalum Purchases</a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_accounts_payable') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_accounts_payable/index">Accounts Payable</a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_tin_summary') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_tin_summary/index">Tin Summary</a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_ta_summary') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_ta_summary/index">Ta Summary</a>
+    </div>
+  </details>
+
+  <style>
+    details.nav-group summary::-webkit-details-marker {
+      display: none;
+    }
+    details.nav-group[open] .chevron {
+      transform: rotate(180deg);
+    }
+    .nav-group-items::-webkit-scrollbar {
+      width: 3px;
+    }
+    .nav-group-items::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .nav-group-items::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+  </style>
+
   <?php if ($showUsers || $showRoles || $showPermissions): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">User Management</div>
