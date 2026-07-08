@@ -8,19 +8,7 @@ $report_slug = 'ta_summary';
 $report_title = 'Ta Summary';
 $report_slug_esc = mysqli_real_escape_string($conn, $report_slug);
 
-// Fetch custom labels map from database
-$label_map = [];
-$label_query = "SELECT `original_label`, `custom_label` FROM `report_labels` WHERE `report_slug` = '{$report_slug_esc}'";
-$label_res = mysqli_query($conn, $label_query);
-if ($label_res) {
-    while ($label_row = mysqli_fetch_assoc($label_res)) {
-        $label_map[$label_row['original_label']] = $label_row['custom_label'];
-    }
-}
-
-function get_label($val, $label_map) {
-    return isset($label_map[$val]) ? $label_map[$val] : $val;
-}
+// Custom labels mapping is disabled
 
 // Parse filters
 $filter_year = $_GET['filter_year'] ?? '';
@@ -172,47 +160,48 @@ $total_w = 0.0;
         <table class="excel-table" id="reportTable">
           <thead>
             <tr style="background: var(--bg); font-weight: 600;">
-              <th>#</th>
               <th>Date</th>
               <th>Negociant</th>
               <th>Code</th>
               <th>Kgs</th>
-              <th>Ta2O5 %</th>
-              <th>Moisture</th>
-              <th>Net Weight</th>
-              <th>LME Price</th>
-              <th>Status</th>
+              <th>Ta2O5</th>
+              <th>Nb2O5</th>
+              <th>Fe</th>
             </tr>
           </thead>
           <tbody>
             <?php
-            $idx = 0;
-            if ($db_res):
+            $total_w = 0.0;
+            $has_data = false;
+            if ($db_res && mysqli_num_rows($db_res) > 0):
+                $has_data = true;
                 while ($row = mysqli_fetch_assoc($db_res)):
-                    $idx++;
                     $weight = (float)$row['total_weight'];
                     $total_w += $weight;
             ?>
               <tr class="data-row">
-                <td><?php echo $idx; ?></td>
                 <td><?php echo htmlspecialchars($row['tx_date']); ?></td>
-                <td><?php echo htmlspecialchars(get_label($row['supplier_name'], $label_map)); ?></td>
+                <td><?php echo htmlspecialchars($row['supplier_name']); ?></td>
                 <td><?php echo htmlspecialchars($row['purchase_no']); ?></td>
                 <td style="text-align: right;"><?php echo number_format($weight, 1); ?></td>
-                <td style="text-align: right;"><?php echo number_format((float)$row['avg_grade'], 4); ?>%</td>
-                <td style="text-align: right;">0.0%</td>
-                <td style="text-align: right;"><?php echo number_format($weight, 1); ?></td>
-                <td style="text-align: right;">$<?php echo number_format((float)$row['avg_lme'], 2); ?></td>
-                <td>Processing</td>
+                <td style="text-align: right;"><?php echo (float)$row['avg_grade'] > 0 ? number_format((float)$row['avg_grade'] * 100, 2) . '%' : ''; ?></td>
+                <td style="text-align: right;"></td>
+                <td style="text-align: right;"></td>
               </tr>
             <?php
                 endwhile;
+            else:
+            ?>
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 24px; color: var(--text2);">No data found for the selected period.</td>
+              </tr>
+            <?php
             endif;
             ?>
             <tr style="font-weight: 700; background: var(--bg);">
-              <td colspan="4" style="text-align: right;">Under processing:</td>
+              <td colspan="3" style="text-align: right;">Under processing:</td>
               <td style="text-align: right;"><?php echo number_format($total_w, 1); ?></td>
-              <td colspan="5"></td>
+              <td colspan="3"></td>
             </tr>
           </tbody>
         </table>

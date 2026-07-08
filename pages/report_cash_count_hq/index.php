@@ -8,19 +8,7 @@ $report_slug = 'cash_count_hq';
 $report_title = 'INEZA Cash Count HQ';
 $report_slug_esc = mysqli_real_escape_string($conn, $report_slug);
 
-// Fetch custom labels map from database
-$label_map = [];
-$label_query = "SELECT `original_label`, `custom_label` FROM `report_labels` WHERE `report_slug` = '{$report_slug_esc}'";
-$label_res = mysqli_query($conn, $label_query);
-if ($label_res) {
-    while ($label_row = mysqli_fetch_assoc($label_res)) {
-        $label_map[$label_row['original_label']] = $label_row['custom_label'];
-    }
-}
-
-function get_label($val, $label_map) {
-    return isset($label_map[$val]) ? $label_map[$val] : $val;
-}
+// Custom labels mapping is disabled
 
 // Parse filters
 $filter_year = $_GET['filter_year'] ?? '';
@@ -166,60 +154,153 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
         </div>
       </form>
 
-      <div class="cash-grid">
-        <!-- RWF Cash Count -->
-        <div class="recon-section">
-          <div class="recon-section-title">Cash Count (RWF)</div>
-          <?php
-          $total_rwf = 0;
-          foreach ($rwf_denoms as $denom):
-              $qty = $counts['RWF'][$denom] ?? 0;
-              $subtotal = $denom * $qty;
-              $total_rwf += $subtotal;
-          ?>
-            <div class="recon-row">
-              <span><?php echo number_format($denom); ?> RWF Note</span>
-              <span><?php echo $qty; ?> x = <strong><?php echo number_format($subtotal); ?> RWF</strong></span>
-            </div>
-          <?php endforeach; ?>
-          
-          <!-- MMO -->
-          <?php
-          $mmo_qty = $counts['RWF'][1] ?? 0;
-          $total_rwf += $mmo_qty;
-          ?>
-          <div class="recon-row">
-            <span>Mobile Money Balance (MMO)</span>
-            <span><strong><?php echo number_format($mmo_qty); ?> RWF</strong></span>
+      <div class="table-wrapper" style="padding: 16px;">
+        <?php
+        $rwf_denoms_full = [5000, 2000, 1000, 500, 100, 50, 1]; // 1 is MMO
+        $usd_denoms_full = [100, 50, 20, 10, 5, 2, 1];
+        
+        $total_rwf = 0.0;
+        $total_usd = 0.0;
+        
+        // Let's compute totals first
+        foreach ($rwf_denoms_full as $d) {
+            $total_rwf += (float)($counts['RWF'][$d] ?? 0);
+        }
+        foreach ($usd_denoms_full as $d) {
+            $total_usd += (float)($counts['USD'][$d] ?? 0);
+        }
+        
+        $rate = 1457.0; // HQ rate from excel row 12
+        $total_usd_equiv = $total_usd + ($total_rwf / $rate);
+        
+        $is_empty = ($total_rwf == 0.0 && $total_usd == 0.0);
+        ?>
+        <?php if ($is_empty): ?>
+          <div style="padding: 12px 16px; margin-bottom: 16px; background: var(--alert-amber-bg); border: 1px solid var(--amber); border-radius: 6px; color: var(--amber); font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            No cash count recorded for this date.
           </div>
+        <?php endif; ?>
+        <table class="excel-table" style="min-width: 100%;">
+          <thead>
+            <tr style="font-weight: 700; background: var(--bg);">
+              <td colspan="5">PETTY CASH ON HAND</td>
+              <td>Daniel MAKASI</td>
+              <td colspan="2"></td>
+              <td colspan="5">CONSOLIDATED CASH COUNT</td>
+            </tr>
+            <tr style="font-weight: 600;">
+              <td>As of:</td>
+              <td><?php echo htmlspecialchars($target_date); ?></td>
+              <td></td>
+              <td style="text-align: right;">Amount</td>
+              <td></td>
+              <td>Rate: <?php echo $rate; ?></td>
+              <td colspan="2"></td>
+              <td>As of:</td>
+              <td><?php echo htmlspecialchars($target_date); ?></td>
+              <td></td>
+              <td style="text-align: right;">Amount</td>
+              <td></td>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- RWF counts -->
+            <tr style="font-weight: 700; background: var(--excel-zebra-bg);">
+              <td>In Francs</td>
+              <td colspan="4">Left Side Count (RWF)</td>
+              <td></td>
+              <td colspan="2"></td>
+              <td>In Francs</td>
+              <td colspan="4">Right Side Count (RWF)</td>
+            </tr>
+            <?php for ($i = 0; $i < 7; $i++): 
+                $r_denom = $rwf_denoms_full[$i];
+                $r_val = (float)($counts['RWF'][$r_denom] ?? 0);
+                $r_qty = $r_denom > 0 ? (int)($r_val / $r_denom) : 0;
+                
+                $label = ($r_denom === 1) ? 'MMO' : number_format($r_denom);
+            ?>
+              <tr>
+                <td><?php echo $label; ?></td>
+                <td><?php echo $r_denom; ?></td>
+                <td style="text-align: right;"><?php echo $r_qty > 0 ? $r_qty : ''; ?></td>
+                <td style="text-align: right;"><?php echo $r_val > 0 ? number_format($r_val) : ''; ?></td>
+                <td></td>
+                <td></td>
+                <td colspan="2"></td>
+                <td><?php echo $label; ?></td>
+                <td><?php echo $r_denom; ?></td>
+                <td style="text-align: right;"></td>
+                <td style="text-align: right;"></td>
+                <td></td>
+              </tr>
+            <?php endfor; ?>
+            
+            <tr style="font-weight: 700; background: var(--bg);">
+              <td colspan="3" style="text-align: right;">Total RWF:</td>
+              <td style="text-align: right;"><?php echo number_format($total_rwf); ?></td>
+              <td></td>
+              <td></td>
+              <td colspan="2"></td>
+              <td colspan="3" style="text-align: right;">Total RWF:</td>
+              <td style="text-align: right;">0</td>
+              <td></td>
+            </tr>
 
-          <div class="recon-row total">
-            <span>Total Cash RWF</span>
-            <span><?php echo number_format($total_rwf); ?> RWF</span>
-          </div>
-        </div>
+            <!-- USD counts -->
+            <tr style="font-weight: 700; background: var(--excel-zebra-bg); border-top: 2px solid var(--border);">
+              <td>In USD$</td>
+              <td colspan="4">Left Side Count (USD)</td>
+              <td></td>
+              <td colspan="2"></td>
+              <td>In USD$</td>
+              <td colspan="4">Right Side Count (USD)</td>
+            </tr>
+            <?php for ($i = 0; $i < 7; $i++): 
+                $u_denom = $usd_denoms_full[$i];
+                $u_val = (float)($counts['USD'][$u_denom] ?? 0);
+                $u_qty = $u_denom > 0 ? (int)($u_val / $u_denom) : 0;
+            ?>
+              <tr>
+                <td>$<?php echo $u_denom; ?> Bill</td>
+                <td><?php echo $u_denom; ?></td>
+                <td style="text-align: right;"><?php echo $u_qty > 0 ? $u_qty : ''; ?></td>
+                <td style="text-align: right;"><?php echo $u_val > 0 ? '$' . number_format($u_val) : ''; ?></td>
+                <td></td>
+                <td></td>
+                <td colspan="2"></td>
+                <td>$<?php echo $u_denom; ?> Bill</td>
+                <td><?php echo $u_denom; ?></td>
+                <td style="text-align: right;"></td>
+                <td style="text-align: right;"></td>
+                <td></td>
+              </tr>
+            <?php endfor; ?>
 
-        <!-- USD Cash Count -->
-        <div class="recon-section">
-          <div class="recon-section-title">Cash Count (USD)</div>
-          <?php
-          $total_usd = 0;
-          foreach ($usd_denoms as $denom):
-              $qty = $counts['USD'][$denom] ?? 0;
-              $subtotal = $denom * $qty;
-              $total_usd += $subtotal;
-          ?>
-            <div class="recon-row">
-              <span>$<?php echo $denom; ?> Bill</span>
-              <span><?php echo $qty; ?> x = <strong>$<?php echo number_format($subtotal); ?></strong></span>
-            </div>
-          <?php endforeach; ?>
+            <tr style="font-weight: 700; background: var(--bg);">
+              <td colspan="3" style="text-align: right;">Total USD:</td>
+              <td style="text-align: right;">$<?php echo number_format($total_usd); ?></td>
+              <td></td>
+              <td></td>
+              <td colspan="2"></td>
+              <td colspan="3" style="text-align: right;">Total USD:</td>
+              <td style="text-align: right;">$0</td>
+              <td></td>
+            </tr>
 
-          <div class="recon-row total">
-            <span>Total Cash USD</span>
-            <span>$<?php echo number_format($total_usd); ?></span>
-          </div>
-        </div>
+            <tr style="font-weight: 700; background: var(--excel-accent-bg); border-top: 2px solid var(--border);">
+              <td colspan="3">TOTAL US$ ACTUAL CASH EQUIVALENT:</td>
+              <td style="text-align: right;">$<?php echo number_format($total_usd_equiv, 2); ?></td>
+              <td></td>
+              <td></td>
+              <td colspan="2"></td>
+              <td colspan="3">TOTAL US$ ACTUAL CASH EQUIVALENT:</td>
+              <td style="text-align: right;">$0.00</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
     </div>

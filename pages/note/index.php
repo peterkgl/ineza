@@ -10,6 +10,316 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
     header("Location: ../dashboard");
     exit();
 }
+
+// Helper to fetch distinct years with posted journal entries
+function getAvailableYears($conn) {
+    $yearsQuery = "SELECT DISTINCT YEAR(entry_date) as yr FROM journal_entries WHERE statuss = 'POSTED' ORDER BY yr DESC";
+    $yearsRes = mysqli_query($conn, $yearsQuery);
+    $availableYears = [];
+    if ($yearsRes) {
+        while ($row = mysqli_fetch_assoc($yearsRes)) {
+            $availableYears[] = (int)$row['yr'];
+        }
+    }
+    if (empty($availableYears)) {
+        $availableYears = [2022, 2021, 2020];
+    }
+    return $availableYears;
+}
+
+// Dynamic helper to calculate balance of a list of accounts or account types
+function getNoteAccountBalances($conn, $options, $year, $isBS = true, $isDebitNormal = true) {
+    $date = "$year-12-31";
+    $yearStart = "$year-01-01";
+    
+    $whereClauses = [];
+    $orClauses = [];
+    
+    if (!empty($options['codes'])) {
+        $codesStr = "'" . implode("','", array_map(function($c) use ($conn) { return mysqli_real_escape_string($conn, $c); }, $options['codes'])) . "'";
+        $orClauses[] = "a.account_code IN ($codesStr)";
+    }
+    if (isset($options['code_prefix'])) {
+        $prefix = mysqli_real_escape_string($conn, $options['code_prefix']);
+        $orClauses[] = "a.account_code LIKE '$prefix%'";
+    }
+    if (isset($options['parent_type_id'])) {
+        $parentTypeId = (int)$options['parent_type_id'];
+        $orClauses[] = "t.parent_id = $parentTypeId";
+    }
+    if (isset($options['type_codes'])) {
+        $typeStr = "'" . implode("','", array_map(function($c) use ($conn) { return mysqli_real_escape_string($conn, $c); }, $options['type_codes'])) . "'";
+        $orClauses[] = "t.code IN ($typeStr)";
+    }
+    if (isset($options['type_ids'])) {
+        $typeIdsStr = implode(",", array_map('intval', $options['type_ids']));
+        $orClauses[] = "a.account_type_id IN ($typeIdsStr)";
+    }
+
+    if (!empty($orClauses)) {
+        $whereClauses[] = "(" . implode(" OR ", $orClauses) . ")";
+    }
+    
+    if (!empty($options['exclude_codes'])) {
+        $excStr = "'" . implode("','", array_map(function($c) use ($conn) { return mysqli_real_escape_string($conn, $c); }, $options['exclude_codes'])) . "'";
+        $whereClauses[] = "a.account_code NOT IN ($excStr)";
+    }
+    if (!empty($options['exclude_type_codes'])) {
+        $excTypeStr = "'" . implode("','", array_map(function($c) use ($conn) { return mysqli_real_escape_string($conn, $c); }, $options['exclude_type_codes'])) . "'";
+        $whereClauses[] = "t.code NOT IN ($excTypeStr)";
+    }
+    if (!empty($options['exclude_type_ids'])) {
+        $excTypeIdsStr = implode(",", array_map('intval', $options['exclude_type_ids']));
+        $whereClauses[] = "a.account_type_id NOT IN ($excTypeIdsStr)";
+    }
+
+    $whereSql = "";
+    if (!empty($whereClauses)) {
+        $whereSql = " AND " . implode(" AND ", $whereClauses);
+    }
+    
+    if ($isBS) {
+        $dateCond = "je.entry_date <= '$date'";
+    } else {
+        $dateCond = "je.entry_date >= '$yearStart' AND je.entry_date <= '$date'";
+    }
+    
+    $sql = "
+        SELECT a.id, a.account_code, a.account_name, t.code as type_code, t.parent_id as parent_type_id,
+               COALESCE(SUM(CASE WHEN $dateCond THEN jel.debit ELSE 0.00 END), 0.00) as total_debit,
+               COALESCE(SUM(CASE WHEN $dateCond THEN jel.credit ELSE 0.00 END), 0.00) as total_credit
+        FROM accounts a
+        JOIN account_types t ON a.account_type_id = t.id
+        LEFT JOIN journal_entry_lines jel ON a.id = jel.account_id
+        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.statuss = 'POSTED'
+        WHERE a.is_active = 1 $whereSql
+        GROUP BY a.id
+        ORDER BY a.account_code ASC";
+        
+    $res = mysqli_query($conn, $sql);
+    $accountsData = [];
+    
+    if ($res) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $deb = (float)$row['total_debit'];
+            $cred = (float)$row['total_credit'];
+            $bal = $isDebitNormal ? ($deb - $cred) : ($cred - $deb);
+            
+            $accountsData[] = [
+                'code' => $row['account_code'],
+                'name' => $row['account_name'],
+                'balance' => $bal
+            ];
+        }
+    }
+    return $accountsData;
+}
+
+// Function to fetch and merge dynamic years data for a list of accounts
+function getMergedNoteData($conn, $options, $years, $isBS = true, $isDebitNormal = true) {
+    $accountsMap = [];
+    
+    foreach ($years as $yr) {
+        $balances = getNoteAccountBalances($conn, $options, $yr, $isBS, $isDebitNormal);
+        foreach ($balances as $acc) {
+            $code = $acc['code'];
+            if (!isset($accountsMap[$code])) {
+                $accountsMap[$code] = [
+                    'code' => $code,
+                    'name' => $acc['name'],
+                    'balances' => []
+                ];
+            }
+            $accountsMap[$code]['balances'][$yr] = $acc['balance'];
+        }
+    }
+    
+    // Filter out accounts where the balance is 0.0 in all years
+    $filtered = [];
+    foreach ($accountsMap as $code => $acc) {
+        $hasValue = false;
+        foreach ($years as $yr) {
+            if (isset($acc['balances'][$yr]) && abs($acc['balances'][$yr]) > 0.01) {
+                $hasValue = true;
+                break;
+            }
+        }
+        if ($hasValue) {
+            $filtered[] = $acc;
+        }
+    }
+    
+    return $filtered;
+}
+
+// Function to render a note card table with dynamic years
+function renderNoteCard($noteNum, $noteTitle, $accounts, $years) {
+    $totals = [];
+    foreach ($years as $yr) {
+        $totals[$yr] = 0.0;
+    }
+    
+    foreach ($accounts as $acc) {
+        foreach ($years as $yr) {
+            $totals[$yr] += $acc['balances'][$yr] ?? 0.0;
+        }
+    }
+    
+    $formatVal = function($val) {
+        if ($val === null || abs($val) < 0.01) {
+            return '-';
+        }
+        if ($val < 0) {
+            return '(' . number_format(abs($val), 0) . ')';
+        }
+        return number_format($val, 0);
+    };
+    ?>
+    <div class="note-card">
+      <div class="note-table-wrapper">
+        <table class="note-table">
+          <thead>
+            <tr class="note-header-row">
+              <td colspan="<?php echo count($years) + 1; ?>"><span class="note-num"><?php echo $noteNum; ?></span> <?php echo htmlspecialchars($noteTitle); ?></td>
+            </tr>
+            <tr class="year-header-row">
+              <th></th>
+              <?php foreach ($years as $yr): ?>
+                <th><?php echo $yr; ?></th>
+              <?php endforeach; ?>
+            </tr>
+            <tr class="currency-header-row">
+              <th></th>
+              <?php foreach ($years as $yr): ?>
+                <th>Frw</th>
+              <?php endforeach; ?>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (empty($accounts)): ?>
+              <tr>
+                <td class="row-label">No active balances</td>
+                <?php foreach ($years as $yr): ?>
+                  <td class="num-val">-</td>
+                <?php endforeach; ?>
+              </tr>
+            <?php else: ?>
+              <?php foreach ($accounts as $acc): ?>
+                <tr>
+                  <td class="row-label"><?php echo htmlspecialchars($acc['name']); ?></td>
+                  <?php foreach ($years as $yr): ?>
+                    <td class="num-val"><?php echo $formatVal($acc['balances'][$yr] ?? 0.0); ?></td>
+                  <?php endforeach; ?>
+                </tr>
+              <?php endforeach; ?>
+            <?php endif; ?>
+            <tr class="total-row">
+              <td class="row-label">Total</td>
+              <?php foreach ($years as $yr): ?>
+                <td class="num-val"><?php echo $formatVal($totals[$yr]); ?></td>
+              <?php endforeach; ?>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <?php
+    return $totals;
+}
+
+// Year filter setup
+$availableYears = getAvailableYears($conn);
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : $availableYears[0];
+if (!in_array($selectedYear, $availableYears)) {
+    $availableYears[] = $selectedYear;
+    rsort($availableYears);
+}
+
+// Display all actual years from database in the tables
+$years = $availableYears;
+
+// Fetch and merge note data from database (no hardcoded fallbacks!)
+// Note 1: Revenue
+$note1_data = getMergedNoteData($conn, ['parent_type_id' => -4], $years, false, false);
+
+// Note 2: Cost of sales
+$note2_data = getMergedNoteData($conn, ['parent_type_id' => -5], $years, false, true);
+
+// Note 3: Administrative expenses
+$note3_data = getMergedNoteData($conn, ['parent_type_id' => -6, 'exclude_type_codes' => ['6013']], $years, false, true);
+
+// Note 4: Finance costs
+$note4_data = getMergedNoteData($conn, ['type_codes' => ['6013']], $years, false, true);
+
+// Note 5: Cash and cash equivalents
+$note5_data = getMergedNoteData($conn, ['type_ids' => [1], 'codes' => ['1010']], $years, true, true);
+
+// Note 6: Accounts receivables
+$note6_data = getMergedNoteData($conn, ['codes' => ['1100'], 'type_ids' => [2, 6]], $years, true, true);
+
+// Note 7: Inventory
+$note7_data = getMergedNoteData($conn, ['codes' => ['1300', '1024', '1034', '1044'], 'type_ids' => [4]], $years, true, true);
+
+// Note 9: Accounts payables / Other current liabilities
+$note9_pay_balances = [];
+$note9_oth_balances = [];
+foreach ($years as $yr) {
+    $pay = getNoteAccountBalances($conn, ['codes' => ['2001'], 'type_ids' => [15, 3]], $yr, true, false);
+    $note9_pay_balances[$yr] = array_sum(array_column($pay, 'balance'));
+    
+    $oth = getNoteAccountBalances($conn, ['codes' => ['2100'], 'type_ids' => [16, 17, 19, 20, 21, 23, 25, 26, 27]], $yr, true, false);
+    $note9_oth_balances[$yr] = array_sum(array_column($oth, 'balance'));
+}
+
+$note9_data = [];
+$hasPay = false;
+$hasOth = false;
+foreach ($years as $yr) {
+    if (abs($note9_pay_balances[$yr]) > 0.01) $hasPay = true;
+    if (abs($note9_oth_balances[$yr]) > 0.01) $hasOth = true;
+}
+if ($hasPay) {
+    $note9_data[] = [
+        'code' => '2001',
+        'name' => 'Accounts payables',
+        'balances' => $note9_pay_balances
+    ];
+}
+if ($hasOth) {
+    $note9_data[] = [
+        'code' => '2100',
+        'name' => 'Other current liabilities',
+        'balances' => $note9_oth_balances
+    ];
+}
+
+// Note 10: Long term loans
+$note10_data = getMergedNoteData($conn, ['codes' => ['2200'], 'type_ids' => [22]], $years, true, false);
+
+// Note 11: Current Tax Payable
+$note11_data = getMergedNoteData($conn, ['codes' => ['2400'], 'type_ids' => [18]], $years, true, false);
+
+// Calculate Stat Cards totals for the selected year
+$totalRevenueY1 = 0.0;
+foreach ($note1_data as $acc) {
+    $totalRevenueY1 += $acc['balances'][$selectedYear] ?? 0.0;
+}
+
+$totalCogsY1 = 0.0;
+foreach ($note2_data as $acc) {
+    $totalCogsY1 += $acc['balances'][$selectedYear] ?? 0.0;
+}
+
+$totalAdminY1 = 0.0;
+foreach ($note3_data as $acc) {
+    $totalAdminY1 += $acc['balances'][$selectedYear] ?? 0.0;
+}
+
+$totalFinanceY1 = 0.0;
+foreach ($note4_data as $acc) {
+    $totalFinanceY1 += $acc['balances'][$selectedYear] ?? 0.0;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,7 +359,7 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; margin-right: 8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           Notes to the Financial Statements
         </h1>
-        <div class="page-sub">DETROIT CROWNED GOLDEN BUSINESS "CGB" Ltd — Year Ended 31st December 2022</div>
+        <div class="page-sub">DETROIT CROWNED GOLDEN BUSINESS "CGB" Ltd — Year Ended 31st December <?php echo $selectedYear; ?></div>
       </div>
       <div class="page-actions">
         <button class="btn-sm" id="exportCsvBtn">
@@ -63,6 +373,25 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
       </div>
     </div>
 
+    <!-- ===== YEAR FILTER SEARCHABLE DROPDOWN ===== -->
+    <div class="year-filter-container">
+      <span class="dropdown-label">Select Fiscal Year</span>
+      <div class="custom-dropdown" id="yearCustomDropdown">
+        <button type="button" class="dropdown-trigger" id="dropdownTriggerBtn">Fiscal Year <?php echo $selectedYear; ?></button>
+        <div class="dropdown-menu">
+          <div class="dropdown-search-wrapper">
+            <input type="text" class="dropdown-search" id="dropdownSearchInput" placeholder="Search year..." autocomplete="off">
+          </div>
+          <div class="dropdown-options-list" id="dropdownOptionsList">
+            <?php foreach ($availableYears as $yr): ?>
+              <div class="dropdown-option <?php echo $yr === $selectedYear ? 'selected' : ''; ?>" data-value="<?php echo $yr; ?>">Fiscal Year <?php echo $yr; ?></div>
+            <?php endforeach; ?>
+            <div class="no-results" id="dropdownNoResults">No years found</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== STAT CARDS SUMMARY ===== -->
     <div class="stats-grid">
       <!-- Total Revenue (Note 1) -->
@@ -73,8 +402,8 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-up">Note 1</span>
         </div>
-        <div class="stat-val">Frw 1,995.0M</div>
-        <div class="stat-label">Sales Revenue (2022)</div>
+        <div class="stat-val">Frw <?php echo number_format($totalRevenueY1 / 1000000, 1); ?>M</div>
+        <div class="stat-label">Sales Revenue (<?php echo $selectedYear; ?>)</div>
       </div>
 
       <!-- Cost of Sales (Note 2) -->
@@ -85,8 +414,8 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-orange">Note 2</span>
         </div>
-        <div class="stat-val">Frw 937.7M</div>
-        <div class="stat-label">Cost of Goods Sold (2022)</div>
+        <div class="stat-val">Frw <?php echo number_format($totalCogsY1 / 1000000, 1); ?>M</div>
+        <div class="stat-label">Cost of Goods Sold (<?php echo $selectedYear; ?>)</div>
       </div>
 
       <!-- Administrative Expenses (Note 3) -->
@@ -97,7 +426,7 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-orange">Note 3</span>
         </div>
-        <div class="stat-val">Frw 256.7M</div>
+        <div class="stat-val">Frw <?php echo number_format($totalAdminY1 / 1000000, 1); ?>M</div>
         <div class="stat-label">Total Admin Expenses</div>
       </div>
 
@@ -109,470 +438,26 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-blue">Note 4</span>
         </div>
-        <div class="stat-val">Frw 43.4M</div>
-        <div class="stat-label">Total Finance Costs (2022)</div>
+        <div class="stat-val">Frw <?php echo number_format($totalFinanceY1 / 1000000, 1); ?>M</div>
+        <div class="stat-label">Total Finance Costs (<?php echo $selectedYear; ?>)</div>
       </div>
     </div>
 
+
     <!-- ===== NOTES STACK ===== -->
     <div class="note-container">
-
-      <!-- Note 1: Revenue -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">1</span> Revenue</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Sales</td>
-                <td class="num-val">1,995,026,000</td>
-                <td class="num-val">1,780,026,000</td>
-                <td class="num-val">1,531,642,000</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">1,995,026,000</td>
-                <td class="num-val">1,780,026,000</td>
-                <td class="num-val">1,531,642,000</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Note 2: Cost of sales -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">2</span> Cost of sales</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Cost of Goods Sold</td>
-                <td class="num-val">937,662,220</td>
-                <td class="num-val">872,212,740</td>
-                <td class="num-val">796,453,840</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">937,662,220</td>
-                <td class="num-val">872,212,740</td>
-                <td class="num-val">796,453,840</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Note 3: Administrative expenses -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">3</span> Administrative expenses</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Others</td>
-                <td class="num-val">82,660,000</td>
-                <td class="num-val">72,740,434</td>
-                <td class="num-val">90,589,000</td>
-              </tr>
-              <tr>
-                <td class="row-label">CEPGL Fees</td>
-                <td class="num-val">55,188,000</td>
-                <td class="num-val">47,188,000</td>
-                <td class="num-val">33,738,000</td>
-              </tr>
-              <tr>
-                <td class="row-label">Salaries and wages</td>
-                <td class="num-val">18,584,000</td>
-                <td class="num-val">15,214,000</td>
-                <td class="num-val">12,391,000</td>
-              </tr>
-              <tr>
-                <td class="row-label">Rent</td>
-                <td class="num-val">7,200,000</td>
-                <td class="num-val">7,200,000</td>
-                <td class="num-val">7,200,000</td>
-              </tr>
-              <tr>
-                <td class="row-label">Annual and District Taxes</td>
-                <td class="num-val">180,000</td>
-                <td class="num-val">180,000</td>
-                <td class="num-val">180,000</td>
-              </tr>
-              <tr>
-                <td class="row-label">Depreciation</td>
-                <td class="num-val">92,911,747</td>
-                <td class="num-val">9,040,000</td>
-                <td class="num-val">8,047,000</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">256,723,747</td>
-                <td class="num-val">151,562,434</td>
-                <td class="num-val">152,145,000</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Note 4: Finance costs -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">4</span> Finance costs</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Insurance fees</td>
-                <td class="num-val">4,891,000</td>
-                <td class="num-val">4,891,000</td>
-                <td class="num-val">2,601,000</td>
-              </tr>
-              <tr>
-                <td class="row-label">Bank interests and charges</td>
-                <td class="num-val">38,532,000</td>
-                <td class="num-val">48,532,000</td>
-                <td class="num-val">35,731,000</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">43,423,000</td>
-                <td class="num-val">53,423,000</td>
-                <td class="num-val">38,332,000</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Note 5: Cash and cash equivalents -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">5</span> Cash and cash equivalents</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Cash at hand</td>
-                <td class="num-val">15,806,100</td>
-                <td class="num-val">25,986,330</td>
-                <td class="num-val">14,507,100</td>
-              </tr>
-              <tr>
-                <td class="row-label">Cash at bank (Local/RWF Account)</td>
-                <td class="num-val">40,000,000</td>
-                <td class="num-val">50,000,000</td>
-                <td class="num-val">20,000,000</td>
-              </tr>
-              <tr>
-                <td class="row-label">Cash at bank (Foreign/USD Account)</td>
-                <td class="num-val">20,000,000</td>
-                <td class="num-val">20,000,000</td>
-                <td class="num-val">10,000,000</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">75,806,100</td>
-                <td class="num-val">95,986,330</td>
-                <td class="num-val">44,507,100</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Note 6: Accounts receivables -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">6</span> Accounts receivables</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Trade Receivables</td>
-                <td class="num-val">421,999,685</td>
-                <td class="num-val">350,565,172</td>
-                <td class="num-val">175,174,448</td>
-              </tr>
-              <tr>
-                <td class="row-label">Other Receivables</td>
-                <td class="num-val">20,000,000</td>
-                <td class="num-val">20,000,000</td>
-                <td class="num-val">10,000,000</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">441,999,685</td>
-                <td class="num-val">370,565,172</td>
-                <td class="num-val">185,174,448</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Note 7: Inventory -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">7</span> Inventory</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Mineral Stocks</td>
-                <td class="num-val">541,623,921</td>
-                <td class="num-val">523,198,870</td>
-                <td class="num-val">314,009,712</td>
-              </tr>
-              <tr>
-                <td class="row-label">Consumables and Spares</td>
-                <td class="num-val">250,000,000</td>
-                <td class="num-val">250,000,000</td>
-                <td class="num-val">150,000,000</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">791,623,921</td>
-                <td class="num-val">773,198,870</td>
-                <td class="num-val">464,009,712</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Note 9: Accounts payables / Other current liabilities -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">9</span> Accounts payables / Other current liabilities</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Accounts payables</td>
-                <td class="num-val">112,748,306</td>
-                <td class="num-val">257,194,092</td>
-                <td class="num-val">149,525,000</td>
-              </tr>
-              <tr>
-                <td class="row-label">Other current liabilities</td>
-                <td class="num-val">50,000,000</td>
-                <td class="num-val">67,030,230</td>
-                <td class="num-val">35,630,100</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">162,748,306</td>
-                <td class="num-val">324,224,322</td>
-                <td class="num-val">185,155,100</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Note 10: Long term loans and other LT liabilities -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">10</span> Long term loans and other LT liabilities</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Long term Bank Loan</td>
-                <td class="num-val">203,338,777</td>
-                <td class="num-val">247,055,474</td>
-                <td class="num-val">-</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">203,338,777</td>
-                <td class="num-val">247,055,474</td>
-                <td class="num-val">-</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Note 11: Current Tax Payable / Tax Expenses -->
-      <div class="note-card">
-        <div class="note-table-wrapper">
-          <table class="note-table">
-            <thead>
-              <tr class="note-header-row">
-                <td colspan="5"><span class="note-num">11</span> Current Tax Payable</td>
-              </tr>
-              <tr class="year-header-row">
-                <th></th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
-              </tr>
-              <tr class="currency-header-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="row-label">Current Tax Payable</td>
-                <td class="num-val">227,165,110</td>
-                <td class="num-val">210,848,348</td>
-                <td class="num-val">163,413,348</td>
-              </tr>
-              <tr class="total-row">
-                <td class="row-label">Total</td>
-                <td class="num-val">227,165,110</td>
-                <td class="num-val">210,848,348</td>
-                <td class="num-val">163,413,348</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
+      <?php
+      renderNoteCard('1', 'Revenue', $note1_data, $years);
+      renderNoteCard('2', 'Cost of sales', $note2_data, $years);
+      renderNoteCard('3', 'Administrative expenses', $note3_data, $years);
+      renderNoteCard('4', 'Finance costs', $note4_data, $years);
+      renderNoteCard('5', 'Cash and cash equivalents', $note5_data, $years);
+      renderNoteCard('6', 'Accounts receivables', $note6_data, $years);
+      renderNoteCard('7', 'Inventory', $note7_data, $years);
+      renderNoteCard('9', 'Accounts payables / Other current liabilities', $note9_data, $years);
+      renderNoteCard('10', 'Long term loans and other LT liabilities', $note10_data, $years);
+      renderNoteCard('11', 'Current Tax Payable', $note11_data, $years);
+      ?>
     </div>
 
   </div>
@@ -581,6 +466,55 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
 <script src="../../src/js/sidebar.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Dropdown toggle
+    const dropdown = document.getElementById('yearCustomDropdown');
+    const trigger = document.getElementById('dropdownTriggerBtn');
+    const searchInput = document.getElementById('dropdownSearchInput');
+    const options = dropdown.querySelectorAll('.dropdown-option');
+    const noResults = document.getElementById('dropdownNoResults');
+
+    trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+        if (dropdown.classList.contains('open')) {
+            searchInput.focus();
+        }
+    });
+
+    // Dropdown option click
+    options.forEach(opt => {
+        opt.addEventListener('click', function() {
+            const yearVal = this.getAttribute('data-value');
+            window.location.href = `?year=${yearVal}`;
+        });
+    });
+
+    // Search logic
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim().toLowerCase();
+        let matchCount = 0;
+        options.forEach(opt => {
+            const text = opt.textContent.toLowerCase();
+            if (text.includes(query)) {
+                opt.style.display = 'block';
+                matchCount++;
+            } else {
+                opt.style.display = 'none';
+            }
+        });
+        noResults.style.display = matchCount === 0 ? 'block' : 'none';
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', function() {
+        dropdown.classList.remove('open');
+    });
+
+    // Stop propagation inside dropdown menu
+    dropdown.querySelector('.dropdown-menu').addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+
     // CSV Exporter logic
     document.getElementById('exportCsvBtn').addEventListener('click', function() {
         let csvContent = "data:text/csv;charset=utf-8,";
@@ -589,8 +523,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const tables = document.querySelectorAll('.note-table');
         tables.forEach(table => {
             const noteHeader = table.querySelector('.note-header-row td').textContent.trim().replace(/,/g, '');
-            csvContent += `"${noteHeader}",,,\r\n`;
-            csvContent += ",2022 (Frw),2021 (Frw),2020 (Frw)\r\n";
+            // Create commas dynamically based on the number of years
+            const commas = ",".repeat(<?php echo count($years); ?>);
+            csvContent += `"${noteHeader}"${commas}\r\n`;
+            csvContent += `,<?php echo implode(' (Frw),', $years); ?> (Frw)\r\n`;
             
             const rows = table.querySelectorAll('tbody tr:not(.note-header-row):not(.year-header-row):not(.currency-header-row)');
             rows.forEach(row => {
@@ -599,11 +535,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const label = labelCell.textContent.trim().replace(/,/g, '');
                 
                 const cells = row.querySelectorAll('.num-val');
-                let val2022 = cells[0] ? cells[0].textContent.trim().replace(/,/g, '') : '';
-                let val2021 = cells[1] ? cells[1].textContent.trim().replace(/,/g, '') : '';
-                let val2020 = cells[2] ? cells[2].textContent.trim().replace(/,/g, '') : '';
+                let cellVals = [];
+                cells.forEach(cell => {
+                    cellVals.push(cell.textContent.trim().replace(/,/g, ''));
+                });
                 
-                csvContent += `"${label}",${val2022},${val2021},${val2020}\r\n`;
+                csvContent += `"${label}",${cellVals.join(',')}\r\n`;
             });
             csvContent += "\r\n"; // Blank line between notes
         });
@@ -612,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "cgb_financial_notes_report.csv");
+        link.setAttribute("download", "cgb_financial_notes_report_<?php echo $selectedYear; ?>.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

@@ -8,19 +8,7 @@ $report_slug = 'purchase_logs_ta';
 $report_title = 'Tantalum Purchase Logs';
 $report_slug_esc = mysqli_real_escape_string($conn, $report_slug);
 
-// Fetch custom labels map from database
-$label_map = [];
-$label_query = "SELECT `original_label`, `custom_label` FROM `report_labels` WHERE `report_slug` = '{$report_slug_esc}'";
-$label_res = mysqli_query($conn, $label_query);
-if ($label_res) {
-    while ($label_row = mysqli_fetch_assoc($label_res)) {
-        $label_map[$label_row['original_label']] = $label_row['custom_label'];
-    }
-}
-
-function get_label($val, $label_map) {
-    return isset($label_map[$val]) ? $label_map[$val] : $val;
-}
+// Custom labels mapping is disabled
 
 // Parse filters
 $filter_year = $_GET['filter_year'] ?? '';
@@ -236,73 +224,82 @@ $avg_grade = $total_qty > 0 ? $total_grade_weight / $total_qty : 0.0;
         <table class="excel-table" id="reportTable">
           <thead>
             <tr style="background: var(--bg); font-weight: 600;">
-              <th>#</th>
               <th>No</th>
               <th>Delivery Date</th>
+              <th>D/Down</th>
               <th>To HO</th>
-              <th>Delivery No</th>
-              <th>Batch</th>
-              <th>Lot Code</th>
-              <th>Supplier</th>
-              <th>Province</th>
-              <th>District</th>
-              <th>Qty (Kg)</th>
-              <th>Grade %</th>
-              <th>Price/Kg (RWF)</th>
-              <th>Value (RWF)</th>
-              <th>Exchange Rate</th>
-              <th>Value (USD)</th>
-              <th>Net Paid (USD)</th>
+              <th>Lot #</th>
+              <th>Negociant</th>
+              <th>Inventory Code</th>
+              <th>Cfr/Commission</th>
+              <th>Quantity (Kg)</th>
+              <th>Ta205%</th>
+              <th>Price (Rwf$)</th>
+              <th>Purchase Value (Rwf)</th>
+              <th>Rate</th>
+              <th>Value ($)</th>
+              <th>Supplier ($)</th>
               <th>Charges/Kg</th>
-              <th>Price/Unit</th>
-              <th>USD/Kg</th>
-              <th>Ta2O5 %</th>
-              <th>Nb2O5 %</th>
-              <th>SnO2 %</th>
-              <th>Fe %</th>
-              <th>MnO2 %</th>
-              <th>Cum. Qty</th>
+              <th>Price /Ta</th>
+              <th>$ Price/ Kg</th>
+              <th>Ta205%</th>
+              <th>Ta %</th>
+              <th>Nb205%</th>
+              <th>Fe%</th>
+              <th>Bal %</th>
+              <th>Balance (Kg)</th>
             </tr>
           </thead>
           <tbody>
             <?php 
             $idx = 0;
             $cum_qty = 0;
+            if (empty($rows)):
+            ?>
+              <tr>
+                <td colspan="24" style="text-align: center; padding: 24px; color: var(--text2);">No purchase log records found.</td>
+              </tr>
+            <?php
+            else:
             foreach ($rows as $row): 
                 $idx++;
                 $qty = (float)$row['quantity_kg'];
                 $grade = (float)($row['grade_pct'] ?? 0);
                 $cum_qty += $qty;
+                
+                // Calculations matching sheet formulas but formatted as values
+                $ta_pct = $grade * 0.819;
+                $nb_pct = $grade * 0.204; // Nb2O5 multiplier
+                $fe_pct = $grade * 0.054; // Fe multiplier
+                $bal_pct = $grade * 0.458; // MnO2/Balance multiplier
             ?>
               <tr class="data-row">
                 <td><?php echo $idx; ?></td>
-                <td><?php echo $idx; ?></td>
+                <td><?php echo htmlspecialchars($row['delivery_date'] ?? ''); ?></td>
+                <td></td>
                 <td><?php echo htmlspecialchars($row['purchase_date']); ?></td>
-                <td><?php echo htmlspecialchars($row['purchase_date']); ?></td>
-                <td><?php echo htmlspecialchars($row['delivery_no'] ?? ''); ?></td>
-                <td>Batch 1</td>
                 <td><?php echo htmlspecialchars($row['lots_code']); ?></td>
-                <td><?php echo htmlspecialchars(get_label($row['supplier_name'], $label_map)); ?></td>
-                <td>Province</td>
-                <td>District</td>
+                <td><?php echo htmlspecialchars($row['supplier_name']); ?></td>
+                <td><?php echo htmlspecialchars($row['inventory_code'] ?? ''); ?></td>
+                <td></td>
                 <td style="text-align: right;"><?php echo number_format($qty, 1); ?></td>
-                <td style="text-align: right;"><?php echo number_format($grade, 4); ?>%</td>
+                <td style="text-align: right;"><?php echo number_format($grade * 100, 2); ?>%</td>
                 <td style="text-align: right;"><?php echo number_format($row['price_per_kg_rwf'], 0); ?></td>
                 <td style="text-align: right;"><?php echo number_format($row['purchase_value_rwf'], 0); ?></td>
                 <td style="text-align: right;"><?php echo number_format($row['exchange_rate'], 2); ?></td>
                 <td style="text-align: right;">$<?php echo number_format($row['purchase_value_usd'], 2); ?></td>
                 <td style="text-align: right;">$<?php echo number_format($row['net_paid_supplier_usd'], 2); ?></td>
                 <td style="text-align: right;"><?php echo number_format($row['charges_per_kg'], 2); ?></td>
-                <td style="text-align: right;"><?php echo $grade > 0 ? number_format($row['purchase_value_usd'] / ($qty * $grade), 2) : ''; ?></td>
-                <td style="text-align: right;"><?php echo $qty > 0 ? number_format($row['purchase_value_usd'] / $qty, 2) : ''; ?></td>
-                <td style="text-align: right;"><?php echo number_format($grade, 4); ?>%</td>
-                <td style="text-align: right;"><?php echo number_format($grade * 0.819, 4); ?>%</td>
-                <td style="text-align: right;"><?php echo number_format($grade * 0.204, 4); ?>%</td>
-                <td style="text-align: right;"><?php echo number_format($grade * 0.054, 4); ?>%</td>
-                <td style="text-align: right;"><?php echo number_format($grade * 0.458, 4); ?>%</td>
+                <td style="text-align: right;"><?php echo $row['price_per_ta_unit'] > 0 ? number_format($row['price_per_ta_unit'], 2) : ''; ?></td>
+                <td style="text-align: right;"><?php echo $row['price_per_kg_usd'] > 0 ? number_format($row['price_per_kg_usd'], 2) : ''; ?></td>
+                <td style="text-align: right;"><?php echo number_format($grade * 100, 2); ?>%</td>
+                <td style="text-align: right;"><?php echo number_format($ta_pct * 100, 2); ?>%</td>
+                <td style="text-align: right;"><?php echo number_format($nb_pct * 100, 2); ?>%</td>
+                <td style="text-align: right;"><?php echo number_format($fe_pct * 100, 2); ?>%</td>
+                <td style="text-align: right;"><?php echo number_format($bal_pct * 100, 2); ?>%</td>
                 <td style="text-align: right;"><?php echo number_format($cum_qty, 1); ?></td>
               </tr>
-            <?php endforeach; ?>
+            <?php endforeach; endif; ?>
           </tbody>
         </table>
       </div>

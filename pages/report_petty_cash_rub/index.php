@@ -8,19 +8,7 @@ $report_slug = 'petty_cash_rub';
 $report_title = 'PC INEZA RUB';
 $report_slug_esc = mysqli_real_escape_string($conn, $report_slug);
 
-// Fetch custom labels map from database
-$label_map = [];
-$label_query = "SELECT `original_label`, `custom_label` FROM `report_labels` WHERE `report_slug` = '{$report_slug_esc}'";
-$label_res = mysqli_query($conn, $label_query);
-if ($label_res) {
-    while ($label_row = mysqli_fetch_assoc($label_res)) {
-        $label_map[$label_row['original_label']] = $label_row['custom_label'];
-    }
-}
-
-function get_label($val, $label_map) {
-    return isset($label_map[$val]) ? $label_map[$val] : $val;
-}
+// Custom labels mapping is disabled
 
 // Parse filters
 $filter_year = $_GET['filter_year'] ?? '';
@@ -176,31 +164,30 @@ $balance = 0.0;
           <thead>
             <tr style="background: var(--bg); font-weight: 600;">
               <th>Date</th>
-              <th>Date Ref</th>
-              <th>Month</th>
-              <th>Withdrawal</th>
-              <th>Deposit</th>
-              <th>Who</th>
-              <th>Ref</th>
-              <th>Type</th>
-              <th>Category</th>
-              <th>Sub-Cat</th>
-              <th>Details</th>
-              <th>Notes</th>
-              <th>Project</th>
+              <th>Day</th>
+              <th>USD</th>
+              <th>USD</th>
+              <th>Paid To Whom/ From</th>
               <th>Location</th>
-              <th>Approval</th>
+              <th>Remarks</th>
+              <th>Bon de Sortie</th>
+              <th>Receipt#</th>
+              <th>Use of Funds</th>
+              <th>Supporting Docs Ref#</th>
+              <th>JV Ref.</th>
+              <th>Account for FS</th>
+              <th>For Cash Flow</th>
               <th>Account</th>
-              <th>Status</th>
-              <th>Balance</th>
-              <th>Verified</th>
-              <th>Month Year</th>
-              <th>Check</th>
+              <th>Physical</th>
+              <th>Ledger Bal</th>
+              <th>Diff.</th>
             </tr>
           </thead>
           <tbody>
             <?php
-            if ($db_res):
+            $has_data = false;
+            if ($db_res && mysqli_num_rows($db_res) > 0):
+                $has_data = true;
                 while ($row = mysqli_fetch_assoc($db_res)):
                     $deposit = (float)$row['deposit'];
                     $withdrawal = (float)$row['withdrawal'];
@@ -213,29 +200,32 @@ $balance = 0.0;
             ?>
               <tr class="data-row">
                 <td><?php echo htmlspecialchars($row['tx_date']); ?></td>
-                <td><?php echo htmlspecialchars($row['tx_date']); ?></td>
-                <td><?php echo date('F', strtotime($row['tx_date'])); ?></td>
+                <td><?php echo date('l', strtotime($row['tx_date'])); ?></td>
                 <td style="text-align: right;"><?php echo $withdrawal > 0 ? '$' . number_format($withdrawal, 2) : ''; ?></td>
                 <td style="text-align: right;"><?php echo $deposit > 0 ? '$' . number_format($deposit, 2) : ''; ?></td>
-                <td><?php echo htmlspecialchars(get_label($who, $label_map)); ?></td>
-                <td>Ref</td>
-                <td>Type</td>
-                <td>Category</td>
-                <td>Sub-Cat</td>
+                <td><?php echo htmlspecialchars($who); ?></td>
+                <td>Rubaya</td>
                 <td><?php echo htmlspecialchars($row['details']); ?></td>
-                <td>Notes</td>
-                <td>Project</td>
-                <td>Location</td>
-                <td>Approval</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
                 <td><?php echo htmlspecialchars($row['offsetting_account_name'] ?? ''); ?></td>
-                <td>Posted</td>
+                <td></td>
                 <td style="text-align: right; font-weight: 600;"><?php echo '$' . number_format($balance, 2); ?></td>
-                <td>Yes</td>
-                <td><?php echo date('Y-m', strtotime($row['tx_date'])); ?></td>
-                <td>OK</td>
+                <td>0</td>
               </tr>
             <?php 
                 endwhile;
+            else:
+            ?>
+              <tr>
+                <td colspan="18" style="text-align: center; padding: 24px; color: var(--text2);">No petty cash transactions found for the selected period.</td>
+              </tr>
+            <?php
             endif;
             ?>
           </tbody>

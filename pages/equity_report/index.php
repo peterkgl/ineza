@@ -10,6 +10,203 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
     header("Location: ../dashboard");
     exit();
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Database Equity Calculation Functions
+// ────────────────────────────────────────────────────────────────────────────
+
+function getBalanceForCategory($conn, $category, $asOfDate) {
+    $asOfDateEsc = mysqli_real_escape_string($conn, $asOfDate);
+    $whereClause = "";
+    if ($category === 'share_capital') {
+        $whereClause = "(a.account_code LIKE '30%' OR LOWER(a.account_name) LIKE '%share%' OR LOWER(a.account_name) LIKE '%capital%') AND t.parent_id = -3";
+    } elseif ($category === 'retained_earnings') {
+        $whereClause = "(a.account_code LIKE '32%' OR LOWER(a.account_name) LIKE '%retained%' OR LOWER(a.account_name) LIKE '%earnings%') AND t.parent_id = -3";
+    } else {
+        return 0.0;
+    }
+
+    $sql = "
+        SELECT COALESCE(SUM(jel.credit - jel.debit), 0.00) as net_balance
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON jel.account_id = a.id
+        JOIN account_types t ON a.account_type_id = t.id
+        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND $whereClause";
+        
+    $res = mysqli_query($conn, $sql);
+    if ($res && $row = mysqli_fetch_assoc($res)) {
+        return (float)$row['net_balance'];
+    }
+    return 0.0;
+}
+
+function getNetIncomeUpToDate($conn, $asOfDate) {
+    $asOfDateEsc = mysqli_real_escape_string($conn, $asOfDate);
+    
+    // Revenue
+    $revenueSql = "
+        SELECT COALESCE(SUM(jel.credit - jel.debit), 0.00) as net_revenue
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON jel.account_id = a.id
+        JOIN account_types t ON a.account_type_id = t.id
+        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND t.parent_id = -4";
+    $revRes = mysqli_query($conn, $revenueSql);
+    $revRow = mysqli_fetch_assoc($revRes);
+    $netRevenue = (float)($revRow['net_revenue'] ?? 0.0);
+
+    // COGS
+    $cogsSql = "
+        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_cogs
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON jel.account_id = a.id
+        JOIN account_types t ON a.account_type_id = t.id
+        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND t.parent_id = -5";
+    $cogsRes = mysqli_query($conn, $cogsSql);
+    $cogsRow = mysqli_fetch_assoc($cogsRes);
+    $netCogs = (float)($cogsRow['net_cogs'] ?? 0.0);
+
+    // Expenses
+    $expSql = "
+        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_exp
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON jel.account_id = a.id
+        JOIN account_types t ON a.account_type_id = t.id
+        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND t.parent_id = -6";
+    $expRes = mysqli_query($conn, $expSql);
+    $expRow = mysqli_fetch_assoc($expRes);
+    $netExp = (float)($expRow['net_exp'] ?? 0.0);
+
+    return $netRevenue - $netCogs - $netExp;
+}
+
+function getRetainedEarningsWithNetIncome($conn, $asOfDate) {
+    $retainedRaw = getBalanceForCategory($conn, 'retained_earnings', $asOfDate);
+    $netIncome = getNetIncomeUpToDate($conn, $asOfDate);
+    return $retainedRaw + $netIncome;
+}
+
+function getNetIncomeForDateRange($conn, $startDate, $endDate) {
+    $startDateEsc = mysqli_real_escape_string($conn, $startDate);
+    $endDateEsc = mysqli_real_escape_string($conn, $endDate);
+    
+    // Revenue
+    $revenueSql = "
+        SELECT COALESCE(SUM(jel.credit - jel.debit), 0.00) as net_revenue
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON jel.account_id = a.id
+        JOIN account_types t ON a.account_type_id = t.id
+        WHERE je.statuss = 'POSTED' AND je.entry_date BETWEEN '$startDateEsc' AND '$endDateEsc' AND t.parent_id = -4";
+    $revRes = mysqli_query($conn, $revenueSql);
+    $revRow = mysqli_fetch_assoc($revRes);
+    $netRevenue = (float)($revRow['net_revenue'] ?? 0.0);
+
+    // COGS
+    $cogsSql = "
+        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_cogs
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON jel.account_id = a.id
+        JOIN account_types t ON a.account_type_id = t.id
+        WHERE je.statuss = 'POSTED' AND je.entry_date BETWEEN '$startDateEsc' AND '$endDateEsc' AND t.parent_id = -5";
+    $cogsRes = mysqli_query($conn, $cogsSql);
+    $cogsRow = mysqli_fetch_assoc($cogsRes);
+    $netCogs = (float)($cogsRow['net_cogs'] ?? 0.0);
+
+    // Expenses
+    $expSql = "
+        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_exp
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON jel.account_id = a.id
+        JOIN account_types t ON a.account_type_id = t.id
+        WHERE je.statuss = 'POSTED' AND je.entry_date BETWEEN '$startDateEsc' AND '$endDateEsc' AND t.parent_id = -6";
+    $expRes = mysqli_query($conn, $expSql);
+    $expRow = mysqli_fetch_assoc($expRes);
+    $netExp = (float)($expRow['net_exp'] ?? 0.0);
+
+    return $netRevenue - $netCogs - $netExp;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Date Range Filtering
+// ────────────────────────────────────────────────────────────────────────────
+
+$filter_year = $_GET['filter_year'] ?? '';
+$filter_month = $_GET['filter_month'] ?? '';
+$filter_date = $_GET['filter_date'] ?? '';
+$filter_start = $_GET['filter_start'] ?? '';
+$filter_end = $_GET['filter_end'] ?? '';
+
+// Load available distinct years of posted entries
+$yearsQuery = "SELECT DISTINCT YEAR(entry_date) as yr FROM journal_entries WHERE statuss = 'POSTED' ORDER BY yr DESC";
+$yearsRes = mysqli_query($conn, $yearsQuery);
+$availableYears = [];
+if ($yearsRes) {
+    while ($row = mysqli_fetch_assoc($yearsRes)) {
+        $availableYears[] = (int)$row['yr'];
+    }
+}
+$defaultYear = !empty($availableYears) ? $availableYears[0] : 2022;
+
+$startDate = '';
+$endDate = '';
+$periodLabel = '';
+
+if (!empty($filter_start) && !empty($filter_end)) {
+    $startDate = $filter_start;
+    $endDate = $filter_end;
+    $periodLabel = "For the period from " . date('j F Y', strtotime($startDate)) . " to " . date('j F Y', strtotime($endDate));
+} elseif (!empty($filter_date)) {
+    $startDate = $filter_date;
+    $endDate = $filter_date;
+    $periodLabel = "For the day " . date('j F Y', strtotime($startDate));
+} elseif (!empty($filter_year) && !empty($filter_month)) {
+    $startDate = "{$filter_year}-" . sprintf('%02d', $filter_month) . "-01";
+    $endDate = date('Y-m-t', strtotime($startDate));
+    $periodLabel = "For the month ended " . date('F Y', strtotime($startDate));
+} elseif (!empty($filter_year)) {
+    $startDate = "{$filter_year}-01-01";
+    $endDate = "{$filter_year}-12-31";
+    $periodLabel = "For the year ended 31 December {$filter_year}";
+} else {
+    // Default to the latest year
+    $filter_year = $defaultYear;
+    $startDate = "{$defaultYear}-01-01";
+    $endDate = "{$defaultYear}-12-31";
+    $periodLabel = "For the year ended 31 December {$defaultYear}";
+}
+
+// Calculate balances
+$dayBeforeOpening = date('Y-m-d', strtotime($startDate . ' -1 day'));
+$opening_capital = getBalanceForCategory($conn, 'share_capital', $dayBeforeOpening);
+$opening_retained = getRetainedEarningsWithNetIncome($conn, $dayBeforeOpening);
+$opening_total = $opening_capital + $opening_retained;
+
+$closing_capital = getBalanceForCategory($conn, 'share_capital', $endDate);
+$closing_retained = getRetainedEarningsWithNetIncome($conn, $endDate);
+$closing_total = $closing_capital + $closing_retained;
+
+$p_l_profit = getNetIncomeForDateRange($conn, $startDate, $endDate);
+$retained_change = getBalanceForCategory($conn, 'retained_earnings', $endDate) - getBalanceForCategory($conn, 'retained_earnings', $dayBeforeOpening);
+$profit = $p_l_profit + $retained_change;
+
+$capital_movement = $closing_capital - $opening_capital;
+$other_movements = $closing_retained - $opening_retained - $profit;
+
+// Calculate YoY Equity Growth trend (comparison against same period previous year)
+$prevYearStart = date('Y-m-d', strtotime($startDate . ' -1 year'));
+$prevYearEnd = date('Y-m-d', strtotime($endDate . ' -1 year'));
+$prev_closing_capital = getBalanceForCategory($conn, 'share_capital', $prevYearEnd);
+$prev_closing_retained = getRetainedEarningsWithNetIncome($conn, $prevYearEnd);
+$prev_total = $prev_closing_capital + $prev_closing_retained;
+
+$yoYGrowthVal = $closing_total - $prev_total;
+$yoYGrowthPct = ($prev_total > 0) ? round(($yoYGrowthVal / $prev_total) * 100, 1) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,7 +216,7 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
 <title>INEZA African Mining — Statement of Changes in Equity</title>
 <meta name="description" content="Statement of Changes in Equity report for INEZA African Mining Ltd.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../src/css/dashboard.css">
 <link rel="stylesheet" href="../../src/css/sidebar.css">
 <link rel="stylesheet" href="../../src/css/navbar.css">
@@ -49,15 +246,14 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           Statement of Changes in Equity
         </h1>
-        <div class="page-sub">INEZA African Mining Ltd — As of December 31, 2022</div>
+        <div class="page-sub">INEZA African Mining Ltd — Financial Statement Report</div>
       </div>
       <div class="page-actions">
-        <button class="btn-sm" id="exportCsvBtn">
-          <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-          Export CSV
-        </button>
-        <button class="btn-sm btn-primary" onclick="window.print()">
-          <svg class="btn-icon btn-icon-white" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+        <a class="btn-sm btn-primary" href="../include/export.php?sheet=equity_report&filter_year=<?php echo urlencode($filter_year); ?>&filter_month=<?php echo urlencode($filter_month); ?>&filter_date=<?php echo urlencode($filter_date); ?>&filter_start=<?php echo urlencode($filter_start); ?>&filter_end=<?php echo urlencode($filter_end); ?>" id="exportBtn">
+          <svg class="btn-icon btn-icon-white" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export to Excel
+        </a>
+        <button class="btn-sm" onclick="window.print()">
           Print Report
         </button>
       </div>
@@ -71,9 +267,9 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           <div class="stat-icon" style="background:var(--green-bg)">
             <svg viewBox="0 0 24 24" style="stroke:var(--green)"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><circle cx="12" cy="12" r="4"/></svg>
           </div>
-          <span class="stat-trend trend-up">2022</span>
+          <span class="stat-trend trend-up">Equity</span>
         </div>
-        <div class="stat-val">Frw 1,418,329,213</div>
+        <div class="stat-val">Frw <?php echo number_format($closing_total); ?></div>
         <div class="stat-label">Total Equity Balance</div>
       </div>
 
@@ -85,8 +281,8 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-orange">Capital</span>
         </div>
-        <div class="stat-val">Frw 15,000,000</div>
-        <div class="stat-label">Paid-in Share Capital</div>
+        <div class="stat-val">Frw <?php echo number_format($closing_capital); ?></div>
+        <div class="stat-label">Share Capital</div>
       </div>
 
       <!-- Retained Earnings -->
@@ -97,53 +293,79 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-warn">Earnings</span>
         </div>
-        <div class="stat-val">Frw 1,403,329,213</div>
-        <div class="stat-label">Accumulated Retained Earnings</div>
+        <div class="stat-val">Frw <?php echo number_format($closing_retained); ?></div>
+        <div class="stat-label">Retained Earnings</div>
       </div>
 
-      <!-- growth -->
+      <!-- Net profit/loss -->
       <div class="stat-card" id="stat-equity-growth">
         <div class="stat-top">
           <div class="stat-icon" style="background:var(--green-bg)">
             <svg viewBox="0 0 24 24" style="stroke:var(--green)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polygon points="17 6 23 6 23 12"/></svg>
           </div>
-          <span class="stat-trend trend-up">+59.7%</span>
+          <span class="stat-trend trend-up"><?php echo ($yoYGrowthPct >= 0 ? '+' : '') . $yoYGrowthPct . '%'; ?></span>
         </div>
-        <div class="stat-val">Frw 530,051,923</div>
-        <div class="stat-label">Growth (YoY increase)</div>
+        <div class="stat-val">Frw <?php echo number_format($profit); ?></div>
+        <div class="stat-label">Net Profit (Period)</div>
       </div>
     </div>
 
-    <!-- ===== YEAR FILTER SEARCHABLE DROPDOWN ===== -->
-    <div class="year-filter-container">
-      <span class="dropdown-label">Select Fiscal Year</span>
-      <div class="custom-dropdown">
-        <button type="button" class="dropdown-trigger" id="dropdownTriggerBtn">Fiscal Year 2022</button>
-        <div class="dropdown-menu">
-          <div class="dropdown-search-wrapper">
-            <input type="text" class="dropdown-search" placeholder="Search year..." autocomplete="off">
-          </div>
-          <div class="dropdown-options-list">
-            <div class="dropdown-option selected" data-value="2022">Fiscal Year 2022</div>
-            <div class="dropdown-option" data-value="2021">Fiscal Year 2021</div>
-            <div class="dropdown-option" data-value="2020">Fiscal Year 2020</div>
-            <div class="no-results">No years found</div>
-          </div>
+    <!-- ===== DATE FILTERS FORM ===== -->
+    <form method="GET" class="equity-filters" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 12px 16px; background: var(--card); border-radius: var(--radius); margin-bottom: 24px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label style="font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;">Year</label>
+        <select name="filter_year" style="padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); font-size: 13px; min-width: 90px; color: var(--text);">
+          <option value="">All</option>
+          <?php foreach ($availableYears as $y): ?>
+            <option value="<?php echo $y; ?>" <?php echo ($filter_year == $y) ? 'selected' : ''; ?>><?php echo $y; ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label style="font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;">Month</label>
+        <select name="filter_month" style="padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); font-size: 13px; min-width: 120px; color: var(--text);">
+          <option value="">All</option>
+          <?php
+          $months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+          for ($m = 1; $m <= 12; $m++):
+          ?>
+            <option value="<?php echo $m; ?>" <?php echo ($filter_month == $m) ? 'selected' : ''; ?>><?php echo $months[$m-1]; ?></option>
+          <?php endfor; ?>
+        </select>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label style="font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;">Specific Date</label>
+        <input type="date" name="filter_date" value="<?php echo htmlspecialchars($filter_date); ?>" style="padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); font-size: 13px; color: var(--text);">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label style="font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;">Date Range</label>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <input type="date" name="filter_start" value="<?php echo htmlspecialchars($filter_start); ?>" style="padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); font-size: 13px; color: var(--text);">
+          <span style="font-size: 12px; color: var(--text2);">to</span>
+          <input type="date" name="filter_end" value="<?php echo htmlspecialchars($filter_end); ?>" style="padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); font-size: 13px; color: var(--text);">
         </div>
       </div>
-    </div>
+      <div style="display: flex; gap: 6px;">
+        <button type="submit" style="padding: 7px 18px; border-radius: var(--radius); border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(99,102,241,0.3);">
+          Apply
+        </button>
+        <a href="?" style="padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); color: var(--text2); font-size: 13px; font-weight: 500; text-decoration: none; cursor: pointer; transition: all 0.2s;">
+          Clear
+        </a>
+      </div>
+    </form>
 
-    <!-- ===== TABLES CONTAINER ===== -->
+    <!-- ===== TABLE CONTAINER ===== -->
     <div class="equity-container">
       
-      <!-- FISCAL YEAR 2022 -->
-      <div class="equity-year-card" data-year-section="2022">
+      <!-- DYNAMIC EQUITY REPORT CARD -->
+      <div class="equity-year-card">
         <div class="equity-banner">
           <h3>Statement of Changes in Equity</h3>
-          <p>For the year ended 31 December 2022</p>
+          <p><?php echo htmlspecialchars($periodLabel); ?></p>
         </div>
         <div class="equity-table-wrapper">
-          <table class="equity-table" id="table-2022">
+          <table class="equity-table">
             <thead>
               <tr>
                 <th></th>
@@ -159,115 +381,48 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
               </tr>
             </thead>
             <tbody>
+              <!-- Opening Balance Row -->
               <tr class="accent-row">
-                <td class="row-label">Opening balance (1 January 2022)</td>
-                <td class="num-val">15,000,000</td>
-                <td class="num-val">873,277,290</td>
-                <td class="num-val">888,277,290</td>
+                <td class="row-label">Opening balance (1 Jan <?php echo date('Y', strtotime($startDate)); ?>)</td>
+                <td class="num-val"><?php echo $opening_capital > 0 ? number_format($opening_capital) : '-'; ?></td>
+                <td class="num-val"><?php echo $opening_retained > 0 ? number_format($opening_retained) : '-'; ?></td>
+                <td class="num-val"><?php echo $opening_total > 0 ? number_format($opening_total) : '-'; ?></td>
               </tr>
+              
+              <!-- Profit/Loss Row -->
               <tr>
-                <td class="row-label">Profit (loss) for the Year</td>
+                <td class="row-label">Profit (loss) for the Period</td>
                 <td class="num-val">-</td>
-                <td class="num-val">530,051,923</td>
-                <td class="num-val">530,051,923</td>
+                <td class="num-val"><?php echo $profit != 0 ? number_format($profit) : '-'; ?></td>
+                <td class="num-val"><?php echo $profit != 0 ? number_format($profit) : '-'; ?></td>
               </tr>
-              <tr class="total-row">
-                <td class="row-label">Closing balance (31 December 2022)</td>
-                <td class="num-val">15,000,000</td>
-                <td class="num-val">1,403,329,213</td>
-                <td class="num-val">1,418,329,213</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      <!-- FISCAL YEAR 2021 -->
-      <div class="equity-year-card" data-year-section="2021">
-        <div class="equity-banner">
-          <h3>Statement of Changes in Equity</h3>
-          <p>For the year ended 31 December 2021</p>
-        </div>
-        <div class="equity-table-wrapper">
-          <table class="equity-table" id="table-2021">
-            <thead>
+              <!-- Share Capital Additions/Movement Row (if any) -->
+              <?php if ($capital_movement != 0): ?>
               <tr>
-                <th></th>
-                <th>Share Capital</th>
-                <th>Retained Earnings</th>
-                <th>Total Equity</th>
-              </tr>
-              <tr class="currency-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="accent-row">
-                <td class="row-label">Opening balance (1 January 2021)</td>
-                <td class="num-val">15,000,000</td>
-                <td class="num-val">381,297,812</td>
-                <td class="num-val">396,297,812</td>
-              </tr>
-              <tr>
-                <td class="row-label">Profit (loss) for the Year</td>
+                <td class="row-label">Issue of Share Capital / Movements</td>
+                <td class="num-val"><?php echo number_format($capital_movement); ?></td>
                 <td class="num-val">-</td>
-                <td class="num-val">491,979,478</td>
-                <td class="num-val">491,979,478</td>
+                <td class="num-val"><?php echo number_format($capital_movement); ?></td>
               </tr>
-              <tr class="total-row">
-                <td class="row-label">Closing balance (31 December 2021)</td>
-                <td class="num-val">15,000,000</td>
-                <td class="num-val">873,277,290</td>
-                <td class="num-val">888,277,290</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+              <?php endif; ?>
 
-      <!-- FISCAL YEAR 2020 -->
-      <div class="equity-year-card" data-year-section="2020">
-        <div class="equity-banner">
-          <h3>Statement of Changes in Equity</h3>
-          <p>For the year ended 31 December 2020</p>
-        </div>
-        <div class="equity-table-wrapper">
-          <table class="equity-table" id="table-2020">
-            <thead>
+              <!-- Other Retained Earnings Movements Row (if any) -->
+              <?php if ($other_movements != 0): ?>
               <tr>
-                <th></th>
-                <th>Share Capital</th>
-                <th>Retained Earnings</th>
-                <th>Total Equity</th>
-              </tr>
-              <tr class="currency-row">
-                <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="accent-row">
-                <td class="row-label">Opening balance (1 January 2020)</td>
-                <td class="num-val">15,000,000</td>
+                <td class="row-label">Other adjustments / Dividends</td>
                 <td class="num-val">-</td>
-                <td class="num-val">15,000,000</td>
+                <td class="num-val"><?php echo number_format($other_movements); ?></td>
+                <td class="num-val"><?php echo number_format($other_movements); ?></td>
               </tr>
-              <tr>
-                <td class="row-label">Profit (loss) for the Year</td>
-                <td class="num-val">-</td>
-                <td class="num-val">381,297,812</td>
-                <td class="num-val">381,297,812</td>
-              </tr>
+              <?php endif; ?>
+              
+              <!-- Closing Balance Row -->
               <tr class="total-row">
-                <td class="row-label">Closing balance (31 December 2020)</td>
-                <td class="num-val">15,000,000</td>
-                <td class="num-val">381,297,812</td>
-                <td class="num-val">396,297,812</td>
+                <td class="row-label">Closing balance (<?php echo date('j Dec Y', strtotime($endDate)); ?>)</td>
+                <td class="num-val"><?php echo $closing_capital > 0 ? number_format($closing_capital) : '-'; ?></td>
+                <td class="num-val"><?php echo $closing_retained > 0 ? number_format($closing_retained) : '-'; ?></td>
+                <td class="num-val"><?php echo $closing_total > 0 ? number_format($closing_total) : '-'; ?></td>
               </tr>
             </tbody>
           </table>
@@ -279,154 +434,6 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
   </div>
 </div>
 <script src="../../src/js/navbar.js"></script>
-<script src="../../src/js/sidebar.js"></script></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Custom Searchable Dropdown Year Filter Logic
-    const dropdown = document.querySelector('.custom-dropdown');
-    const trigger = document.querySelector('.dropdown-trigger');
-    const searchInput = document.querySelector('.dropdown-search');
-    const options = document.querySelectorAll('.dropdown-option');
-    const noResults = document.querySelector('.no-results');
-    const yearSections = document.querySelectorAll('.equity-year-card');
-
-    // Default load: show only the active year (2022) and hide others
-    const initialYear = '2022';
-    yearSections.forEach(section => {
-        if (section.getAttribute('data-year-section') === initialYear) {
-            section.style.display = 'block';
-        } else {
-            section.style.display = 'none';
-        }
-    });
-
-    // Toggle Dropdown Panel
-    trigger.addEventListener('click', function(e) {
-        e.stopPropagation();
-        dropdown.classList.toggle('open');
-        if (dropdown.classList.contains('open')) {
-            searchInput.value = '';
-            // Reset options visibility
-            options.forEach(opt => opt.style.display = 'block');
-            noResults.style.display = 'none';
-            searchInput.focus();
-        }
-    });
-
-    // Search Options Filter
-    searchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        let visibleCount = 0;
-
-        options.forEach(opt => {
-            const text = opt.textContent.toLowerCase();
-            if (text.includes(query)) {
-                opt.style.display = 'block';
-                visibleCount++;
-            } else {
-                opt.style.display = 'none';
-            }
-        });
-
-        if (visibleCount === 0) {
-            noResults.style.display = 'block';
-        } else {
-            noResults.style.display = 'none';
-        }
-    });
-
-    // Option Selection
-    options.forEach(opt => {
-        opt.addEventListener('click', function(e) {
-            e.stopPropagation();
-            
-            // Remove selection class and set on selected
-            options.forEach(o => o.classList.remove('selected'));
-            this.classList.add('selected');
-
-            // Update trigger text
-            const selectedText = this.textContent.trim();
-            const selectedYear = this.getAttribute('data-value');
-            trigger.textContent = selectedText;
-
-            // Close dropdown
-            dropdown.classList.remove('open');
-
-            // Show selected section, hide others
-            yearSections.forEach(section => {
-                if (section.getAttribute('data-year-section') === selectedYear) {
-                    section.style.display = 'block';
-                    section.style.opacity = '0';
-                    setTimeout(() => {
-                        section.style.opacity = '1';
-                        section.style.transition = 'opacity 0.25s ease-in-out';
-                    }, 50);
-                } else {
-                    section.style.display = 'none';
-                }
-            });
-        });
-    });
-
-    // Click outside to close
-    document.addEventListener('click', function() {
-        if (dropdown) {
-            dropdown.classList.remove('open');
-        }
-    });
-
-    // Stop propagation inside dropdown menu so it doesn't close when typing or clicking inside
-    const dropdownMenu = dropdown ? dropdown.querySelector('.dropdown-menu') : null;
-    if (dropdownMenu) {
-        dropdownMenu.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-
-    // CSV Exporter logic
-    document.getElementById('exportCsvBtn').addEventListener('click', function() {
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "INEZA African Mining Ltd - Statement of Changes in Equity\r\n\r\n";
-
-        const sections = [
-            { year: '2022', tableId: 'table-2022' },
-            { year: '2021', tableId: 'table-2021' },
-            { year: '2020', tableId: 'table-2020' }
-        ];
-
-        sections.forEach(sec => {
-            const table = document.getElementById(sec.tableId);
-            csvContent += `Statement of Changes in Equity - Year ended 31 December ${sec.year}\r\n`;
-            
-            // Header Row
-            csvContent += ",Share Capital (Frw),Retained Earnings (Frw),Total Equity (Frw)\r\n";
-
-            // Body Rows
-            const rows = table.querySelectorAll('tbody tr');
-            rows.forEach(row => {
-                const label = row.querySelector('.row-label').textContent.trim().replace(/,/g, '');
-                const cells = row.querySelectorAll('.num-val');
-                
-                let capital = cells[0].textContent.trim().replace(/,/g, '');
-                let earnings = cells[1].textContent.trim().replace(/,/g, '');
-                let total = cells[2].textContent.trim().replace(/,/g, '');
-
-                csvContent += `"${label}",${capital},${earnings},${total}\r\n`;
-            });
-            csvContent += "\r\n"; // Blank line between years
-        });
-
-        // Trigger download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "ineza_statement_of_changes_in_equity.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    });
-});
-</script>
-
+<script src="../../src/js/sidebar.js"></script>
 </body>
 </html>

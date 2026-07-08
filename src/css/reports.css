@@ -2,6 +2,30 @@
    INEZA AFRICAN MINING — Excel Reports Unified Styles
    =================================================== */
 
+:root {
+  --excel-blue-bg: #D9E2F3;
+  --excel-blue-text: #000000;
+  --excel-zebra-bg: #f9fafb;
+  --excel-header-bg: #f3f4f6;
+  --excel-accent-bg: #e5e7eb;
+  --excel-red-text: #FF0000;
+  --excel-diff-bg: #fef2f2;
+  --excel-diff-border: #fca5a5;
+  --excel-diff-text: #b91c1c;
+}
+
+[data-theme="dark"] {
+  --excel-blue-bg: #1e293b;
+  --excel-blue-text: #f8fafc;
+  --excel-zebra-bg: #18181b;
+  --excel-header-bg: #27272a;
+  --excel-accent-bg: #3f3f46;
+  --excel-red-text: #f87171;
+  --excel-diff-bg: #2d1a1a;
+  --excel-diff-border: #7f1d1d;
+  --excel-diff-text: #f87171;
+}
+
 .report-container {
   display: flex;
   flex-direction: column;

@@ -8,19 +8,7 @@ $report_slug = 'bank_recon_usd';
 $report_title = 'Bank Reconciliation — $ EQUITY INEZA';
 $report_slug_esc = mysqli_real_escape_string($conn, $report_slug);
 
-// Fetch custom labels map from database
-$label_map = [];
-$label_query = "SELECT `original_label`, `custom_label` FROM `report_labels` WHERE `report_slug` = '{$report_slug_esc}'";
-$label_res = mysqli_query($conn, $label_query);
-if ($label_res) {
-    while ($label_row = mysqli_fetch_assoc($label_res)) {
-        $label_map[$label_row['original_label']] = $label_row['custom_label'];
-    }
-}
-
-function get_label($val, $label_map) {
-    return isset($label_map[$val]) ? $label_map[$val] : $val;
-}
+// Custom labels mapping is disabled
 
 // Parse filters
 $filter_year = $_GET['filter_year'] ?? '';
@@ -213,90 +201,178 @@ $diff = $adjusted_bank - $adjusted_book;
         </div>
       </form>
 
-      <div class="recon-container">
-        <!-- Bank reconciliation statement -->
-        <div class="recon-section">
-          <div class="recon-section-title">Reconciliation of Bank Statement Balance</div>
-          
-          <div class="recon-row">
-            <span>Balance per Bank Statement (as of <?php echo htmlspecialchars($target_date); ?>)</span>
-            <span><strong><?php echo $curr_symbol . number_format($statement_balance, 2); ?></strong></span>
+      <div class="table-wrapper" style="padding: 16px;">
+        <?php if ($statement_balance == 0.0 && empty($outstanding_checks) && empty($unrecorded_payments)): ?>
+          <div style="padding: 12px 16px; margin-bottom: 16px; background: var(--alert-amber-bg); border: 1px solid var(--amber); border-radius: 6px; color: var(--amber); font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            No bank statement balance or reconciliation items recorded for this date.
           </div>
-          
-          <div class="recon-row" style="color: var(--orange); font-weight: 600; margin-top: 10px;">
-            <span>Add: Deposits in Transit</span>
-            <span></span>
-          </div>
-          <?php foreach ($deposits_in_transit as $dit): ?>
-            <div class="recon-row" style="padding-left: 20px; color: var(--text-secondary);">
-              <span><?php echo htmlspecialchars($dit['description']); ?> (<?php echo htmlspecialchars($dit['reference']); ?>)</span>
-              <span><?php echo $curr_symbol . number_format($dit['amount'], 2); ?></span>
-            </div>
-          <?php endforeach; if (empty($deposits_in_transit)): ?>
-            <div class="recon-row" style="padding-left: 20px; color: var(--text-secondary); font-style: italic;">
-              <span>No deposits in transit</span>
-              <span><?php echo $curr_symbol; ?>0.00</span>
-            </div>
-          <?php endif; ?>
-          
-          <div class="recon-row" style="color: var(--orange); font-weight: 600; margin-top: 10px;">
-            <span>Deduct: Outstanding Checks</span>
-            <span></span>
-          </div>
-          <?php foreach ($outstanding_checks as $oc): ?>
-            <div class="recon-row" style="padding-left: 20px; color: var(--text-secondary);">
-              <span><?php echo htmlspecialchars($oc['description']); ?> (<?php echo htmlspecialchars($oc['reference']); ?>)</span>
-              <span>(<?php echo $curr_symbol . number_format($oc['amount'], 2); ?>)</span>
-            </div>
-          <?php endforeach; if (empty($outstanding_checks)): ?>
-            <div class="recon-row" style="padding-left: 20px; color: var(--text-secondary); font-style: italic;">
-              <span>No outstanding checks</span>
-              <span><?php echo $curr_symbol; ?>0.00</span>
-            </div>
-          <?php endif; ?>
+        <?php endif; ?>
+        <table class="excel-table" style="min-width: 100%;">
+          <thead>
+            <tr style="background: var(--excel-blue-bg); color: var(--excel-red-text); font-weight: 700;">
+              <td colspan="5" style="border: 1px solid var(--border);">INPUT IN BLUE CELLS ONLY</td>
+              <td colspan="2" style="text-align: right; border: 1px solid var(--border);">Difference:</td>
+              <td style="text-align: right; font-weight: 700; border: 1px solid var(--border);"><?php echo $curr_symbol . number_format($diff, 2); ?></td>
+              <td style="border: 1px solid var(--border);">diff.</td>
+            </tr>
+            <tr style="font-weight: 700;">
+              <td colspan="9" style="font-size: 14px; border: none; padding-top: 15px;">INEZA AFRICAN MINING Ltd</td>
+            </tr>
+            <tr style="font-weight: 700;">
+              <td colspan="9" style="font-size: 16px; border: none;">BANK RECONCILIATON - EQUITY</td>
+            </tr>
+            <tr>
+              <td colspan="9" style="font-weight: 600; border: none; padding-bottom: 15px;"><?php echo htmlspecialchars($target_date); ?></td>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Statement Balance -->
+            <tr style="font-weight: 600; background: var(--bg);">
+              <td>EQUITY Balance - As of</td>
+              <td></td>
+              <td><?php echo htmlspecialchars($target_date); ?></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td style="text-align: right; background: var(--excel-blue-bg); color: var(--excel-blue-text); font-weight: 700;"><?php echo number_format($statement_balance, 2); ?></td>
+              <td style="color: var(--text-secondary);">...as per bank statement ending balance</td>
+            </tr>
 
-          <div class="recon-row total">
-            <span>Adjusted Bank Balance</span>
-            <span><?php echo $curr_symbol . number_format($adjusted_bank, 2); ?></span>
-          </div>
-        </div>
+            <!-- Outstanding Checks Header -->
+            <tr style="font-weight: 700; background: var(--excel-zebra-bg);">
+              <td>Deduct:</td>
+              <td>EQUITY Outstanding Checks</td>
+              <td></td>
+              <td>Date</td>
+              <td>Check#</td>
+              <td style="text-align: right;">Amount</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
 
-        <!-- Book balance reconciliation -->
-        <div class="recon-section">
-          <div class="recon-section-title">Reconciliation of General Ledger (Book) Balance</div>
-          
-          <div class="recon-row">
-            <span>Balance per General Ledger (as of <?php echo htmlspecialchars($target_date); ?>)</span>
-            <span><strong><?php echo $curr_symbol . number_format($book_balance, 2); ?></strong></span>
-          </div>
+            <!-- Outstanding Checks Rows -->
+            <?php if (empty($outstanding_checks)): ?>
+              <tr>
+                <td></td>
+                <td style="color: var(--text-secondary); font-style: italic;">No outstanding checks</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td style="text-align: right;">0.00</td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            <?php else: foreach ($outstanding_checks as $oc): ?>
+              <tr>
+                <td></td>
+                <td><?php echo htmlspecialchars($oc['description']); ?></td>
+                <td></td>
+                <td><?php echo htmlspecialchars($oc['reference']); ?></td>
+                <td></td>
+                <td style="text-align: right;"><?php echo number_format($oc['amount'], 2); ?></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            <?php endforeach; endif; ?>
 
-          <div class="recon-row" style="color: var(--orange); font-weight: 600; margin-top: 10px;">
-            <span>Add/Deduct: Unrecorded Bank Transactions</span>
-            <span></span>
-          </div>
-          <?php foreach ($unrecorded_payments as $up): ?>
-            <div class="recon-row" style="padding-left: 20px; color: var(--text-secondary);">
-              <span><?php echo htmlspecialchars($up['description']); ?> (<?php echo htmlspecialchars($up['reference']); ?>)</span>
-              <span><?php echo $curr_symbol . number_format($up['amount'], 2); ?></span>
-            </div>
-          <?php endforeach; if (empty($unrecorded_payments)): ?>
-            <div class="recon-row" style="padding-left: 20px; color: var(--text-secondary); font-style: italic;">
-              <span>No unrecorded bank transactions</span>
-              <span><?php echo $curr_symbol; ?>0.00</span>
-            </div>
-          <?php endif; ?>
+            <!-- Total Outstanding -->
+            <tr style="font-weight: 600; background: var(--bg);">
+              <td></td>
+              <td>Total Outstanding Checks</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td style="text-align: right; font-weight: 700;"><?php echo number_format($total_outstanding, 2); ?></td>
+              <td></td>
+            </tr>
 
-          <div class="recon-row total">
-            <span>Adjusted Book Balance</span>
-            <span><?php echo $curr_symbol . number_format($adjusted_book, 2); ?></span>
-          </div>
-        </div>
+            <!-- Adjusted Bank Balance -->
+            <tr style="font-weight: 700; background: var(--excel-header-bg);">
+              <td>Adjusted Bank Balance</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td style="text-align: right; font-weight: 700;"><?php echo number_format($adjusted_bank, 2); ?></td>
+              <td></td>
+            </tr>
 
-        <!-- Reconciliation difference -->
-        <div class="recon-row difference">
-          <span>Reconciliation Difference (Bank vs. Book)</span>
-          <span><?php echo $curr_symbol . number_format($diff, 2); ?></span>
-        </div>
+            <!-- Unrecorded Payments Header -->
+            <tr style="font-weight: 700; background: var(--excel-zebra-bg);">
+              <td>Add:</td>
+              <td>Unrecorded Bank Payments</td>
+              <td></td>
+              <td>Date</td>
+              <td>Check#</td>
+              <td style="text-align: right;">Amount</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+
+            <!-- Unrecorded Payments Rows -->
+            <?php if (empty($unrecorded_payments)): ?>
+              <tr>
+                <td></td>
+                <td style="color: var(--text-secondary); font-style: italic;">No unrecorded bank payments</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td style="text-align: right;">0.00</td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            <?php else: foreach ($unrecorded_payments as $up): ?>
+              <tr>
+                <td></td>
+                <td><?php echo htmlspecialchars($up['description']); ?></td>
+                <td></td>
+                <td><?php echo htmlspecialchars($up['reference']); ?></td>
+                <td></td>
+                <td style="text-align: right;"><?php echo number_format($up['amount'], 2); ?></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            <?php endforeach; endif; ?>
+
+            <!-- Total Unrecorded -->
+            <tr style="font-weight: 600; background: var(--bg);">
+              <td></td>
+              <td>Total Unrecorded Payments</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td style="text-align: right; font-weight: 700;"><?php echo number_format($total_unrecorded, 2); ?></td>
+              <td></td>
+            </tr>
+
+            <!-- Adjusted Book Balance -->
+            <tr style="font-weight: 700; background: var(--excel-accent-bg);">
+              <td>UC SAS BOOK Balance - as of</td>
+              <td></td>
+              <td><?php echo htmlspecialchars($target_date); ?></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td style="text-align: right; font-weight: 700;"><?php echo number_format($adjusted_book, 2); ?></td>
+              <td style="color: var(--text-secondary);">...as per book balance or Equity excel report</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
     </div>

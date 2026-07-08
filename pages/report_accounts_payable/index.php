@@ -8,19 +8,7 @@ $report_slug = 'accounts_payable';
 $report_title = 'Account Payable';
 $report_slug_esc = mysqli_real_escape_string($conn, $report_slug);
 
-// Fetch custom labels map from database
-$label_map = [];
-$label_query = "SELECT `original_label`, `custom_label` FROM `report_labels` WHERE `report_slug` = '{$report_slug_esc}'";
-$label_res = mysqli_query($conn, $label_query);
-if ($label_res) {
-    while ($label_row = mysqli_fetch_assoc($label_res)) {
-        $label_map[$label_row['original_label']] = $label_row['custom_label'];
-    }
-}
-
-function get_label($val, $label_map) {
-    return isset($label_map[$val]) ? $label_map[$val] : $val;
-}
+// Custom labels mapping is disabled
 
 // Parse filters
 $filter_year = $_GET['filter_year'] ?? '';
@@ -176,26 +164,26 @@ $total_bal = 0.0;
       <div class="table-wrapper" style="padding: 16px;">
         <table class="excel-table" id="reportTable">
           <thead>
+            <tr style="background: var(--bg); font-weight: 700; text-align: center;">
+              <th colspan="8">ACCOUNTS PAYABLE - SUPPLIERS OF MINERALS</th>
+            </tr>
             <tr style="background: var(--bg); font-weight: 600;">
-              <th>#</th>
               <th>Date</th>
-              <th>Supplier</th>
-              <th>Lot Code</th>
-              <th>Product</th>
-              <th>Weight (Kg)</th>
-              <th>Amount (USD)</th>
-              <th>Advances (USD)</th>
-              <th>Balance Due (USD)</th>
-              <th>Status</th>
-              <th>Notes</th>
+              <th>Description</th>
+              <th>Lot No.</th>
+              <th>Code</th>
+              <th>Weight (kgs)</th>
+              <th>Est. Total Amount</th>
+              <th>Advances</th>
+              <th>Balance Due</th>
             </tr>
           </thead>
           <tbody>
             <?php
-            $idx = 0;
-            if ($db_res):
+            $has_data = false;
+            if ($db_res && mysqli_num_rows($db_res) > 0):
+                $has_data = true;
                 while ($row = mysqli_fetch_assoc($db_res)):
-                    $idx++;
                     $weight = (float)$row['total_weight'];
                     $amount = (float)$row['total_amount'];
                     $advances = (float)$row['total_advances'];
@@ -207,29 +195,31 @@ $total_bal = 0.0;
                     $total_bal += $bal;
             ?>
               <tr class="data-row">
-                <td><?php echo $idx; ?></td>
                 <td><?php echo htmlspecialchars($row['tx_date']); ?></td>
-                <td><?php echo htmlspecialchars(get_label($row['supplier_name'], $label_map)); ?></td>
+                <td><?php echo htmlspecialchars($row['supplier_name']); ?></td>
                 <td><?php echo htmlspecialchars($row['lots_code']); ?></td>
-                <td>Mineral Lot</td>
+                <td></td>
                 <td style="text-align: right;"><?php echo number_format($weight, 1); ?></td>
                 <td style="text-align: right;">$<?php echo number_format($amount, 2); ?></td>
                 <td style="text-align: right;">$<?php echo number_format($advances, 2); ?></td>
                 <td style="text-align: right; font-weight: 600;">$<?php echo number_format($bal, 2); ?></td>
-                <td>Pending</td>
-                <td>Notes</td>
               </tr>
             <?php
                 endwhile;
+            else:
+            ?>
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 24px; color: var(--text2);">No accounts payable records found.</td>
+              </tr>
+            <?php
             endif;
             ?>
             <tr style="font-weight: 700; background: var(--bg);">
-              <td colspan="5" style="text-align: right;">General Total:</td>
+              <td colspan="4" style="text-align: right;">Total:</td>
               <td style="text-align: right;"><?php echo number_format($total_w, 1); ?></td>
               <td style="text-align: right;">$<?php echo number_format($total_a, 2); ?></td>
               <td style="text-align: right;">$<?php echo number_format($total_ad, 2); ?></td>
               <td style="text-align: right;">$<?php echo number_format($total_bal, 2); ?></td>
-              <td colspan="2"></td>
             </tr>
           </tbody>
         </table>
