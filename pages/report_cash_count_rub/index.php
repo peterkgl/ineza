@@ -28,12 +28,61 @@ if (empty($target_date)) {
     }
 }
 
-// Fetch denomination counts
+// Fetch exchange rate from database
+$rate = 1455.0; // Rubaya default fallback
+$rate_query = "
+    SELECT er.rate 
+    FROM exchange_rates er
+    JOIN currencies fc ON er.from_currency_id = fc.id
+    JOIN currencies tc ON er.to_currency_id = tc.id
+    WHERE (fc.code = 'RWF' AND tc.code = 'USD') OR (fc.code = 'USD' AND tc.code = 'RWF')
+      AND er.rate_date <= '" . mysqli_real_escape_string($conn, $target_date) . "'
+    ORDER BY er.rate_date DESC, er.id DESC 
+    LIMIT 1
+";
+$rate_res = mysqli_query($conn, $rate_query);
+if ($rate_res && mysqli_num_rows($rate_res) > 0) {
+    $rate_row = mysqli_fetch_assoc($rate_res);
+    $rate = (float)$rate_row['rate'];
+} else {
+    // Fallback to latest overall rate
+    $rate_query = "
+        SELECT er.rate 
+        FROM exchange_rates er
+        JOIN currencies fc ON er.from_currency_id = fc.id
+        JOIN currencies tc ON er.to_currency_id = tc.id
+        WHERE (fc.code = 'RWF' AND tc.code = 'USD') OR (fc.code = 'USD' AND tc.code = 'RWF')
+        ORDER BY er.rate_date DESC, er.id DESC 
+        LIMIT 1
+    ";
+    $rate_res = mysqli_query($conn, $rate_query);
+    if ($rate_res && $rate_row = mysqli_fetch_assoc($rate_res)) {
+        $rate = (float)$rate_row['rate'];
+    }
+}
+if ($rate < 1.0 && $rate > 0) {
+    $rate = 1.0 / $rate;
+}
+
+// Fetch denomination counts for both HQ and Rubaya on this date
 $counts = [];
-$res_cc = mysqli_query($conn, "SELECT denomination, currency, quantity FROM cash_counts WHERE report_slug = '{$report_slug_esc}' AND count_date = '{$target_date}'");
+$consolidated = [];
+$res_cc = mysqli_query($conn, "SELECT report_slug, denomination, currency, quantity FROM cash_counts WHERE count_date = '{$target_date}'");
 if ($res_cc) {
     while ($cc_row = mysqli_fetch_assoc($res_cc)) {
-        $counts[$cc_row['currency']][(int)$cc_row['denomination']] = (int)$cc_row['quantity'];
+        $slug = $cc_row['report_slug'];
+        $denom = (int)$cc_row['denomination'];
+        $curr = $cc_row['currency'];
+        $qty = (int)$cc_row['quantity'];
+
+        if ($slug === $report_slug) {
+            $counts[$curr][$denom] = $qty;
+        }
+
+        if (!isset($consolidated[$curr][$denom])) {
+            $consolidated[$curr][$denom] = 0;
+        }
+        $consolidated[$curr][$denom] += $qty;
     }
 }
 
@@ -156,23 +205,43 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
 
       <div class="table-wrapper" style="padding: 16px;">
         <?php
-        $rwf_denoms_full = [5000, 2000, 1000, 500, 100, 50, 1]; // 1 is MMO
-        $usd_denoms_full = [100, 50, 20, 10, 5, 2, 1];
-        
+        // Derive denomination lists dynamically from what is recorded in the database
+        // (union of keys from both this site and consolidated so the table is always complete)
+        $rwf_keys = array_unique(array_merge(
+            array_keys($counts['RWF'] ?? []),
+            array_keys($consolidated['RWF'] ?? [])
+        ));
+        $usd_keys = array_unique(array_merge(
+            array_keys($counts['USD'] ?? []),
+            array_keys($consolidated['USD'] ?? [])
+        ));
+        rsort($rwf_keys); // highest denomination first
+        rsort($usd_keys);
+        $rwf_denoms_full = $rwf_keys;
+        $usd_denoms_full = $usd_keys;
+
+        // Petty cash totals (Left Side — this site only)
         $total_rwf = 0.0;
         $total_usd = 0.0;
-        
-        // Let's compute totals first
         foreach ($rwf_denoms_full as $d) {
             $total_rwf += (float)($counts['RWF'][$d] ?? 0);
         }
         foreach ($usd_denoms_full as $d) {
             $total_usd += (float)($counts['USD'][$d] ?? 0);
         }
-        
-        $rate = 1455.0; // Rubaya rate from excel row 12
         $total_usd_equiv = $total_usd + ($total_rwf / $rate);
-        
+
+        // Consolidated totals (Right Side — all sites combined)
+        $total_con_rwf = 0.0;
+        $total_con_usd = 0.0;
+        foreach ($rwf_denoms_full as $d) {
+            $total_con_rwf += (float)($consolidated['RWF'][$d] ?? 0);
+        }
+        foreach ($usd_denoms_full as $d) {
+            $total_con_usd += (float)($consolidated['USD'][$d] ?? 0);
+        }
+        $total_con_usd_equiv = $total_con_usd + ($total_con_rwf / $rate);
+
         $is_empty = ($total_rwf == 0.0 && $total_usd == 0.0);
         ?>
         <?php if ($is_empty): ?>
@@ -214,11 +283,14 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
               <td>In Francs</td>
               <td colspan="4">Right Side Count (RWF)</td>
             </tr>
-            <?php for ($i = 0; $i < 7; $i++): 
+            <?php for ($i = 0; $i < count($rwf_denoms_full); $i++):
                 $r_denom = $rwf_denoms_full[$i];
-                $r_val = (float)($counts['RWF'][$r_denom] ?? 0);
-                $r_qty = $r_denom > 0 ? (int)($r_val / $r_denom) : 0;
-                
+                // Left side: this site's petty cash
+                $r_qty = (int)($counts['RWF'][$r_denom] ?? 0);
+                $r_val = (float)($r_denom * $r_qty);
+                // Right side: consolidated (all sites)
+                $rc_qty = (int)($consolidated['RWF'][$r_denom] ?? 0);
+                $rc_val = (float)($r_denom * $rc_qty);
                 $label = ($r_denom === 1) ? 'MMO' : number_format($r_denom);
             ?>
               <tr>
@@ -231,8 +303,8 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
                 <td colspan="2"></td>
                 <td><?php echo $label; ?></td>
                 <td><?php echo $r_denom; ?></td>
-                <td style="text-align: right;"></td>
-                <td style="text-align: right;"></td>
+                <td style="text-align: right;"><?php echo $rc_qty > 0 ? $rc_qty : ''; ?></td>
+                <td style="text-align: right;"><?php echo $rc_val > 0 ? number_format($rc_val) : ''; ?></td>
                 <td></td>
               </tr>
             <?php endfor; ?>
@@ -244,7 +316,7 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
               <td></td>
               <td colspan="2"></td>
               <td colspan="3" style="text-align: right;">Total RWF:</td>
-              <td style="text-align: right;">0</td>
+              <td style="text-align: right;"><?php echo number_format($total_con_rwf); ?></td>
               <td></td>
             </tr>
 
@@ -257,10 +329,14 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
               <td>In USD$</td>
               <td colspan="4">Right Side Count (USD)</td>
             </tr>
-            <?php for ($i = 0; $i < 7; $i++): 
+            <?php for ($i = 0; $i < count($usd_denoms_full); $i++):
                 $u_denom = $usd_denoms_full[$i];
-                $u_val = (float)($counts['USD'][$u_denom] ?? 0);
-                $u_qty = $u_denom > 0 ? (int)($u_val / $u_denom) : 0;
+                // Left side: this site's petty cash
+                $u_qty = (int)($counts['USD'][$u_denom] ?? 0);
+                $u_val = (float)($u_denom * $u_qty);
+                // Right side: consolidated (all sites)
+                $uc_qty = (int)($consolidated['USD'][$u_denom] ?? 0);
+                $uc_val = (float)($u_denom * $uc_qty);
             ?>
               <tr>
                 <td>$<?php echo $u_denom; ?> Bill</td>
@@ -272,8 +348,8 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
                 <td colspan="2"></td>
                 <td>$<?php echo $u_denom; ?> Bill</td>
                 <td><?php echo $u_denom; ?></td>
-                <td style="text-align: right;"></td>
-                <td style="text-align: right;"></td>
+                <td style="text-align: right;"><?php echo $uc_qty > 0 ? $uc_qty : ''; ?></td>
+                <td style="text-align: right;"><?php echo $uc_val > 0 ? '$' . number_format($uc_val) : ''; ?></td>
                 <td></td>
               </tr>
             <?php endfor; ?>
@@ -285,7 +361,7 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
               <td></td>
               <td colspan="2"></td>
               <td colspan="3" style="text-align: right;">Total USD:</td>
-              <td style="text-align: right;">$0</td>
+              <td style="text-align: right;">$<?php echo number_format($total_con_usd); ?></td>
               <td></td>
             </tr>
 
@@ -296,7 +372,7 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
               <td></td>
               <td colspan="2"></td>
               <td colspan="3">TOTAL US$ ACTUAL CASH EQUIVALENT:</td>
-              <td style="text-align: right;">$0.00</td>
+              <td style="text-align: right;">$<?php echo number_format($total_con_usd_equiv, 2); ?></td>
               <td></td>
             </tr>
           </tbody>

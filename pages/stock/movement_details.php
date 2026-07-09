@@ -34,13 +34,15 @@ $query = "SELECT sm.*,
                  l.lots_code,
                  l.closing_date AS lot_closing_date,
                  pr.product_name,
-                 pr.product_code
+                 pr.product_code,
+                 cur.code AS currency_code
           FROM stock_movement sm
           LEFT JOIN users u ON sm.created_by = u.id
           LEFT JOIN unit_of_measure uom ON sm.uom_id = uom.id
           LEFT JOIN warehouses w ON sm.warehouse_id = w.id
           LEFT JOIN lots l ON sm.lot_id = l.id
           LEFT JOIN product pr ON sm.product_id = pr.id
+          LEFT JOIN currencies cur ON sm.purchase_currency_id = cur.id
           WHERE sm.id = $id
           LIMIT 1";
 
@@ -258,6 +260,52 @@ if ($movement['reference_type'] === 'purchasing' && $movement['reference_id'] > 
           <div class="info-group">
             <div class="info-label">Closing Balance</div>
             <div class="info-value bold"><?php echo number_format((float)$movement['closing'], 2) . ' ' . htmlspecialchars($movement['uom_code'] ?? 'kg'); ?></div>
+          </div>
+        </div>
+
+        <div class="info-value-grid">
+          <div class="info-group">
+            <div class="info-label">Purchase Currency</div>
+            <div class="info-value bold"><span class="status-pill <?php echo ($movement['currency_code'] === 'RWF') ? 'pill-blue' : 'pill-green'; ?>"><?php echo htmlspecialchars($movement['currency_code'] ?? 'USD'); ?></span></div>
+          </div>
+          <div class="info-group">
+            <div class="info-label">Amount in Selected Currency</div>
+            <div class="info-value bold">
+              <?php 
+                if ($movement['purchase_amount_in_currency'] !== null) {
+                    echo ($movement['currency_code'] === 'RWF' ? '' : '$') . number_format((float)$movement['purchase_amount_in_currency'], 2) . ($movement['currency_code'] === 'RWF' ? ' Frw' : '');
+                } else {
+                    echo '—';
+                }
+              ?>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-value-grid">
+          <div class="info-group">
+            <div class="info-label">Exchange Rate</div>
+            <div class="info-value">
+              <?php 
+                if ($movement['exchange_rate'] !== null) {
+                    echo number_format((float)$movement['exchange_rate'], 2) . ' RWF / USD';
+                } else {
+                    echo '—';
+                }
+              ?>
+            </div>
+          </div>
+          <div class="info-group">
+            <div class="info-label">Converted Amount Equivalent</div>
+            <div class="info-value">
+              <?php 
+                if ($movement['converted_amount'] !== null) {
+                    echo ($movement['currency_code'] === 'RWF' ? '$' : '') . number_format((float)$movement['converted_amount'], 2) . ($movement['currency_code'] === 'RWF' ? '' : ' Frw');
+                } else {
+                    echo '—';
+                }
+              ?>
+            </div>
           </div>
         </div>
 

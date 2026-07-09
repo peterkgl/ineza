@@ -52,7 +52,8 @@ $query = "SELECT sm.*,
                  w.warehouse_code, 
                  l.lots_code,
                  pr.product_name,
-                 pr.product_code
+                 pr.product_code,
+                 cur.code AS currency_code
           FROM stock_movement sm
           LEFT JOIN users u ON sm.created_by = u.id
           LEFT JOIN unit_of_measure uom ON sm.uom_id = uom.id
@@ -60,6 +61,7 @@ $query = "SELECT sm.*,
           LEFT JOIN warehouses w ON sm.warehouse_id = w.id
           LEFT JOIN lots l ON sm.lot_id = l.id
           LEFT JOIN product pr ON sm.product_id = pr.id
+          LEFT JOIN currencies cur ON sm.purchase_currency_id = cur.id
           $whereClause
           ORDER BY sm.movement_date ASC, sm.id ASC";
 
@@ -176,6 +178,9 @@ if ($result) {
               <th style="text-align: right;">Quantity</th>
               <th style="text-align: right;">Opening (kg)</th>
               <th style="text-align: right;">Closing (kg)</th>
+              <th style="text-align: right;">Currency</th>
+              <th style="text-align: right;">Value in Currency</th>
+              <th style="text-align: right;">Exchange Rate</th>
               <th style="text-align: right;">Unit Cost (USD)</th>
               <th style="text-align: right;">Total Value (USD)</th>
               <th>Reference</th>
@@ -186,7 +191,7 @@ if ($result) {
           <tbody>
             <?php if (empty($movements)): ?>
               <tr>
-                <td colspan="13" class="table-empty">No stock movements recorded.</td>
+                <td colspan="16" class="table-empty">No stock movements recorded.</td>
               </tr>
             <?php else: ?>
               <?php foreach ($movements as $m): ?>
@@ -244,6 +249,25 @@ if ($result) {
                   <td style="text-align: right; font-weight: 500;"><?php echo $qty; ?></td>
                   <td style="text-align: right; color: var(--text2); font-weight: 500;"><?php echo number_format((float)$m['opening'], 2) . ' ' . htmlspecialchars($m['uom_code'] ?? 'kg'); ?></td>
                   <td style="text-align: right; color: var(--text2); font-weight: 500;"><?php echo number_format((float)$m['closing'], 2) . ' ' . htmlspecialchars($m['uom_code'] ?? 'kg'); ?></td>
+                  <td style="text-align: right;"><span class="status-pill <?php echo ($m['currency_code'] === 'RWF') ? 'pill-blue' : 'pill-green'; ?>"><?php echo htmlspecialchars($m['currency_code'] ?? 'USD'); ?></span></td>
+                  <td style="text-align: right; color: var(--text); font-weight: 500;">
+                    <?php 
+                      if ($m['purchase_amount_in_currency'] !== null) {
+                          echo ($m['currency_code'] === 'RWF' ? '' : '$') . number_format((float)$m['purchase_amount_in_currency'], 2) . ($m['currency_code'] === 'RWF' ? ' Frw' : '');
+                      } else {
+                          echo '—';
+                      }
+                    ?>
+                  </td>
+                  <td style="text-align: right; color: var(--text3); font-size: 11px;">
+                    <?php 
+                      if ($m['exchange_rate'] !== null) {
+                          echo number_format((float)$m['exchange_rate'], 2) . ' RWF/USD';
+                      } else {
+                          echo '—';
+                      }
+                    ?>
+                  </td>
                   <td style="text-align: right; color: var(--text2);"><?php echo $cost; ?></td>
                   <td style="text-align: right; font-weight: 600; color: var(--green);"><?php echo $total; ?></td>
                   <td style="font-weight: 500; font-size: 11px;"><?php echo $ref; ?></td>

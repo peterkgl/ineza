@@ -18,12 +18,14 @@ $query = "SELECT
             pr.product_code,
             l.lots_code, 
             l.closing_date AS lot_closing_date,
-            uom.code AS uom_code
+            uom.code AS uom_code,
+            cur.code AS currency_code
           FROM stock s
           JOIN warehouses w ON s.warehouse_id = w.id
           JOIN product pr ON s.product_id = pr.id
           JOIN lots l ON s.lot_id = l.id
           LEFT JOIN unit_of_measure uom ON s.uom_id = uom.id
+          LEFT JOIN currencies cur ON s.purchase_currency_id = cur.id
           ORDER BY w.warehouse_name ASC, pr.product_name ASC, l.lots_code ASC";
 
 $result = mysqli_query($conn, $query);
@@ -55,7 +57,11 @@ if ($result) {
             'avg_cost_per_kg_rwf' => (float)$row['avg_cost_per_kg_rwf'],
             'total_value_usd' => (float)$row['total_value_usd'],
             'total_value_rwf' => (float)$row['total_value_rwf'],
-            'uom_code' => $row['uom_code'] ?? 'kg'
+            'uom_code' => $row['uom_code'] ?? 'kg',
+            'currency_code' => $row['currency_code'] ?? 'USD',
+            'purchase_amount_in_currency' => $row['purchase_amount_in_currency'] !== null ? (float)$row['purchase_amount_in_currency'] : null,
+            'exchange_rate' => $row['exchange_rate'] !== null ? (float)$row['exchange_rate'] : null,
+            'converted_amount' => $row['converted_amount'] !== null ? (float)$row['converted_amount'] : null
         ];
         $totalQty += (float)$row['qty_on_hand'];
         $totalValUsd += (float)$row['total_value_usd'];
@@ -165,6 +171,9 @@ if ($result) {
               <th style="text-align: right;">Opening (kg)</th>
               <th style="text-align: right;">Closing (kg)</th>
               <th style="text-align: right;">On Hand (kg)</th>
+              <th style="text-align: right;">Currency</th>
+              <th style="text-align: right;">Value in Currency</th>
+              <th style="text-align: right;">Exchange Rate</th>
               <th style="text-align: right;">Avg Cost (USD/kg)</th>
               <th style="text-align: right;">Total Value (USD)</th>
               <th style="width: 150px; text-align: center;">Actions</th>
@@ -173,7 +182,7 @@ if ($result) {
           <tbody id="stockList">
             <?php if (empty($stockData)): ?>
               <tr>
-                <td colspan="13" class="table-empty">No stock records found.</td>
+                <td colspan="16" class="table-empty">No stock records found.</td>
               </tr>
             <?php else: ?>
               <?php foreach ($stockData as $index => $row): ?>
@@ -211,6 +220,25 @@ if ($result) {
                   <td style="text-align: right; color: var(--text2); font-weight: 500;"><?php echo $qtyOpening; ?></td>
                   <td style="text-align: right; color: var(--text2); font-weight: 500;"><?php echo $qtyClosing; ?></td>
                   <td style="text-align: right; font-weight: 600;"><?php echo $qtyHand; ?></td>
+                  <td style="text-align: right;"><span class="status-pill <?php echo ($row['currency_code'] === 'RWF') ? 'pill-blue' : 'pill-green'; ?>"><?php echo htmlspecialchars($row['currency_code']); ?></span></td>
+                  <td style="text-align: right; color: var(--text); font-weight: 500;">
+                    <?php 
+                      if ($row['purchase_amount_in_currency'] !== null) {
+                          echo ($row['currency_code'] === 'RWF' ? '' : '$') . number_format($row['purchase_amount_in_currency'], 2) . ($row['currency_code'] === 'RWF' ? ' Frw' : '');
+                      } else {
+                          echo '—';
+                      }
+                    ?>
+                  </td>
+                  <td style="text-align: right; color: var(--text3); font-size: 11px;">
+                    <?php 
+                      if ($row['exchange_rate'] !== null) {
+                          echo number_format($row['exchange_rate'], 2) . ' RWF/USD';
+                      } else {
+                          echo '—';
+                      }
+                    ?>
+                  </td>
                   <td style="text-align: right; color: var(--text2);"><?php echo $avgCost; ?></td>
                   <td style="text-align: right; font-weight: 600; color: var(--green);"><?php echo $totVal; ?></td>
                   <td style="text-align: center;">

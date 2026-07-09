@@ -556,38 +556,56 @@ if ($sheet === 'purchase_logs_ta') {
     }
 } elseif ($sheet === 'cash_count_hq' || $sheet === 'cash_count_rub') {
     $report_code = ($sheet === 'cash_count_hq') ? 'cash_count_hq' : 'cash_count_rub';
-    $cc_date_cond = "";
+    $report_code_esc = mysqli_real_escape_string($conn, $report_code);
+
+    // Resolve target date
+    $cc_target_date = '';
     if (!empty($filter_date)) {
-        $fd = mysqli_real_escape_string($conn, $filter_date);
-        $cc_date_cond = " AND count_date = '{$fd}' ";
-    } elseif (!empty($filter_start) && !empty($filter_end)) {
-        $fs = mysqli_real_escape_string($conn, $filter_start);
-        $fe = mysqli_real_escape_string($conn, $filter_end);
-        $cc_date_cond = " AND count_date BETWEEN '{$fs}' AND '{$fe}' ";
-    } elseif (!empty($filter_year) && !empty($filter_month)) {
-        $fy = mysqli_real_escape_string($conn, $filter_year);
-        $fm = mysqli_real_escape_string($conn, $filter_month);
-        $cc_date_cond = " AND YEAR(count_date) = '{$fy}' AND MONTH(count_date) = '{$fm}' ";
-    } elseif (!empty($filter_year)) {
-        $fy = mysqli_real_escape_string($conn, $filter_year);
-        $cc_date_cond = " AND YEAR(count_date) = '{$fy}' ";
-    } elseif (!empty($filter_month)) {
-        $fm = mysqli_real_escape_string($conn, $filter_month);
-        $cc_date_cond = " AND MONTH(count_date) = '{$fm}' ";
+        $cc_target_date = mysqli_real_escape_string($conn, $filter_date);
+    } elseif (!empty($filter_start)) {
+        $cc_target_date = mysqli_real_escape_string($conn, $filter_start);
+    } else {
+        // Use the latest date recorded for this report
+        $latest_res = mysqli_query($conn, "SELECT MAX(count_date) as max_date FROM cash_counts WHERE report_slug = '{$report_code_esc}'");
+        if ($latest_res && $latest_row = mysqli_fetch_assoc($latest_res)) {
+            $cc_target_date = $latest_row['max_date'] ?? date('Y-m-d');
+        } else {
+            $cc_target_date = date('Y-m-d');
+        }
     }
 
-    $cc_query = "SELECT denomination, quantity, currency FROM cash_counts WHERE report_slug = '{$report_code}' {$cc_date_cond} ORDER BY denomination DESC";
-    $cc_res = mysqli_query($conn, $cc_query);
+    // Fetch petty counts for this site only
+    $petty_counts = [];
+    $cc_res = mysqli_query($conn, "SELECT denomination, currency, quantity FROM cash_counts WHERE report_slug = '{$report_code_esc}' AND count_date = '{$cc_target_date}'");
     if ($cc_res) {
         while ($cc_row = mysqli_fetch_assoc($cc_res)) {
-            $cash_counts[] = [
-                'currency' => $cc_row['currency'],
+            $petty_counts[] = [
+                'currency'     => $cc_row['currency'],
                 'denomination' => (float)$cc_row['denomination'],
-                'quantity' => (int)$cc_row['quantity'],
-                'total' => (float)$cc_row['denomination'] * (int)$cc_row['quantity']
+                'quantity'     => (int)$cc_row['quantity'],
+                'total'        => (float)$cc_row['denomination'] * (int)$cc_row['quantity']
             ];
         }
     }
+
+    // Fetch consolidated counts across ALL sites for the same date
+    $con_raw = [];
+    $cc_res2 = mysqli_query($conn, "SELECT denomination, currency, SUM(quantity) as total_qty FROM cash_counts WHERE count_date = '{$cc_target_date}' GROUP BY denomination, currency");
+    if ($cc_res2) {
+        while ($cc_row2 = mysqli_fetch_assoc($cc_res2)) {
+            $denom = (float)$cc_row2['denomination'];
+            $qty   = (int)$cc_row2['total_qty'];
+            $con_raw[] = [
+                'currency'     => $cc_row2['currency'],
+                'denomination' => $denom,
+                'quantity'     => $qty,
+                'total'        => $denom * $qty
+            ];
+        }
+    }
+
+    // Keep backward-compat variable used in handleCashCountReport call
+    $cash_counts = $petty_counts;
 } elseif ($sheet === 'equity_report') {
     // Determine active period
     // Load available years
@@ -1162,36 +1180,56 @@ function handleReconReport($dom, $sheetData, $gl_balance, $stmt_balance, $recon_
     }
 }
 
-function handleCashCountReport($dom, $sheetData, $cash_counts, $shared_strings) {
+function handleCashCountReport($dom, $sheetData, $cash_counts, $shared_strings, $con_raw = []) {
+    // Write petty cash (Left Side) — col B holds denomination, write to C (qty) and D (amount)
     foreach ($cash_counts as $item) {
-        $denom = floatval($item['denomination']);
-        $qty = intval($item['quantity']);
-        $total = floatval($item['total']);
+        $denom    = floatval($item['denomination']);
+        $qty      = intval($item['quantity']);
+        $total    = floatval($item['total']);
         $currency = $item['currency'];
-        
+
         for ($row = 1; $row <= 100; $row++) {
             if ($currency === 'RWF') {
-                $ref_b = 'B' . $row;
-                $cell_b = getCellByRef($sheetData, $ref_b);
-                $val_b = getCellValueResolved($cell_b, $shared_strings);
+                $cell_b = getCellByRef($sheetData, 'B' . $row);
+                $val_b  = getCellValueResolved($cell_b, $shared_strings);
                 if ($val_b !== null && floatval($val_b) == $denom) {
-                    $cell_c = getOrCreateCell($dom, $sheetData, $row, 3);
+                    $cell_c = getOrCreateCell($dom, $sheetData, $row, 3); // C = qty
                     setCellValue($dom, $cell_c, $qty);
-                    $cell_d = getOrCreateCell($dom, $sheetData, $row, 4);
+                    $cell_d = getOrCreateCell($dom, $sheetData, $row, 4); // D = amount
                     setCellValue($dom, $cell_d, $total);
                     break;
                 }
             } elseif ($currency === 'USD') {
-                $ref_j = 'J' . $row;
-                $cell_j = getCellByRef($sheetData, $ref_j);
-                $val_j = getCellValueResolved($cell_j, $shared_strings);
-                if ($val_j !== null && floatval($val_j) == $denom) {
-                    $cell_k = getOrCreateCell($dom, $sheetData, $row, 11);
-                    setCellValue($dom, $cell_k, $qty);
-                    $cell_l = getOrCreateCell($dom, $sheetData, $row, 12);
-                    setCellValue($dom, $cell_l, $total);
+                // USD left side uses col B as well (same column layout)
+                $cell_b = getCellByRef($sheetData, 'B' . $row);
+                $val_b  = getCellValueResolved($cell_b, $shared_strings);
+                if ($val_b !== null && floatval($val_b) == $denom) {
+                    $cell_c = getOrCreateCell($dom, $sheetData, $row, 3); // C = qty
+                    setCellValue($dom, $cell_c, $qty);
+                    $cell_d = getOrCreateCell($dom, $sheetData, $row, 4); // D = amount
+                    setCellValue($dom, $cell_d, $total);
                     break;
                 }
+            }
+        }
+    }
+
+    // Write consolidated (Right Side) — col J holds denomination, write to K (qty) and L (amount)
+    foreach ($con_raw as $item) {
+        $denom    = floatval($item['denomination']);
+        $qty      = intval($item['quantity']);
+        $total    = floatval($item['total']);
+        $currency = $item['currency'];
+
+        for ($row = 1; $row <= 100; $row++) {
+            $cell_j = getCellByRef($sheetData, 'J' . $row);
+            $val_j  = getCellValueResolved($cell_j, $shared_strings);
+            if ($val_j !== null && floatval($val_j) == $denom) {
+                $cell_k = getOrCreateCell($dom, $sheetData, $row, 11); // K = qty
+                setCellValue($dom, $cell_k, $qty);
+                $cell_l = getOrCreateCell($dom, $sheetData, $row, 12); // L = amount
+                setCellValue($dom, $cell_l, $total);
+                break;
             }
         }
     }
@@ -1276,7 +1314,7 @@ if (!$sheetData) {
 if ($sheet === 'bank_recon_usd' || $sheet === 'bank_recon_rwf') {
     handleReconReport($sheet_dom, $sheetData, $gl_balance, $stmt_balance, $recon_items);
 } elseif ($sheet === 'cash_count_hq' || $sheet === 'cash_count_rub') {
-    handleCashCountReport($sheet_dom, $sheetData, $cash_counts, $shared_strings);
+    handleCashCountReport($sheet_dom, $sheetData, $cash_counts, $shared_strings, $con_raw);
 } elseif ($sheet === 'equity_report') {
     handleEquityReport($sheet_dom, $sheetData, $opening_capital, $opening_retained, $capital_movement, $profit, $closing_capital, $closing_retained, $startDate, $endDate, $periodLabel);
 } else {

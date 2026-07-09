@@ -113,6 +113,9 @@ function calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_
     $manual_price_usd = (float)$manual_price_usd;
 
     $price_usd = formula_price_per_kg_usd($lme_price, $tc_charges, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+    if ($manual_price_usd > 0.0) {
+        $price_usd = $manual_price_usd;
+    }
     $price_rwf = formula_price_per_kg_rwf($price_usd, $exchange_rate);
     $val_usd = formula_purchase_value_usd($price_usd, $quantity_kg);
     $val_rwf = formula_purchase_value_rwf($quantity_kg, $price_rwf);
@@ -205,13 +208,13 @@ function getOrCreateSupplierAccount($conn, $supplierId) {
 }
 
 // Helper to update stock values
-function updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $qty_diff, $value_usd_diff, $value_rwf_diff) {
+function updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $qty_diff, $value_usd_diff, $value_rwf_diff, $purchase_currency_id = null, $purchase_amount_in_currency_diff = null, $exchange_rate = null, $converted_amount_diff = null) {
     $warehouse_id = (int)$warehouse_id;
     $product_id = (int)$product_id;
     $lot_id = (int)$lot_id;
     $uom_id = (int)$uom_id;
     
-    $chk = mysqli_query($conn, "SELECT id, qty_purchased, qty_sold, qty_adjusted, total_value_usd, total_value_rwf, opening, closing FROM stock WHERE warehouse_id = $warehouse_id AND product_id = $product_id AND lot_id = $lot_id LIMIT 1");
+    $chk = mysqli_query($conn, "SELECT id, qty_purchased, qty_sold, qty_adjusted, total_value_usd, total_value_rwf, opening, closing, purchase_amount_in_currency, converted_amount FROM stock WHERE warehouse_id = $warehouse_id AND product_id = $product_id AND lot_id = $lot_id LIMIT 1");
     if ($chk && mysqli_num_rows($chk) > 0) {
         $row = mysqli_fetch_assoc($chk);
         $stockId = $row['id'];
@@ -238,8 +241,26 @@ function updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $qty_d
                       total_value_rwf = $new_val_rwf, 
                       avg_cost_per_kg_usd = $avg_cost_usd, 
                       avg_cost_per_kg_rwf = $avg_cost_rwf,
-                      closing = $closing
-                   WHERE id = $stockId";
+                      closing = $closing";
+
+        if ($purchase_currency_id !== null) {
+            $update .= ", purchase_currency_id = " . (int)$purchase_currency_id;
+        }
+        if ($purchase_amount_in_currency_diff !== null) {
+            $new_amt_curr = (float)$row['purchase_amount_in_currency'] + (float)$purchase_amount_in_currency_diff;
+            if ($new_amt_curr < 0) $new_amt_curr = 0;
+            $update .= ", purchase_amount_in_currency = " . $new_amt_curr;
+        }
+        if ($exchange_rate !== null) {
+            $update .= ", exchange_rate = " . (float)$exchange_rate;
+        }
+        if ($converted_amount_diff !== null) {
+            $new_conv_amt = (float)$row['converted_amount'] + (float)$converted_amount_diff;
+            if ($new_conv_amt < 0) $new_conv_amt = 0;
+            $update .= ", converted_amount = " . $new_conv_amt;
+        }
+
+        $update .= " WHERE id = $stockId";
         if (mysqli_query($conn, $update)) {
             return [
                 'success' => true,
@@ -256,8 +277,13 @@ function updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $qty_d
             $closing = $qty_diff;
             $today = date('Y-m-d');
             
-            $insert = "INSERT INTO stock (warehouse_id, product_id, lot_id, uom_id, qty_purchased, qty_sold, qty_adjusted, total_value_usd, total_value_rwf, avg_cost_per_kg_usd, avg_cost_per_kg_rwf, opening, closing, last_rolled_over_at) 
-                       VALUES ($warehouse_id, $product_id, $lot_id, $uom_id, $qty_diff, 0, 0, $value_usd_diff, $value_rwf_diff, $avg_cost_usd, $avg_cost_rwf, $opening, $closing, '$today')";
+            $currency_id_val = $purchase_currency_id !== null ? (int)$purchase_currency_id : 'NULL';
+            $amt_in_curr_val = $purchase_amount_in_currency_diff !== null ? (float)$purchase_amount_in_currency_diff : 'NULL';
+            $ex_rate_val = $exchange_rate !== null ? (float)$exchange_rate : 'NULL';
+            $conv_amt_val = $converted_amount_diff !== null ? (float)$converted_amount_diff : 'NULL';
+
+            $insert = "INSERT INTO stock (warehouse_id, product_id, lot_id, uom_id, qty_purchased, qty_sold, qty_adjusted, total_value_usd, total_value_rwf, avg_cost_per_kg_usd, avg_cost_per_kg_rwf, opening, closing, last_rolled_over_at, purchase_currency_id, purchase_amount_in_currency, exchange_rate, converted_amount) 
+                       VALUES ($warehouse_id, $product_id, $lot_id, $uom_id, $qty_diff, 0, 0, $value_usd_diff, $value_rwf_diff, $avg_cost_usd, $avg_cost_rwf, $opening, $closing, '$today', $currency_id_val, $amt_in_curr_val, $ex_rate_val, $conv_amt_val)";
             if (mysqli_query($conn, $insert)) {
                 return [
                     'success' => true,
@@ -279,15 +305,16 @@ switch ($action) {
         }
 
         $query = "SELECT p.*, pr.product_name, pr.product_code, l.lots_code, s.name as supplier_name, w.warehouse_name, uom.code as uom_code,
-                         a.account_code, a.account_name
-                  FROM purchasing p
-                  JOIN product pr ON p.product_id = pr.id
-                  JOIN lots l ON p.lot_id = l.id
-                  JOIN suppliers s ON p.supplier_id = s.id
-                  JOIN warehouses w ON p.warehouse_id = w.id
-                  LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
-                  LEFT JOIN accounts a ON p.account_id = a.id
-                  ORDER BY p.purchase_date DESC, p.id DESC";
+                         a.account_code, a.account_name, cur.code as currency_code
+                   FROM purchasing p
+                   JOIN product pr ON p.product_id = pr.id
+                   JOIN lots l ON p.lot_id = l.id
+                   JOIN suppliers s ON p.supplier_id = s.id
+                   JOIN warehouses w ON p.warehouse_id = w.id
+                   LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
+                   LEFT JOIN accounts a ON p.account_id = a.id
+                   LEFT JOIN currencies cur ON p.purchase_currency_id = cur.id
+                   ORDER BY p.purchase_date DESC, p.id DESC";
         
         $result = mysqli_query($conn, $query);
         $purchases = [];
@@ -346,6 +373,10 @@ switch ($action) {
                 $row['tax_rma'] = $row['tax_rma'] !== null ? (float)$row['tax_rma'] : null;
                 $row['tax_inkomane'] = $row['tax_inkomane'] !== null ? (float)$row['tax_inkomane'] : null;
                 $row['production_charges'] = $row['production_charges'] !== null ? (float)$row['production_charges'] : null;
+                $row['purchase_currency_id'] = $row['purchase_currency_id'] !== null ? (int)$row['purchase_currency_id'] : null;
+                $row['purchase_amount_in_currency'] = $row['purchase_amount_in_currency'] !== null ? (float)$row['purchase_amount_in_currency'] : null;
+                $row['converted_amount'] = $row['converted_amount'] !== null ? (float)$row['converted_amount'] : null;
+                $row['currency_code'] = $row['currency_code'] ?? 'USD';
                 
                 $row['grades'] = $grades;
                 $row['primary_element_id'] = $primaryElementId;
@@ -523,6 +554,24 @@ switch ($action) {
         mysqli_begin_transaction($conn);
 
         try {
+            $purchase_currency_id = isset($_POST['purchase_currency_id']) ? (int)$_POST['purchase_currency_id'] : 2; // Default to USD (2)
+            
+            // Find currency code
+            $currencyCode = 'USD';
+            $currQuery = mysqli_query($conn, "SELECT code FROM currencies WHERE id = $purchase_currency_id LIMIT 1");
+            if ($currQuery && mysqli_num_rows($currQuery) > 0) {
+                $currencyCode = mysqli_fetch_assoc($currQuery)['code'];
+            }
+            
+            // Calculate purchase_amount_in_currency and converted_amount based on selected currency
+            if ($currencyCode === 'RWF') {
+                $purchase_amount_in_currency = $purchase_value_rwf;
+                $converted_amount = $purchase_value_usd;
+            } else {
+                $purchase_amount_in_currency = $purchase_value_usd;
+                $converted_amount = $purchase_value_rwf;
+            }
+
             $delNoEsc = $delivery_no !== null ? "'" . mysqli_real_escape_string($conn, $delivery_no) . "'" : "NULL";
             $invEsc = $inventory_code !== null ? "'" . mysqli_real_escape_string($conn, $inventory_code) . "'" : "NULL";
             $accEsc = $account_id !== null ? (int)$account_id : "NULL";
@@ -550,6 +599,10 @@ switch ($action) {
 
             $methodEsc = mysqli_real_escape_string($conn, $pricing_method);
 
+            $p_curr_id = (int)$purchase_currency_id;
+            $p_amt_curr = $purchase_amount_in_currency !== null ? (float)$purchase_amount_in_currency : 'NULL';
+            $p_conv_amt = $converted_amount !== null ? (float)$converted_amount : 'NULL';
+
             // Insert into purchasing
             $insertPurch = "INSERT INTO purchasing (
                 purchase_no, delivery_no, inventory_code, account_id, delivery_date, purchase_date,
@@ -557,14 +610,14 @@ switch ($action) {
                 price_per_kg_rwf, purchase_value_rwf, exchange_rate, purchase_value_usd,
                 net_paid_supplier_usd, charges_per_kg, production_charges_per_kg, price_per_ta_unit, price_per_kg_usd, pricing_method,
                 lme_price, tc_charges, tax_rra, tax_rma, tax_inkomane, production_charges,
-                status, notes, created_by
+                status, notes, created_by, purchase_currency_id, purchase_amount_in_currency, converted_amount
             ) VALUES (
                 '$pNoEsc', $delNoEsc, $invEsc, $accEsc, $delDateEsc, '$purchase_date',
                 $lot_id, $product_id, $supplier_id, $negEsc, $warehouse_id, $quantity_kg, $uom_id,
                 $p_kg_rwf, $p_val_rwf, $ex_rate, $p_val_usd,
                 $n_paid, $chg_kg, $prod_chg_kg, $p_ta, $p_kg_usd, '$methodEsc',
                 $lme, $tc, $t_rra, $t_rma, $t_inko, $prod_chg,
-                '$statusEsc', $notesEsc, $userId
+                '$statusEsc', $notesEsc, $userId, $p_curr_id, $p_amt_curr, $p_conv_amt
             )";
 
             if (!mysqli_query($conn, $insertPurch)) {
@@ -626,7 +679,7 @@ switch ($action) {
                 $val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 0.0;
                 $val_rwf = $purchase_value_rwf !== null ? $purchase_value_rwf : 0.0;
                 
-                $stock_info = updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf);
+                $stock_info = updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf, $purchase_currency_id, $purchase_amount_in_currency, $exchange_rate, $converted_amount);
                 if (!$stock_info) {
                     throw new Exception("Failed to update inventory stock.");
                 }
@@ -637,16 +690,21 @@ switch ($action) {
                 $unit_cost_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 0.0;
                 $unit_cost_rwf = $price_per_kg_rwf !== null ? $price_per_kg_rwf : 0.0;
 
+                $currency_id_val = $purchase_currency_id !== null ? (int)$purchase_currency_id : 'NULL';
+                $amt_in_curr_val = $purchase_amount_in_currency !== null ? (float)$purchase_amount_in_currency : 'NULL';
+                $ex_rate_val = $exchange_rate !== null ? (float)$exchange_rate : 'NULL';
+                $conv_amt_val = $converted_amount !== null ? (float)$converted_amount : 'NULL';
+
                 $insertMovement = "INSERT INTO stock_movement (
                     movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
                     unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
                     reference_type, reference_id, movement_date, notes, created_by,
-                    opening, closing
+                    opening, closing, purchase_currency_id, purchase_amount_in_currency, exchange_rate, converted_amount
                 ) VALUES (
                     'PURCHASE_IN', $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg,
                     $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
                     'purchasing', $purchasingId, '$purchase_date', $notesEsc, $userId,
-                    $mvt_opening, $mvt_closing
+                    $mvt_opening, $mvt_closing, $currency_id_val, $amt_in_curr_val, $ex_rate_val, $conv_amt_val
                 )";
 
                 if (!mysqli_query($conn, $insertMovement)) {
@@ -963,7 +1021,12 @@ switch ($action) {
                 $old_qty = (float)$oldValues['quantity_kg'];
                 $old_val_usd = (float)$oldValues['purchase_value_usd'];
                 $old_val_rwf = (float)$oldValues['purchase_value_rwf'];
-                if (!updateStock($conn, $oldValues['warehouse_id'], $oldValues['product_id'], $oldValues['lot_id'], $oldValues['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf)) {
+                $old_currency_id = $oldValues['purchase_currency_id'] !== null ? (int)$oldValues['purchase_currency_id'] : 'NULL';
+                $old_amt_in_curr = $oldValues['purchase_amount_in_currency'] !== null ? (float)$oldValues['purchase_amount_in_currency'] : 0.0;
+                $old_ex_rate = $oldValues['exchange_rate'] !== null ? (float)$oldValues['exchange_rate'] : 0.0;
+                $old_conv_amt = $oldValues['converted_amount'] !== null ? (float)$oldValues['converted_amount'] : 0.0;
+
+                if (!updateStock($conn, $oldValues['warehouse_id'], $oldValues['product_id'], $oldValues['lot_id'], $oldValues['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf, $oldValues['purchase_currency_id'], -$old_amt_in_curr, $oldValues['exchange_rate'], -$old_conv_amt)) {
                     throw new Exception("Failed to adjust inventory stock.");
                 }
 
@@ -998,6 +1061,28 @@ switch ($action) {
 
             $methodEsc = mysqli_real_escape_string($conn, $pricing_method);
 
+            $purchase_currency_id = isset($_POST['purchase_currency_id']) ? (int)$_POST['purchase_currency_id'] : 2; // Default to USD (2)
+            
+            // Find currency code
+            $currencyCode = 'USD';
+            $currQuery = mysqli_query($conn, "SELECT code FROM currencies WHERE id = $purchase_currency_id LIMIT 1");
+            if ($currQuery && mysqli_num_rows($currQuery) > 0) {
+                $currencyCode = mysqli_fetch_assoc($currQuery)['code'];
+            }
+            
+            // Calculate purchase_amount_in_currency and converted_amount based on selected currency
+            if ($currencyCode === 'RWF') {
+                $purchase_amount_in_currency = $purchase_value_rwf;
+                $converted_amount = $purchase_value_usd;
+            } else {
+                $purchase_amount_in_currency = $purchase_value_usd;
+                $converted_amount = $purchase_value_rwf;
+            }
+
+            $p_curr_id = (int)$purchase_currency_id;
+            $p_amt_curr = $purchase_amount_in_currency !== null ? (float)$purchase_amount_in_currency : 'NULL';
+            $p_conv_amt = $converted_amount !== null ? (float)$converted_amount : 'NULL';
+
             $updatePurch = "UPDATE purchasing SET
                 purchase_no = '$pNoEsc',
                 delivery_no = $delNoEsc,
@@ -1030,6 +1115,9 @@ switch ($action) {
                 production_charges = $prod_chg,
                 status = '$statusEsc',
                 notes = $notesEsc,
+                purchase_currency_id = $p_curr_id,
+                purchase_amount_in_currency = $p_amt_curr,
+                converted_amount = $p_conv_amt,
                 updated_at = CURRENT_TIMESTAMP
                 WHERE id = $id";
 
@@ -1095,7 +1183,7 @@ switch ($action) {
                 $val_usd = $purchase_value_usd !== null ? $purchase_value_usd : 0.0;
                 $val_rwf = $purchase_value_rwf !== null ? $purchase_value_rwf : 0.0;
                 
-                $stock_info = updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf);
+                $stock_info = updateStock($conn, $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg, $val_usd, $val_rwf, $purchase_currency_id, $purchase_amount_in_currency, $exchange_rate, $converted_amount);
                 if (!$stock_info) {
                     throw new Exception("Failed to update inventory stock.");
                 }
@@ -1106,16 +1194,21 @@ switch ($action) {
                 $unit_cost_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 0.0;
                 $unit_cost_rwf = $price_per_kg_rwf !== null ? $price_per_kg_rwf : 0.0;
 
+                $currency_id_val = $purchase_currency_id !== null ? (int)$purchase_currency_id : 'NULL';
+                $amt_in_curr_val = $purchase_amount_in_currency !== null ? (float)$purchase_amount_in_currency : 'NULL';
+                $ex_rate_val = $exchange_rate !== null ? (float)$exchange_rate : 'NULL';
+                $conv_amt_val = $converted_amount !== null ? (float)$converted_amount : 'NULL';
+
                 $insertMovement = "INSERT INTO stock_movement (
                     movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
                     unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
                     reference_type, reference_id, movement_date, notes, created_by,
-                    opening, closing
+                    opening, closing, purchase_currency_id, purchase_amount_in_currency, exchange_rate, converted_amount
                 ) VALUES (
                     'PURCHASE_IN', $warehouse_id, $product_id, $lot_id, $uom_id, $quantity_kg,
                     $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
                     'purchasing', $id, '$purchase_date', $notesEsc, $userId,
-                    $mvt_opening, $mvt_closing
+                    $mvt_opening, $mvt_closing, $currency_id_val, $amt_in_curr_val, $ex_rate_val, $conv_amt_val
                 )";
 
                 if (!mysqli_query($conn, $insertMovement)) {
@@ -1192,7 +1285,12 @@ switch ($action) {
                     $val_usd = $currentRow['purchase_value_usd'] !== null ? (float)$currentRow['purchase_value_usd'] : 0.0;
                     $val_rwf = $currentRow['purchase_value_rwf'] !== null ? (float)$currentRow['purchase_value_rwf'] : 0.0;
                     
-                    $stock_info = updateStock($conn, $currentRow['warehouse_id'], $currentRow['product_id'], $currentRow['lot_id'], $currentRow['uom_id'], $quantity_kg, $val_usd, $val_rwf);
+                    $currency_id = $currentRow['purchase_currency_id'];
+                    $amt_in_curr = $currentRow['purchase_amount_in_currency'] !== null ? (float)$currentRow['purchase_amount_in_currency'] : 0.0;
+                    $ex_rate = $currentRow['exchange_rate'] !== null ? (float)$currentRow['exchange_rate'] : 0.0;
+                    $conv_amt = $currentRow['converted_amount'] !== null ? (float)$currentRow['converted_amount'] : 0.0;
+
+                    $stock_info = updateStock($conn, $currentRow['warehouse_id'], $currentRow['product_id'], $currentRow['lot_id'], $currentRow['uom_id'], $quantity_kg, $val_usd, $val_rwf, $currency_id, $amt_in_curr, $ex_rate, $conv_amt);
                     if (!$stock_info) {
                         throw new Exception("Failed to update inventory stock.");
                     }
@@ -1205,16 +1303,21 @@ switch ($action) {
                     $notesEsc = $currentRow['notes'] !== null ? "'" . mysqli_real_escape_string($conn, $currentRow['notes']) . "'" : "NULL";
                     $purchase_date = $currentRow['purchase_date'];
 
+                    $currency_id_val = $currency_id !== null ? (int)$currency_id : 'NULL';
+                    $amt_in_curr_val = $amt_in_curr !== 0.0 ? $amt_in_curr : 'NULL';
+                    $ex_rate_val = $ex_rate !== 0.0 ? $ex_rate : 'NULL';
+                    $conv_amt_val = $conv_amt !== 0.0 ? $conv_amt : 'NULL';
+
                     $insertMovement = "INSERT INTO stock_movement (
                         movement_type, warehouse_id, product_id, lot_id, uom_id, qty_kg, 
                         unit_cost_rwf, unit_cost_usd, total_value_rwf, total_value_usd, 
                         reference_type, reference_id, movement_date, notes, created_by,
-                        opening, closing
+                        opening, closing, purchase_currency_id, purchase_amount_in_currency, exchange_rate, converted_amount
                     ) VALUES (
                         'PURCHASE_IN', {$currentRow['warehouse_id']}, {$currentRow['product_id']}, {$currentRow['lot_id']}, {$currentRow['uom_id']}, $quantity_kg,
                         $unit_cost_rwf, $unit_cost_usd, $val_rwf, $val_usd,
                         'purchasing', $id, '$purchase_date', $notesEsc, $userId,
-                        $mvt_opening, $mvt_closing
+                        $mvt_opening, $mvt_closing, $currency_id_val, $amt_in_curr_val, $ex_rate_val, $conv_amt_val
                     )";
 
                     if (!mysqli_query($conn, $insertMovement)) {
@@ -1226,7 +1329,12 @@ switch ($action) {
                 $old_qty = (float)$currentRow['quantity_kg'];
                 $old_val_usd = (float)$currentRow['purchase_value_usd'];
                 $old_val_rwf = (float)$currentRow['purchase_value_rwf'];
-                if (!updateStock($conn, $currentRow['warehouse_id'], $currentRow['product_id'], $currentRow['lot_id'], $currentRow['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf)) {
+                $old_currency_id = $currentRow['purchase_currency_id'];
+                $old_amt_in_curr = $currentRow['purchase_amount_in_currency'] !== null ? (float)$currentRow['purchase_amount_in_currency'] : 0.0;
+                $old_ex_rate = $currentRow['exchange_rate'] !== null ? (float)$currentRow['exchange_rate'] : 0.0;
+                $old_conv_amt = $currentRow['converted_amount'] !== null ? (float)$currentRow['converted_amount'] : 0.0;
+
+                if (!updateStock($conn, $currentRow['warehouse_id'], $currentRow['product_id'], $currentRow['lot_id'], $currentRow['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf, $old_currency_id, -$old_amt_in_curr, $old_ex_rate, -$old_conv_amt)) {
                     throw new Exception("Failed to adjust inventory stock.");
                 }
 
@@ -1277,7 +1385,12 @@ switch ($action) {
                 $old_qty = (float)$oldValues['quantity_kg'];
                 $old_val_usd = (float)$oldValues['purchase_value_usd'];
                 $old_val_rwf = (float)$oldValues['purchase_value_rwf'];
-                if (!updateStock($conn, $oldValues['warehouse_id'], $oldValues['product_id'], $oldValues['lot_id'], $oldValues['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf)) {
+                $old_currency_id = $oldValues['purchase_currency_id'];
+                $old_amt_in_curr = $oldValues['purchase_amount_in_currency'] !== null ? (float)$oldValues['purchase_amount_in_currency'] : 0.0;
+                $old_ex_rate = $oldValues['exchange_rate'] !== null ? (float)$oldValues['exchange_rate'] : 0.0;
+                $old_conv_amt = $oldValues['converted_amount'] !== null ? (float)$oldValues['converted_amount'] : 0.0;
+
+                if (!updateStock($conn, $oldValues['warehouse_id'], $oldValues['product_id'], $oldValues['lot_id'], $oldValues['uom_id'], -$old_qty, -$old_val_usd, -$old_val_rwf, $old_currency_id, -$old_amt_in_curr, $old_ex_rate, -$old_conv_amt)) {
                     throw new Exception("Failed to adjust inventory stock.");
                 }
 

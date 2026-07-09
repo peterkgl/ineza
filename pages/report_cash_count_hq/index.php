@@ -8,37 +8,153 @@ $report_slug = 'cash_count_hq';
 $report_title = 'INEZA Cash Count HQ';
 $report_slug_esc = mysqli_real_escape_string($conn, $report_slug);
 
-// Custom labels mapping is disabled
-
-// Parse filters
-$filter_year = $_GET['filter_year'] ?? '';
+$filter_year  = $_GET['filter_year']  ?? '';
 $filter_month = $_GET['filter_month'] ?? '';
-$filter_date = $_GET['filter_date'] ?? '';
+$filter_date  = $_GET['filter_date']  ?? '';
 $filter_start = $_GET['filter_start'] ?? '';
-$filter_end = $_GET['filter_end'] ?? '';
+$filter_end   = $_GET['filter_end']   ?? '';
 
-// Get latest count date if not specified
 $target_date = $filter_date;
 if (empty($target_date)) {
-    $latest_res = mysqli_query($conn, "SELECT MAX(count_date) as max_date FROM cash_counts WHERE report_slug = '{$report_slug_esc}'");
+    $latest_res = mysqli_query($conn,
+        "SELECT MAX(count_date) AS max_date
+         FROM cash_counts
+         WHERE report_slug = '{$report_slug_esc}'"
+    );
     if ($latest_res && $latest_row = mysqli_fetch_assoc($latest_res)) {
         $target_date = $latest_row['max_date'] ?? date('Y-m-d');
     } else {
         $target_date = date('Y-m-d');
     }
 }
+$target_date_esc = mysqli_real_escape_string($conn, $target_date);
 
-// Fetch denomination counts
-$counts = [];
-$res_cc = mysqli_query($conn, "SELECT denomination, currency, quantity FROM cash_counts WHERE report_slug = '{$report_slug_esc}' AND count_date = '{$target_date}'");
-if ($res_cc) {
-    while ($cc_row = mysqli_fetch_assoc($res_cc)) {
-        $counts[$cc_row['currency']][(int)$cc_row['denomination']] = (int)$cc_row['quantity'];
+$currencies_meta = [];
+$curr_res = mysqli_query($conn,
+    "SELECT id, code, name, symbol, is_base_currency
+     FROM currencies
+     WHERE is_active = 1
+     ORDER BY code ASC"
+);
+if ($curr_res) {
+    while ($curr_row = mysqli_fetch_assoc($curr_res)) {
+        $currencies_meta[$curr_row['code']] = [
+            'id'      => (int)$curr_row['id'],
+            'name'    => $curr_row['name'],
+            'symbol'  => $curr_row['symbol'] ?? $curr_row['code'],
+            'is_base' => (int)$curr_row['is_base_currency'],
+        ];
     }
 }
 
-$rwf_denoms = [5000, 2000, 1000, 500];
-$usd_denoms = [100, 50, 20, 10, 5, 1];
+$rate = null;
+
+$rate_sql_base = "
+    SELECT er.rate,
+           fc.code AS from_code,
+           tc.code AS to_code
+    FROM exchange_rates er
+    JOIN currencies fc ON er.from_currency_id = fc.id
+    JOIN currencies tc ON er.to_currency_id   = tc.id
+    WHERE (
+        (fc.code = 'RWF' AND tc.code = 'USD')
+        OR
+        (fc.code = 'USD' AND tc.code = 'RWF')
+    )
+";
+
+$rate_res = mysqli_query($conn,
+    $rate_sql_base .
+    "AND er.rate_date <= '{$target_date_esc}'
+     ORDER BY er.rate_date DESC, er.id DESC
+     LIMIT 1"
+);
+if ($rate_res && $rate_row = mysqli_fetch_assoc($rate_res)) {
+    $raw = (float)$rate_row['rate'];
+    if ($rate_row['from_code'] === 'USD' && $rate_row['to_code'] === 'RWF') {
+        $rate = ($raw > 0) ? 1.0 / $raw : null;
+    } else {
+        $rate = ($raw > 1.0) ? $raw : (($raw > 0 && $raw < 1.0) ? 1.0 / $raw : null);
+    }
+}
+
+if ($rate === null) {
+    $rate_res = mysqli_query($conn,
+        $rate_sql_base .
+        "ORDER BY er.rate_date DESC, er.id DESC
+         LIMIT 1"
+    );
+    if ($rate_res && $rate_row = mysqli_fetch_assoc($rate_res)) {
+        $raw = (float)$rate_row['rate'];
+        if ($rate_row['from_code'] === 'USD' && $rate_row['to_code'] === 'RWF') {
+            $rate = ($raw > 0) ? 1.0 / $raw : null;
+        } else {
+            $rate = ($raw > 1.0) ? $raw : (($raw > 0 && $raw < 1.0) ? 1.0 / $raw : null);
+        }
+    }
+}
+
+$counts      = [];
+$consolidated = [];
+
+$res_cc = mysqli_query($conn,
+    "SELECT report_slug, denomination, currency, quantity
+     FROM cash_counts
+     WHERE count_date = '{$target_date_esc}'"
+);
+if ($res_cc) {
+    while ($cc_row = mysqli_fetch_assoc($res_cc)) {
+        $slug  = $cc_row['report_slug'];
+        $denom = (int)$cc_row['denomination'];
+        $curr  = $cc_row['currency'];
+        $qty   = (int)$cc_row['quantity'];
+
+        if ($slug === $report_slug) {
+            $counts[$curr][$denom] = $qty;
+        }
+
+        if (!isset($consolidated[$curr][$denom])) {
+            $consolidated[$curr][$denom] = 0;
+        }
+        $consolidated[$curr][$denom] += $qty;
+    }
+}
+
+$denom_lists = [];
+
+$all_currencies_in_data = array_unique(
+    array_merge(array_keys($counts), array_keys($consolidated))
+);
+foreach ($all_currencies_in_data as $curr_code) {
+    $keys = array_unique(array_merge(
+        array_keys($counts[$curr_code]       ?? []),
+        array_keys($consolidated[$curr_code] ?? [])
+    ));
+    rsort($keys);
+    $denom_lists[$curr_code] = $keys;
+}
+
+$site_totals = [];
+$con_totals  = [];
+
+foreach ($denom_lists as $curr_code => $denoms) {
+    $site_totals[$curr_code] = 0.0;
+    $con_totals[$curr_code]  = 0.0;
+    foreach ($denoms as $d) {
+        $site_totals[$curr_code] += (float)$d * (float)($counts[$curr_code][$d]       ?? 0);
+        $con_totals[$curr_code]  += (float)$d * (float)($consolidated[$curr_code][$d] ?? 0);
+    }
+}
+
+$site_rwf = $site_totals['RWF'] ?? 0.0;
+$site_usd = $site_totals['USD'] ?? 0.0;
+$con_rwf  = $con_totals['RWF']  ?? 0.0;
+$con_usd  = $con_totals['USD']  ?? 0.0;
+
+$site_usd_equiv = ($rate !== null) ? $site_usd + ($site_rwf / $rate) : null;
+$con_usd_equiv  = ($rate !== null) ? $con_usd  + ($con_rwf  / $rate) : null;
+
+$is_empty = (array_sum($site_totals) == 0.0 && array_sum($con_totals) == 0.0);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -114,7 +230,6 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
 
   <div class="content">
 
-    <!-- Page Header -->
     <div class="page-header">
       <div>
         <h1 class="page-title">
@@ -134,11 +249,9 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
       </div>
     </div>
 
-    <!-- Report Container -->
     <div class="report-container page-<?php echo htmlspecialchars($report_slug); ?>">
       <div class="report-card" style="padding: 16px;">
-      
-      <!-- Date Filters -->
+
       <form method="GET" class="report-filters" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 12px 16px; background: var(--card-bg, #fff); border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border, #e5e7eb); box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
         <div style="display: flex; flex-direction: column; gap: 4px;">
           <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary, #6b7280); text-transform: uppercase; letter-spacing: 0.5px;">Count Date</label>
@@ -154,33 +267,22 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
         </div>
       </form>
 
+      <?php if ($rate === null): ?>
+        <div style="padding: 10px 16px; margin-bottom: 12px; background: var(--alert-amber-bg); border: 1px solid var(--amber); border-radius: 6px; color: var(--amber); font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          No exchange rate found in the database. USD-equivalent totals cannot be calculated. Please add an exchange rate in the Currencies section.
+        </div>
+      <?php endif; ?>
+
       <div class="table-wrapper" style="padding: 16px;">
-        <?php
-        $rwf_denoms_full = [5000, 2000, 1000, 500, 100, 50, 1]; // 1 is MMO
-        $usd_denoms_full = [100, 50, 20, 10, 5, 2, 1];
-        
-        $total_rwf = 0.0;
-        $total_usd = 0.0;
-        
-        // Let's compute totals first
-        foreach ($rwf_denoms_full as $d) {
-            $total_rwf += (float)($counts['RWF'][$d] ?? 0);
-        }
-        foreach ($usd_denoms_full as $d) {
-            $total_usd += (float)($counts['USD'][$d] ?? 0);
-        }
-        
-        $rate = 1457.0; // HQ rate from excel row 12
-        $total_usd_equiv = $total_usd + ($total_rwf / $rate);
-        
-        $is_empty = ($total_rwf == 0.0 && $total_usd == 0.0);
-        ?>
         <?php if ($is_empty): ?>
           <div style="padding: 12px 16px; margin-bottom: 16px; background: var(--alert-amber-bg); border: 1px solid var(--amber); border-radius: 6px; color: var(--amber); font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 8px;">
             <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             No cash count recorded for this date.
           </div>
         <?php endif; ?>
+
+        <?php if (!$is_empty): ?>
         <table class="excel-table" style="min-width: 100%;">
           <thead>
             <tr style="font-weight: 700; background: var(--bg);">
@@ -195,7 +297,14 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
               <td></td>
               <td style="text-align: right;">Amount</td>
               <td></td>
-              <td>Rate: <?php echo $rate; ?></td>
+              <td>
+                Rate:
+                <?php if ($rate !== null): ?>
+                  <?php echo number_format($rate, 2); ?>
+                <?php else: ?>
+                  <span style="color: var(--amber); font-size: 11px;">N/A</span>
+                <?php endif; ?>
+              </td>
               <td colspan="2"></td>
               <td>As of:</td>
               <td><?php echo htmlspecialchars($target_date); ?></td>
@@ -205,102 +314,111 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
             </tr>
           </thead>
           <tbody>
-            <!-- RWF counts -->
-            <tr style="font-weight: 700; background: var(--excel-zebra-bg);">
-              <td>In Francs</td>
-              <td colspan="4">Left Side Count (RWF)</td>
+
+            <?php
+            $display_order = ['RWF', 'USD'];
+            $other_currencies = array_diff(array_keys($denom_lists), $display_order);
+            $ordered_currencies = array_merge(
+                array_intersect($display_order, array_keys($denom_lists)),
+                $other_currencies
+            );
+
+            foreach ($ordered_currencies as $curr_code):
+                $denoms         = $denom_lists[$curr_code];
+                $symbol         = $currencies_meta[$curr_code]['symbol'] ?? $curr_code;
+                $is_rwf         = ($curr_code === 'RWF');
+                $site_total_val = $site_totals[$curr_code] ?? 0.0;
+                $con_total_val  = $con_totals[$curr_code]  ?? 0.0;
+
+                $section_label = $is_rwf
+                    ? 'In Francs'
+                    : (($curr_code === 'USD') ? 'In USD$' : 'In ' . htmlspecialchars($curr_code));
+                $left_label  = ($curr_code === 'RWF') ? 'Left Side Count (RWF)'  : "Left Side Count ({$curr_code})";
+                $right_label = ($curr_code === 'RWF') ? 'Right Side Count (RWF)' : "Right Side Count ({$curr_code})";
+                $total_label = 'Total ' . htmlspecialchars($curr_code) . ':';
+            ?>
+
+            <tr style="font-weight: 700; background: var(--excel-zebra-bg);<?php echo ($curr_code !== 'RWF') ? ' border-top: 2px solid var(--border);' : ''; ?>">
+              <td><?php echo $section_label; ?></td>
+              <td colspan="4"><?php echo $left_label; ?></td>
               <td></td>
               <td colspan="2"></td>
-              <td>In Francs</td>
-              <td colspan="4">Right Side Count (RWF)</td>
+              <td><?php echo $section_label; ?></td>
+              <td colspan="4"><?php echo $right_label; ?></td>
             </tr>
-            <?php for ($i = 0; $i < 7; $i++): 
-                $r_denom = $rwf_denoms_full[$i];
-                $r_val = (float)($counts['RWF'][$r_denom] ?? 0);
-                $r_qty = $r_denom > 0 ? (int)($r_val / $r_denom) : 0;
-                
-                $label = ($r_denom === 1) ? 'MMO' : number_format($r_denom);
+
+            <?php foreach ($denoms as $denom):
+                $site_qty = (int)($counts[$curr_code][$denom] ?? 0);
+                $site_val = (float)$denom * $site_qty;
+
+                $con_qty = (int)($consolidated[$curr_code][$denom] ?? 0);
+                $con_val = (float)$denom * $con_qty;
+
+                if ($is_rwf) {
+                    $denom_label = ($denom === 1) ? 'MMO' : number_format($denom);
+                } else {
+                    $denom_label = $symbol . number_format($denom) . ' Bill';
+                }
             ?>
               <tr>
-                <td><?php echo $label; ?></td>
-                <td><?php echo $r_denom; ?></td>
-                <td style="text-align: right;"><?php echo $r_qty > 0 ? $r_qty : ''; ?></td>
-                <td style="text-align: right;"><?php echo $r_val > 0 ? number_format($r_val) : ''; ?></td>
+                <td><?php echo $denom_label; ?></td>
+                <td><?php echo number_format($denom); ?></td>
+                <td style="text-align: right;"><?php echo $site_qty > 0 ? number_format($site_qty) : ''; ?></td>
+                <td style="text-align: right;"><?php echo $site_val > 0 ? ($is_rwf ? number_format($site_val) : $symbol . number_format($site_val)) : ''; ?></td>
                 <td></td>
                 <td></td>
                 <td colspan="2"></td>
-                <td><?php echo $label; ?></td>
-                <td><?php echo $r_denom; ?></td>
-                <td style="text-align: right;"></td>
-                <td style="text-align: right;"></td>
+                <td><?php echo $denom_label; ?></td>
+                <td><?php echo number_format($denom); ?></td>
+                <td style="text-align: right;"><?php echo $con_qty > 0 ? number_format($con_qty) : ''; ?></td>
+                <td style="text-align: right;"><?php echo $con_val > 0 ? ($is_rwf ? number_format($con_val) : $symbol . number_format($con_val)) : ''; ?></td>
                 <td></td>
               </tr>
-            <?php endfor; ?>
-            
+            <?php endforeach; ?>
+
             <tr style="font-weight: 700; background: var(--bg);">
-              <td colspan="3" style="text-align: right;">Total RWF:</td>
-              <td style="text-align: right;"><?php echo number_format($total_rwf); ?></td>
+              <td colspan="3" style="text-align: right;"><?php echo $total_label; ?></td>
+              <td style="text-align: right;">
+                <?php echo $is_rwf ? number_format($site_total_val) : $symbol . number_format($site_total_val); ?>
+              </td>
               <td></td>
               <td></td>
               <td colspan="2"></td>
-              <td colspan="3" style="text-align: right;">Total RWF:</td>
-              <td style="text-align: right;">0</td>
+              <td colspan="3" style="text-align: right;"><?php echo $total_label; ?></td>
+              <td style="text-align: right;">
+                <?php echo $is_rwf ? number_format($con_total_val) : $symbol . number_format($con_total_val); ?>
+              </td>
               <td></td>
             </tr>
 
-            <!-- USD counts -->
-            <tr style="font-weight: 700; background: var(--excel-zebra-bg); border-top: 2px solid var(--border);">
-              <td>In USD$</td>
-              <td colspan="4">Left Side Count (USD)</td>
-              <td></td>
-              <td colspan="2"></td>
-              <td>In USD$</td>
-              <td colspan="4">Right Side Count (USD)</td>
-            </tr>
-            <?php for ($i = 0; $i < 7; $i++): 
-                $u_denom = $usd_denoms_full[$i];
-                $u_val = (float)($counts['USD'][$u_denom] ?? 0);
-                $u_qty = $u_denom > 0 ? (int)($u_val / $u_denom) : 0;
-            ?>
-              <tr>
-                <td>$<?php echo $u_denom; ?> Bill</td>
-                <td><?php echo $u_denom; ?></td>
-                <td style="text-align: right;"><?php echo $u_qty > 0 ? $u_qty : ''; ?></td>
-                <td style="text-align: right;"><?php echo $u_val > 0 ? '$' . number_format($u_val) : ''; ?></td>
-                <td></td>
-                <td></td>
-                <td colspan="2"></td>
-                <td>$<?php echo $u_denom; ?> Bill</td>
-                <td><?php echo $u_denom; ?></td>
-                <td style="text-align: right;"></td>
-                <td style="text-align: right;"></td>
-                <td></td>
-              </tr>
-            <?php endfor; ?>
-
-            <tr style="font-weight: 700; background: var(--bg);">
-              <td colspan="3" style="text-align: right;">Total USD:</td>
-              <td style="text-align: right;">$<?php echo number_format($total_usd); ?></td>
-              <td></td>
-              <td></td>
-              <td colspan="2"></td>
-              <td colspan="3" style="text-align: right;">Total USD:</td>
-              <td style="text-align: right;">$0</td>
-              <td></td>
-            </tr>
+            <?php endforeach; ?>
 
             <tr style="font-weight: 700; background: var(--excel-accent-bg); border-top: 2px solid var(--border);">
               <td colspan="3">TOTAL US$ ACTUAL CASH EQUIVALENT:</td>
-              <td style="text-align: right;">$<?php echo number_format($total_usd_equiv, 2); ?></td>
+              <td style="text-align: right;">
+                <?php if ($site_usd_equiv !== null): ?>
+                  $<?php echo number_format($site_usd_equiv, 2); ?>
+                <?php else: ?>
+                  <span style="color: var(--amber); font-size: 11px;">N/A — no rate</span>
+                <?php endif; ?>
+              </td>
               <td></td>
               <td></td>
               <td colspan="2"></td>
               <td colspan="3">TOTAL US$ ACTUAL CASH EQUIVALENT:</td>
-              <td style="text-align: right;">$0.00</td>
+              <td style="text-align: right;">
+                <?php if ($con_usd_equiv !== null): ?>
+                  $<?php echo number_format($con_usd_equiv, 2); ?>
+                <?php else: ?>
+                  <span style="color: var(--amber); font-size: 11px;">N/A — no rate</span>
+                <?php endif; ?>
+              </td>
               <td></td>
             </tr>
+
           </tbody>
         </table>
+        <?php endif; ?>
       </div>
 
     </div>

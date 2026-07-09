@@ -39,9 +39,25 @@ document.addEventListener("DOMContentLoaded", function () {
   var tcChargesInput = document.getElementById("tcCharges");
   var pricingMethodRadios = document.getElementsByName("pricing_method");
 
+  // New Custom Currency & Exchange Rate Reference DOM elements
+  var purchaseCurrencySelect = document.getElementById("purchaseCurrencyId");
+  var purchaseCurrencyValueInput = document.getElementById("purchaseCurrencyValue");
+  var exchangeCurrencySelect = document.getElementById("exchangeCurrencyId");
+  var exchangeRateValueInput = document.getElementById("exchangeRateValue");
+  var purchaseAmountInCurrencyInput = document.getElementById("purchaseAmountInCurrency");
+  var amountInCurrencyLabel = document.getElementById("amountInCurrencyLabel");
+  var equivalentPriceUsdDisplay = document.getElementById("equivalentPriceUsdDisplay");
+  var equivalentPriceRwfDisplay = document.getElementById("equivalentPriceRwfDisplay");
+
   function getPricingMethod() {
     var selected = document.querySelector('input[name="pricing_method"]:checked');
     return selected ? selected.value : 'lme';
+  }
+
+  function updateCurrencyUI() {
+    if (!purchaseCurrencySelect || !amountInCurrencyLabel) return;
+    var code = purchaseCurrencySelect.options[purchaseCurrencySelect.selectedIndex].text.split(' - ')[0];
+    amountInCurrencyLabel.textContent = "Price per kg in Selected Currency (" + code + ") *";
   }
 
   function updatePricingMethodUI() {
@@ -49,11 +65,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (method === 'manual') {
       priceKgUsd.removeAttribute("readonly");
       priceKgRwf.removeAttribute("readonly");
+      if (purchaseAmountInCurrencyInput) purchaseAmountInCurrencyInput.removeAttribute("readonly");
       lmePriceInput.setAttribute("disabled", "true");
       tcChargesInput.setAttribute("disabled", "true");
     } else {
       priceKgUsd.setAttribute("readonly", "true");
       priceKgRwf.setAttribute("readonly", "true");
+      // Price field stays editable in LME mode for manual override
+      if (purchaseAmountInCurrencyInput) purchaseAmountInCurrencyInput.removeAttribute("readonly");
       lmePriceInput.removeAttribute("disabled");
       tcChargesInput.removeAttribute("disabled");
     }
@@ -68,6 +87,10 @@ document.addEventListener("DOMContentLoaded", function () {
           input.removeAttribute("data-overridden");
         }
       });
+      // Clear price override when switching back to LME so formula takes over
+      if (purchaseAmountInCurrencyInput) {
+        purchaseAmountInCurrencyInput.removeAttribute("data-overridden");
+      }
     }
     calculateTotals();
   }
@@ -523,7 +546,27 @@ document.addEventListener("DOMContentLoaded", function () {
   function calculateTotals() {
     var method = getPricingMethod();
     var qty = parseFloat(qtyInput.value) || 0.0;
-    var exRate = parseFloat(exRateInput.value) || 1400.0;
+    
+    // Calculate legacy exchange rate from user inputs
+    var pVal = purchaseCurrencyValueInput ? parseFloat(purchaseCurrencyValueInput.value) || 1.0 : 1.0;
+    var eRateVal = exchangeRateValueInput ? parseFloat(exchangeRateValueInput.value) || 0.0 : 0.0;
+    var pCode = purchaseCurrencySelect ? purchaseCurrencySelect.options[purchaseCurrencySelect.selectedIndex].text.split(' - ')[0] : 'RWF';
+    var eCode = exchangeCurrencySelect ? exchangeCurrencySelect.options[exchangeCurrencySelect.selectedIndex].text.split(' - ')[0] : 'USD';
+    
+    var dbRate = parseFloat(window.latestExchangeRate) || 1400.0;
+    var exRate = dbRate; // Legacy exchange rate RWF/USD
+    if (pCode === 'RWF' && eCode === 'USD') {
+      exRate = eRateVal > 0 ? (pVal / eRateVal) : dbRate;
+    } else if (pCode === 'USD' && eCode === 'RWF') {
+      exRate = pVal > 0 ? (eRateVal / pVal) : dbRate;
+    } else {
+      exRate = 1.0;
+    }
+    
+    if (exRateInput) {
+      exRateInput.value = exRate.toFixed(6);
+    }
+    
     var productId = productSelect ? productSelect.value : "";
     var lme = parseFloat(lmePriceInput.value) || 0.0;
     var tc = parseFloat(tcChargesInput.value) || 0.0;
@@ -534,27 +577,38 @@ document.addEventListener("DOMContentLoaded", function () {
     var pricePerTaUnitInput = document.getElementById("pricePerTaUnit");
     var taUnit = pricePerTaUnitInput ? parseFloat(pricePerTaUnitInput.value) || 0.0 : 0.0;
     
-    var priceUsd = parseFloat(priceKgUsd.value) || 0.0;
+    var selectedCurrencyId = purchaseCurrencySelect ? purchaseCurrencySelect.value : "2";
+    var currencyCode = pCode;
     
-    var gradePct = 0.0;
-    if (primaryElementId) {
-      var primaryGradeInput = gradesInputContainer ? gradesInputContainer.querySelector('input[name="el_grade_' + primaryElementId + '"]') : null;
-      if (primaryGradeInput) {
-        gradePct = parseFloat(primaryGradeInput.value) || 0.0;
-      }
-    }
-
+    var amountInCurr = parseFloat(purchaseAmountInCurrencyInput.value) || 0.0;
+    
     if (method === 'manual') {
-      var priceRwf = priceUsd * exRate;
-      if (document.activeElement !== priceKgRwf) {
-        priceKgRwf.value = priceRwf > 0 ? parseFloat(priceRwf.toFixed(4)) : "";
+      var priceUsd = 0.0;
+      var priceRwf = 0.0;
+      
+      if (currencyCode === 'RWF') {
+        priceRwf = amountInCurr;
+        priceUsd = exRate > 0 ? priceRwf / exRate : 0.0;
+      } else {
+        priceUsd = amountInCurr;
+        priceRwf = priceUsd * exRate;
       }
+      
+      priceKgUsd.value = priceUsd > 0 ? parseFloat(priceUsd.toFixed(4)) : "";
+      priceKgRwf.value = priceRwf > 0 ? parseFloat(priceRwf.toFixed(4)) : "";
       
       var purchaseValueUsd = priceUsd * qty;
       var purchaseValueRwf = priceRwf * qty;
       
       valUsd.value = purchaseValueUsd.toFixed(2);
       valRwf.value = purchaseValueRwf.toFixed(2);
+      
+      if (equivalentPriceUsdDisplay) {
+        equivalentPriceUsdDisplay.textContent = "$" + priceUsd.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+      }
+      if (equivalentPriceRwfDisplay) {
+        equivalentPriceRwfDisplay.textContent = priceRwf.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + " Frw";
+      }
       
       var taxRraVal = parseFloat(rraTax.value) || 0.0;
       var taxRmaVal = parseFloat(rmaTax.value) || 0.0;
@@ -577,6 +631,25 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("pricingSummaryPreview").innerHTML = previewHtml;
       
     } else {
+      var gradePct = 0.0;
+      if (primaryElementId) {
+        var primaryGradeInput = gradesInputContainer ? gradesInputContainer.querySelector('input[name="el_grade_' + primaryElementId + '"]') : null;
+        if (primaryGradeInput) {
+          gradePct = parseFloat(primaryGradeInput.value) || 0.0;
+        }
+      }
+
+      // If user has manually overridden the price, pass it to the API
+      var manualPriceUsd = 0.0;
+      var priceIsOverridden = purchaseAmountInCurrencyInput && purchaseAmountInCurrencyInput.hasAttribute("data-overridden");
+      if (priceIsOverridden && amountInCurr > 0) {
+        if (currencyCode === 'RWF') {
+          manualPriceUsd = exRate > 0 ? amountInCurr / exRate : 0.0;
+        } else {
+          manualPriceUsd = amountInCurr;
+        }
+      }
+
       var url = "purchas_api.php?action=calculate" +
         "&product_id=" + encodeURIComponent(productId) +
         "&quantity_kg=" + encodeURIComponent(qty) +
@@ -586,20 +659,34 @@ document.addEventListener("DOMContentLoaded", function () {
         "&production_charges_per_kg=" + encodeURIComponent(prodChargesRate) +
         "&price_per_ta_unit=" + encodeURIComponent(taUnit) +
         "&grade_pct=" + encodeURIComponent(gradePct) +
-        "&price_per_kg_usd=" + encodeURIComponent(priceUsd);
+        "&price_per_kg_usd=" + encodeURIComponent(manualPriceUsd);
 
       fetch(url)
         .then(function(res) { return res.json(); })
         .then(function(result) {
           if (result.success) {
             var metrics = result.data;
-            if (document.activeElement !== priceKgUsd) {
-              var usdVal = parseFloat(metrics.price_per_kg_usd);
-              priceKgUsd.value = (isNaN(usdVal) || usdVal === 0) ? "" : usdVal;
+            
+            var usdVal = parseFloat(metrics.price_per_kg_usd) || 0.0;
+            var rwfVal = parseFloat(metrics.price_per_kg_rwf) || 0.0;
+            
+            priceKgUsd.value = usdVal > 0 ? usdVal : "";
+            priceKgRwf.value = rwfVal > 0 ? rwfVal : "";
+            
+            // Only update the price field if the user hasn't manually overridden it
+            if (!priceIsOverridden) {
+              if (currencyCode === 'RWF') {
+                purchaseAmountInCurrencyInput.value = rwfVal > 0 ? parseFloat(rwfVal.toFixed(4)) : "";
+              } else {
+                purchaseAmountInCurrencyInput.value = usdVal > 0 ? parseFloat(usdVal.toFixed(4)) : "";
+              }
             }
-            if (document.activeElement !== priceKgRwf) {
-              var rwfVal = parseFloat(metrics.price_per_kg_rwf);
-              priceKgRwf.value = (isNaN(rwfVal) || rwfVal === 0) ? "" : rwfVal;
+            
+            if (equivalentPriceUsdDisplay) {
+              equivalentPriceUsdDisplay.textContent = "$" + usdVal.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+            }
+            if (equivalentPriceRwfDisplay) {
+              equivalentPriceRwfDisplay.textContent = rwfVal.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + " Frw";
             }
             
             var purchaseValueUsd = parseFloat(metrics.purchase_value_usd);
@@ -631,7 +718,7 @@ document.addEventListener("DOMContentLoaded", function () {
             netPaidUsd.value = netPaidUsdVal.toFixed(4);
 
             var previewHtml = '<div class="summary-row"><span>Quantity:</span><span class="summary-val-usd">' + qty.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' kg</span></div>' +
-              '<div class="summary-row"><span>Unit Price:</span><span class="summary-val-usd">$' + parseFloat(priceKgUsd.value || metrics.price_per_kg_usd).toFixed(4) + ' <span class="summary-val-rwf">(' + parseFloat(priceKgRwf.value || metrics.price_per_kg_rwf).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
+              '<div class="summary-row"><span>Unit Price:</span><span class="summary-val-usd">$' + usdVal.toFixed(4) + ' <span class="summary-val-rwf">(' + rwfVal.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
               '<div class="summary-row"><span>Purchase Value:</span><span class="summary-val-usd">$' + purchaseValueUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span class="summary-val-rwf">(' + purchaseValueRwf.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RWF)</span></span></div>' +
               '<div class="summary-row"><span>Total Deductions/Taxes/Charges:</span><span class="summary-val-usd" style="color:var(--red)">-$' + totalTaxes.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + '</span></div>' +
               '<div class="summary-row"><span>Net Payable Amount:</span><span class="summary-val-usd" style="color:var(--green)">$' + netPaidUsdVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span></div>';
@@ -649,11 +736,86 @@ document.addEventListener("DOMContentLoaded", function () {
   var prodChargesPerKgInput = document.getElementById("productionChargesPerKg");
   var pricePerTaUnitInput = document.getElementById("pricePerTaUnit");
 
-  [qtyInput, exRateInput, priceKgUsd, priceKgRwf, lmePriceInput, tcChargesInput, prodChargesPerKgInput, pricePerTaUnitInput].forEach(function(input) {
+  [qtyInput, purchaseCurrencyValueInput, exchangeRateValueInput, lmePriceInput, tcChargesInput, prodChargesPerKgInput, pricePerTaUnitInput].forEach(function(input) {
     if (input) {
       input.addEventListener("input", calculateTotals);
     }
   });
+
+  // Separate listener for the price field to track manual override
+  if (purchaseAmountInCurrencyInput) {
+    purchaseAmountInCurrencyInput.addEventListener("input", function() {
+      var method = getPricingMethod();
+      if (method === 'lme') {
+        purchaseAmountInCurrencyInput.setAttribute("data-overridden", "true");
+      }
+      calculateTotals();
+    });
+  }
+
+  if (purchaseCurrencySelect) {
+    purchaseCurrencySelect.addEventListener("change", function() {
+      var selectedCode = purchaseCurrencySelect.options[purchaseCurrencySelect.selectedIndex].text.split(' - ')[0];
+      if (exchangeCurrencySelect) {
+        // Toggle opposite
+        for (var i = 0; i < exchangeCurrencySelect.options.length; i++) {
+          var optCode = exchangeCurrencySelect.options[i].text.split(' - ')[0];
+          if (optCode !== selectedCode) {
+            exchangeCurrencySelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      
+      // Default rate presets
+      var dbRate = parseFloat(window.latestExchangeRate) || 1400.0;
+      if (selectedCode === 'RWF') {
+        purchaseCurrencyValueInput.value = "1";
+        exchangeRateValueInput.value = (1.0 / dbRate).toFixed(8);
+      } else {
+        purchaseCurrencyValueInput.value = "1";
+        exchangeRateValueInput.value = dbRate.toFixed(4);
+      }
+      
+      updateCurrencyUI();
+      
+      // Sync manual values on currency switch
+      var method = getPricingMethod();
+      if (method === 'manual') {
+        var dbRate = parseFloat(window.latestExchangeRate) || 1400.0;
+        var rate = parseFloat(exRateInput.value) || dbRate;
+        var amount = parseFloat(purchaseAmountInCurrencyInput.value) || 0.0;
+        
+        if (selectedCode === 'RWF') {
+          priceKgRwf.value = amount;
+          priceKgUsd.value = rate > 0 ? parseFloat((amount / rate).toFixed(4)) : 0;
+        } else {
+          priceKgUsd.value = amount;
+          priceKgRwf.value = parseFloat((amount * rate).toFixed(4));
+        }
+      }
+      
+      calculateTotals();
+    });
+  }
+
+  if (exchangeCurrencySelect) {
+    exchangeCurrencySelect.addEventListener("change", function() {
+      var selectedCode = exchangeCurrencySelect.options[exchangeCurrencySelect.selectedIndex].text.split(' - ')[0];
+      if (purchaseCurrencySelect) {
+        // Toggle opposite
+        for (var i = 0; i < purchaseCurrencySelect.options.length; i++) {
+          var optCode = purchaseCurrencySelect.options[i].text.split(' - ')[0];
+          if (optCode !== selectedCode) {
+            purchaseCurrencySelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      updateCurrencyUI();
+      calculateTotals();
+    });
+  }
 
   if (pricingMethodRadios) {
     pricingMethodRadios.forEach(function(radio) {
@@ -673,40 +835,6 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
   });
-
-  if (priceKgUsd) {
-    priceKgUsd.addEventListener("focus", function() {
-      var val = parseFloat(priceKgUsd.value);
-      if (val === 0 || isNaN(val) || priceKgUsd.value === "0" || priceKgUsd.value === "0.00" || priceKgUsd.value === "0.0000") {
-        priceKgUsd.value = "";
-      }
-    });
-  }
-
-  if (priceKgRwf) {
-    priceKgRwf.addEventListener("focus", function() {
-      var val = parseFloat(priceKgRwf.value);
-      if (val === 0 || isNaN(val) || priceKgRwf.value === "0" || priceKgRwf.value === "0.00" || priceKgRwf.value === "0.0000") {
-        priceKgRwf.value = "";
-      }
-    });
-
-    priceKgRwf.addEventListener("input", function() {
-      if (document.activeElement === priceKgRwf) {
-        var rwfVal = parseFloat(priceKgRwf.value);
-        if (isNaN(rwfVal) || rwfVal === 0) {
-          priceKgUsd.value = "";
-          calculateTotals();
-        } else {
-          var exRate = parseFloat(exRateInput.value) || 1400.0;
-          if (exRate > 0) {
-            priceKgUsd.value = parseFloat((rwfVal / exRate).toFixed(4));
-            calculateTotals();
-          }
-        }
-      }
-    });
-  }
 
   // Next/Prev Buttons
   nextBtn.addEventListener("click", function() {
@@ -900,7 +1028,8 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       // Step 4: Pricing & Financials
-      exRateInput.value = p.exchange_rate || 1400.0;
+      var dbRate = parseFloat(window.latestExchangeRate) || 1400.0;
+      exRateInput.value = p.exchange_rate || dbRate;
       priceKgUsd.value = (p.price_per_kg_usd && parseFloat(p.price_per_kg_usd) !== 0) ? parseFloat(p.price_per_kg_usd) : "";
       priceKgRwf.value = (p.price_per_kg_rwf && parseFloat(p.price_per_kg_rwf) !== 0) ? parseFloat(p.price_per_kg_rwf) : "";
       valUsd.value = p.purchase_value_usd || "";
@@ -918,6 +1047,54 @@ document.addEventListener("DOMContentLoaded", function () {
       tcChargesInput.value = p.tc_charges || "";
       document.getElementById("pricePerTaUnit").value = p.price_per_ta_unit || "";
       
+      if (purchaseCurrencySelect) {
+        purchaseCurrencySelect.value = p.purchase_currency_id || "2"; // Default to USD (2)
+      }
+      updateCurrencyUI();
+      
+      var pCode = purchaseCurrencySelect ? purchaseCurrencySelect.options[purchaseCurrencySelect.selectedIndex].text.split(' - ')[0] : 'USD';
+      if (exchangeCurrencySelect) {
+        for (var i = 0; i < exchangeCurrencySelect.options.length; i++) {
+          var optCode = exchangeCurrencySelect.options[i].text.split(' - ')[0];
+          if (optCode !== pCode) {
+            exchangeCurrencySelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      
+      var eCode = exchangeCurrencySelect ? exchangeCurrencySelect.options[exchangeCurrencySelect.selectedIndex].text.split(' - ')[0] : '';
+      
+      if (p.exchange_rate) {
+        var dbRate = parseFloat(window.latestExchangeRate) || 1400.0;
+        var legacyRate = parseFloat(p.exchange_rate) || dbRate;
+        if (pCode === 'RWF' && eCode === 'USD') {
+          purchaseCurrencyValueInput.value = "1";
+          exchangeRateValueInput.value = (1.0 / legacyRate).toFixed(8);
+        } else if (pCode === 'USD' && eCode === 'RWF') {
+          purchaseCurrencyValueInput.value = "1";
+          exchangeRateValueInput.value = legacyRate.toFixed(4);
+        } else {
+          purchaseCurrencyValueInput.value = "1";
+          exchangeRateValueInput.value = "1";
+        }
+      } else {
+        var dbRate = parseFloat(window.latestExchangeRate) || 1400.0;
+        if (pCode === 'RWF') {
+          purchaseCurrencyValueInput.value = "1";
+          exchangeRateValueInput.value = (1.0 / dbRate).toFixed(8);
+        } else {
+          purchaseCurrencyValueInput.value = "1";
+          exchangeRateValueInput.value = dbRate.toFixed(4);
+        }
+      }
+
+      if (pCode === 'RWF') {
+        purchaseAmountInCurrencyInput.value = (p.price_per_kg_rwf && parseFloat(p.price_per_kg_rwf) !== 0) ? parseFloat(p.price_per_kg_rwf) : "";
+      } else {
+        purchaseAmountInCurrencyInput.value = (p.price_per_kg_usd && parseFloat(p.price_per_kg_usd) !== 0) ? parseFloat(p.price_per_kg_usd) : "";
+      }
+      
       var method = p.pricing_method || 'lme';
       var methodRadio = document.querySelector('input[name="pricing_method"][value="' + method + '"]');
       if (methodRadio) {
@@ -927,7 +1104,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (method === 'lme') {
         var qty = parseFloat(p.quantity_kg) || 0.0;
-        var exRate = parseFloat(p.exchange_rate) || 1400.0;
+        var dbRate = parseFloat(window.latestExchangeRate) || 1400.0;
+        var exRate = parseFloat(p.exchange_rate) || dbRate;
         var lme = parseFloat(p.lme_price) || 0.0;
         var tc = parseFloat(p.tc_charges) || 0.0;
         var prodChargesPerKg = parseFloat(p.production_charges_per_kg) || 0.0;
@@ -975,7 +1153,32 @@ document.addEventListener("DOMContentLoaded", function () {
       // ADD MODE
       document.getElementById("purchaseDate").value = new Date().toISOString().split('T')[0];
       document.getElementById("deliveryDate").value = "";
-      exRateInput.value = 1400.0;
+      
+      // Default to RWF for Purchase, USD for Exchange
+      if (purchaseCurrencySelect) {
+        for (var i = 0; i < purchaseCurrencySelect.options.length; i++) {
+          if (purchaseCurrencySelect.options[i].text.split(' - ')[0] === 'RWF') {
+            purchaseCurrencySelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      if (exchangeCurrencySelect) {
+        for (var i = 0; i < exchangeCurrencySelect.options.length; i++) {
+          if (exchangeCurrencySelect.options[i].text.split(' - ')[0] === 'USD') {
+            exchangeCurrencySelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      var dbRate = parseFloat(window.latestExchangeRate) || 1400.0;
+      if (purchaseCurrencyValueInput) purchaseCurrencyValueInput.value = "1";
+      if (exchangeRateValueInput) exchangeRateValueInput.value = (1.0 / dbRate).toFixed(8);
+      
+      updateCurrencyUI();
+      
+      if (exRateInput) exRateInput.value = dbRate.toFixed(6);
+      
       var methodRadio = document.querySelector('input[name="pricing_method"][value="lme"]');
       if (methodRadio) {
         methodRadio.checked = true;

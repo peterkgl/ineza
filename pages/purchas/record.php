@@ -31,6 +31,26 @@ if ($accQuery) {
     }
 }
 
+$currenciesList = [];
+$curQuery = mysqli_query($conn, "SELECT id, code, name FROM currencies WHERE is_active = 1 ORDER BY name ASC");
+if ($curQuery) {
+    while ($row = mysqli_fetch_assoc($curQuery)) {
+        $currenciesList[] = $row;
+    }
+}
+
+$exchangeRatesList = [];
+$erQuery = mysqli_query($conn, "SELECT er.id, er.rate, er.rate_date, fc.code as from_code, tc.code as to_code 
+                                FROM exchange_rates er
+                                JOIN currencies fc ON er.from_currency_id = fc.id
+                                JOIN currencies tc ON er.to_currency_id = tc.id
+                                ORDER BY er.rate_date DESC, er.id DESC");
+if ($erQuery) {
+    while ($row = mysqli_fetch_assoc($erQuery)) {
+        $exchangeRatesList[] = $row;
+    }
+}
+
 $suppliers = [];
 $supQuery = mysqli_query($conn, "SELECT id, name FROM suppliers WHERE is_active = 1 ORDER BY name ASC");
 if ($supQuery) {
@@ -349,10 +369,40 @@ if ($id > 0) {
             </div>
           </div>
 
+          <div class="form-grid-4" style="background: var(--bg); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px;">
+            <div class="form-group">
+              <label for="purchaseCurrencyId">Purchase Currency *</label>
+              <select id="purchaseCurrencyId" name="purchase_currency_id" class="form-control" required>
+                <?php foreach ($currenciesList as $c): ?>
+                  <option value="<?php echo $c['id']; ?>" <?php echo ($c['code'] === 'RWF') ? 'selected' : ''; ?>><?php echo htmlspecialchars($c['code'] . ' - ' . $c['name']); ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="purchaseCurrencyValue">Currency Value *</label>
+              <input type="number" id="purchaseCurrencyValue" class="form-control" placeholder="1.00" step="any" value="1" required>
+            </div>
+            <div class="form-group">
+              <label for="exchangeCurrencyId">Exchange Currency *</label>
+              <select id="exchangeCurrencyId" class="form-control" required>
+                <?php foreach ($currenciesList as $c): ?>
+                  <option value="<?php echo $c['id']; ?>" <?php echo ($c['code'] === 'USD') ? 'selected' : ''; ?>><?php echo htmlspecialchars($c['code'] . ' - ' . $c['name']); ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="exchangeRateValue">Exchange Rate *</label>
+              <input type="number" id="exchangeRateValue" class="form-control" placeholder="0.00068" step="any" value="0.00068" required>
+            </div>
+          </div>
+
+          <!-- Hidden legacy input kept for API & DB compatibility -->
+          <input type="hidden" id="exchangeRate" name="exchange_rate" value="1400.00">
+
           <div class="form-grid-3">
             <div class="form-group">
-              <label for="exchangeRate">Exchange Rate (RWF/USD)</label>
-              <input type="number" id="exchangeRate" name="exchange_rate" class="form-control" placeholder="1400.00" step="any" value="1400.00">
+              <label id="amountInCurrencyLabel" for="purchaseAmountInCurrency">Price per kg in Selected Currency *</label>
+              <input type="number" id="purchaseAmountInCurrency" name="purchase_amount_in_currency" class="form-control" placeholder="0.00" step="any" required>
             </div>
             <div class="form-group">
               <label for="lmePrice">LME Price (USD / Ton or Unit)</label>
@@ -364,14 +414,18 @@ if ($id > 0) {
             </div>
           </div>
 
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label for="pricePerKgUsd">Price per kg (USD) *</label>
-              <input type="number" id="pricePerKgUsd" name="price_per_kg_usd" class="form-control" placeholder="600" step="any" required>
+          <!-- Hidden inputs kept for logic integration -->
+          <input type="hidden" id="pricePerKgUsd" name="price_per_kg_usd">
+          <input type="hidden" id="pricePerKgRwf" name="price_per_kg_rwf">
+
+          <div class="form-grid-2" style="background: var(--bg); padding: 16px; border-radius: var(--radius); border: 1px dashed var(--border); margin-bottom: 15px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text3);">Equivalent Price (USD/kg)</label>
+              <div id="equivalentPriceUsdDisplay" style="font-size: 16px; font-weight: 600; color: var(--green); padding: 6px 0;">$0.00</div>
             </div>
-            <div class="form-group">
-              <label for="pricePerKgRwf">Price per kg (RWF)</label>
-              <input type="number" id="pricePerKgRwf" name="price_per_kg_rwf" class="form-control" placeholder="600" step="any">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text3);">Equivalent Price (RWF/kg)</label>
+              <div id="equivalentPriceRwfDisplay" style="font-size: 16px; font-weight: 600; color: var(--text2); padding: 6px 0;">0.00 Frw</div>
             </div>
           </div>
 
@@ -468,8 +522,22 @@ if ($id > 0) {
   </div>
 </div>
 
+<?php
+$latestRate = 1400.0;
+if (!empty($exchangeRatesList)) {
+    foreach ($exchangeRatesList as $r) {
+        if ($r['from_code'] === 'USD' && $r['to_code'] === 'RWF') {
+            $latestRate = (float)$r['rate'];
+            break;
+        }
+    }
+}
+?>
 <script>
   window.editingPurchaseData = <?php echo ($id > 0 && $purchaseRecord) ? json_encode($purchaseRecord) : 'null'; ?>;
+  window.currenciesList = <?php echo json_encode($currenciesList); ?>;
+  window.exchangeRatesList = <?php echo json_encode($exchangeRatesList); ?>;
+  window.latestExchangeRate = <?php echo $latestRate; ?>;
 </script>
 <script src="../../src/js/navbar.js"></script>
 <script src="../../src/js/sidebar.js"></script>
