@@ -283,5 +283,7 @@ $total_bal = 0.0;
     searchTable();
   }
 </script>
+<script src="../../src/js/navbar.js"></script>
+<script src="../../src/js/sidebar.js"></script>
 </body>
 </html>

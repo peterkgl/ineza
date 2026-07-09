@@ -381,5 +381,7 @@ $diff = $adjusted_bank - $adjusted_book;
   </div>
 </div>
 
+<script src="../../src/js/navbar.js"></script>
+<script src="../../src/js/sidebar.js"></script>
 </body>
 </html>

@@ -362,5 +362,7 @@ $avg_grade = $total_qty > 0 ? $total_grade_weight / $total_qty : 0.0;
     searchTable();
   }
 </script>
+<script src="../../src/js/navbar.js"></script>
+<script src="../../src/js/sidebar.js"></script>
 </body>
 </html>

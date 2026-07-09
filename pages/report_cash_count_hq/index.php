@@ -309,5 +309,7 @@ $usd_denoms = [100, 50, 20, 10, 5, 1];
   </div>
 </div>
 
+<script src="../../src/js/navbar.js"></script>
+<script src="../../src/js/sidebar.js"></script>
 </body>
 </html>

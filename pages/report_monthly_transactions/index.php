@@ -502,5 +502,7 @@ $db_res = mysqli_query($conn, $query);
     searchTable();
   }
 </script>
+<script src="../../src/js/navbar.js"></script>
+<script src="../../src/js/sidebar.js"></script>
 </body>
 </html>
