@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   
   var activeDeleteId = null;
+  var highlightedProductId = null;
   var allProducts = [];
   var searchInput = document.getElementById('searchInput');
 
@@ -127,7 +128,9 @@ document.addEventListener('DOMContentLoaded', function () {
         ? '<span class="status-pill pill-green">Active</span>'
         : '<span class="status-pill pill-red">Inactive</span>';
 
-      html += '<tr>' +
+      var rowClass = (p.id === highlightedProductId) ? ' class="row-highlight"' : '';
+
+      html += '<tr' + rowClass + '>' +
         '<td>' + globalIndex + '</td>' +
         '<td><span class="code-badge">' + codeVal + '</span></td>' +
         '<td><strong>' + nameVal + '</strong></td>' +
@@ -150,6 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     productsList.innerHTML = html;
+    highlightedProductId = null;
     attachRowEventListeners(paginated);
     renderPagination(totalItems, totalPages);
   }
@@ -367,6 +371,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (result.success) {
           showAlert(alertPlaceholder, 'success', result.message);
           resetForm();
+          if (result.data && result.data.id) {
+            highlightedProductId = result.data.id;
+          }
           fetchProducts();
         } else {
           showAlert(formAlertPlaceholder, 'error', result.message);

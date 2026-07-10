@@ -220,3 +220,13 @@
   border: 1px solid var(--border);
   color: var(--text2);
 }
+
+@keyframes rowHighlight {
+  0% { background-color: var(--alert-green-bg); }
+  30% { background-color: var(--alert-green-bg); }
+  100% { background-color: transparent; }
+}
+
+.row-highlight {
+  animation: rowHighlight 3s ease-out;
+}
