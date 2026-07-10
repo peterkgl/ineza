@@ -32,14 +32,35 @@ if (!empty($filter_date)) {
     $date_cond = " AND MONTH({$date_col}) = '" . mysqli_real_escape_string($conn, $filter_month) . "' ";
 }
 
-// Fetch database records (product_id = 1 is Tin, element_id = 4 is Sn)
-$query = "SELECT p.purchase_date as tx_date, s.name as supplier_name, p.purchase_no,
-            SUM(p.quantity_kg) as total_weight, AVG(peg.grade_pct) as avg_grade, AVG(p.lme_price) as avg_lme
+// Helper function to format grade values as percentage
+function formatGradeHtml($val) {
+    if (is_null($val) || $val === '') return '';
+    $val = (float)$val;
+    if ($val <= 1.0) {
+        $val = $val * 100;
+    }
+    return number_format($val, 2) . '%';
+}
+
+// Fetch database records (product_id = 1 is Tin, Sn = 5, Fe = 4, Bal = 6)
+$query = "SELECT p.purchase_date as tx_date, p.negociant, s.name as supplier_name, p.purchase_no,
+            SUM(p.quantity_kg) as total_weight,
+            AVG(peg.grade_sn) as avg_sn,
+            AVG(peg.grade_fe) as avg_fe,
+            AVG(peg.grade_bal) as avg_bal,
+            AVG(p.lme_price) as avg_lme
           FROM purchasing p
           JOIN suppliers s ON p.supplier_id = s.id
-          LEFT JOIN purchasing_element_grade peg ON peg.purchasing_id = p.id AND peg.product_element_id = 4
+          LEFT JOIN (
+              SELECT purchasing_id,
+                     MAX(CASE WHEN product_element_id = 5 THEN grade_pct END) as grade_sn,
+                     MAX(CASE WHEN product_element_id = 4 THEN grade_pct END) as grade_fe,
+                     MAX(CASE WHEN product_element_id = 6 THEN grade_pct END) as grade_bal
+              FROM purchasing_element_grade
+              GROUP BY purchasing_id
+          ) peg ON peg.purchasing_id = p.id
           WHERE p.product_id = 1 {$date_cond}
-          GROUP BY s.id, p.purchase_date, p.purchase_no
+          GROUP BY p.id, p.purchase_date, p.purchase_no, p.negociant, s.name
           ORDER BY p.purchase_date ASC, s.name ASC";
 $db_res = mysqli_query($conn, $query);
 $total_w = 0.0;
@@ -182,12 +203,12 @@ $total_w = 0.0;
             ?>
               <tr class="data-row">
                 <td><?php echo htmlspecialchars($row['tx_date']); ?></td>
-                <td><?php echo htmlspecialchars($row['supplier_name']); ?></td>
+                <td><?php echo htmlspecialchars($row['negociant'] ?? ''); ?></td>
                 <td><?php echo htmlspecialchars($row['purchase_no']); ?></td>
                 <td style="text-align: right;"><?php echo number_format($weight, 1); ?></td>
-                <td style="text-align: right;"><?php echo (float)$row['avg_grade'] > 0 ? number_format((float)$row['avg_grade'] * 100, 2) . '%' : ''; ?></td>
-                <td style="text-align: right;"></td>
-                <td style="text-align: right;"></td>
+                <td style="text-align: right;"><?php echo formatGradeHtml($row['avg_sn']); ?></td>
+                <td style="text-align: right;"><?php echo formatGradeHtml($row['avg_fe']); ?></td>
+                <td style="text-align: right;"><?php echo formatGradeHtml($row['avg_bal']); ?></td>
                 <td style="text-align: right;"><?php echo (float)$row['avg_lme'] > 0 ? '$' . number_format((float)$row['avg_lme'], 2) : ''; ?></td>
               </tr>
             <?php

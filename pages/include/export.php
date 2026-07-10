@@ -221,9 +221,59 @@ if ($sheet === 'purchase_logs_ta') {
             $rows_data[] = $row_vals;
         }
     }
-} elseif ($sheet === 'tin_summary' || $sheet === 'ta_summary') {
-    $product_id = ($sheet === 'tin_summary') ? 1 : 2;
-    $grade_elem_id = ($product_id === 1) ? 4 : 1;
+} elseif ($sheet === 'tin_summary') {
+    if (!function_exists('formatGradeExcel')) {
+        function formatGradeExcel($val) {
+            if (is_null($val) || $val === '') return '';
+            $val = (float)$val;
+            if ($val > 1.0) {
+                $val = $val / 100;
+            }
+            return $val;
+        }
+    }
+
+    $query = "SELECT p.purchase_date as tx_date, p.negociant, s.name as supplier_name, p.purchase_no,
+                SUM(p.quantity_kg) as total_weight,
+                AVG(peg.grade_sn) as avg_sn,
+                AVG(peg.grade_fe) as avg_fe,
+                AVG(peg.grade_bal) as avg_bal,
+                AVG(p.lme_price) as avg_lme
+              FROM purchasing p 
+              JOIN suppliers s ON p.supplier_id = s.id
+              LEFT JOIN (
+                  SELECT purchasing_id,
+                         MAX(CASE WHEN product_element_id = 5 THEN grade_pct END) as grade_sn,
+                         MAX(CASE WHEN product_element_id = 4 THEN grade_pct END) as grade_fe,
+                         MAX(CASE WHEN product_element_id = 6 THEN grade_pct END) as grade_bal
+                  FROM purchasing_element_grade
+                  GROUP BY purchasing_id
+              ) peg ON peg.purchasing_id = p.id
+              WHERE p.product_id = 1 {$date_cond}
+              GROUP BY p.id, p.purchase_date, p.purchase_no, p.negociant, s.name 
+              ORDER BY p.purchase_date ASC";
+    $db_res = mysqli_query($conn, $query);
+    $idx = 0;
+    if ($db_res) {
+        while ($db_row = mysqli_fetch_assoc($db_res)) {
+            $idx++;
+            $row_vals = array_fill(0, 10, '');
+            $row_vals[0] = '';
+            $row_vals[1] = $db_row['tx_date'];
+            $row_vals[2] = $db_row['negociant'] ?? '';
+            $row_vals[3] = $db_row['purchase_no'];
+            $row_vals[4] = (float)$db_row['total_weight'] > 0 ? (float)$db_row['total_weight'] : '';
+            $row_vals[5] = formatGradeExcel($db_row['avg_sn']);
+            $row_vals[6] = formatGradeExcel($db_row['avg_fe']);
+            $row_vals[7] = formatGradeExcel($db_row['avg_bal']);
+            $row_vals[8] = (float)$db_row['avg_lme'] > 0 ? (float)$db_row['avg_lme'] : '';
+
+            $rows_data[] = $row_vals;
+        }
+    }
+} elseif ($sheet === 'ta_summary') {
+    $product_id = 2;
+    $grade_elem_id = 1;
     $query = "SELECT p.purchase_date as tx_date, s.name as supplier_name, p.purchase_no,
                 SUM(p.quantity_kg) as total_weight, AVG(peg.grade_pct) as avg_grade, AVG(p.lme_price) as avg_lme
               FROM purchasing p 
@@ -244,14 +294,8 @@ if ($sheet === 'purchase_logs_ta') {
             $row_vals[3] = $db_row['purchase_no'];
             $row_vals[4] = (float)$db_row['total_weight'] > 0 ? (float)$db_row['total_weight'] : '';
             $row_vals[5] = (float)$db_row['avg_grade'] > 0 ? (float)$db_row['avg_grade'] : '';
-            if ($sheet === 'tin_summary') {
-                $row_vals[6] = ''; // Fe
-                $row_vals[7] = ''; // Bal
-                $row_vals[8] = (float)$db_row['avg_lme'] > 0 ? (float)$db_row['avg_lme'] : '';
-            } else {
-                $row_vals[6] = ''; // Nb2O5
-                $row_vals[7] = ''; // Fe
-            }
+            $row_vals[6] = ''; // Nb2O5
+            $row_vals[7] = ''; // Fe
 
             $rows_data[] = $row_vals;
         }
