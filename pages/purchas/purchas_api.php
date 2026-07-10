@@ -757,9 +757,11 @@ switch ($action) {
 
             // Get Inventory Account
             $stmt = mysqli_prepare($conn, "
-                SELECT inventory_account_id
+                SELECT inventory_account_id, accounts.account_type_id
                 FROM product
-                WHERE id = ?
+                INNER JOIN accounts 
+                ON accounts.account_code = product.inventory_account_id
+                WHERE product.id = ?
             ");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . mysqli_error($conn));
@@ -773,14 +775,19 @@ switch ($action) {
             if (!$product) {
                 throw new Exception("Product not found.");
             }
-            $inventoryAccount = $product['inventory_account_id'];
+            $inventoryAccount = isset($product['inventory_account_id']) ? (int)$product['inventory_account_id'] : 0;
+            $InventoryParentAccount = isset($product['account_type_id']) ? (int)$product['account_type_id'] : 0;
+
+            if ($inventoryAccount <= 0) {
+                throw new Exception("Inventory account was not found for the selected product.");
+            }
 
             // Get Supplier Account
             $stmt = mysqli_prepare($conn, "
-                SELECT accounts.id
+                SELECT payables_account_id, accounts.account_type_id
                 FROM suppliers
                 INNER JOIN accounts
-                    ON accounts.id = suppliers.payables_account_id
+                    ON accounts.account_code = suppliers.payables_account_id
                 WHERE suppliers.id = ?
             ");
             if (!$stmt) {
@@ -795,7 +802,12 @@ switch ($action) {
             if (!$supplier) {
                 throw new Exception("Supplier account not found.");
             }
-            $supplierAccount = $supplier['id'];
+            $supplierAccount = isset($supplier['payables_account_id']) ? (int)$supplier['payables_account_id'] : 0;
+            $supplierAccountType = isset($supplier['account_type_id']) ? (int)$supplier['account_type_id'] : 0;
+
+            if ($supplierAccount <= 0) {
+                throw new Exception("Supplier payables account was not found.");
+            }
 
             // Insert Journal Header
             $status = "AUTO POSTED";
@@ -833,6 +845,7 @@ switch ($action) {
                 INSERT INTO journal_entry_lines
                 (
                     journal_entry_id,
+                    parent_account_id,
                     account_id,
                     debit,
                     credit,
@@ -842,7 +855,7 @@ switch ($action) {
                     amount_base,
                     description
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . mysqli_error($conn));
@@ -854,8 +867,9 @@ switch ($action) {
 
             mysqli_stmt_bind_param(
                 $stmt,
-                "iiddiddds",
+                "iiiddiddds",
                 $journalEntryId,
+                $InventoryParentAccount,
                 $inventoryAccount,
                 $debit,
                 $credit,
@@ -875,8 +889,9 @@ switch ($action) {
 
             mysqli_stmt_bind_param(
                 $stmt,
-                "iiddiddds",
+                "iiiddiddds",
                 $journalEntryId,
+                $supplierAccountType,
                 $supplierAccount,
                 $debit,
                 $credit,
@@ -898,10 +913,13 @@ switch ($action) {
 
         } catch (Exception $e) {
             mysqli_rollback($conn);
+
             $msg = $e->getMessage();
+
             if (strpos($msg, 'Duplicate entry') !== false) {
                 $msg = "Duplicate chemical element selected. Each element can only be added once per purchase.";
             }
+
             sendResponse(false, $msg);
         }
         break;

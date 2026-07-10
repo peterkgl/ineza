@@ -284,7 +284,7 @@ switch ($action) {
                                         '" . mysqli_real_escape_string($conn, $custEmail) . "', 
                                         '" . mysqli_real_escape_string($conn, $custAddress) . "', 
                                         '" . mysqli_real_escape_string($conn, $custCountry) . "', 
-                                        $receivableAccountId, 
+                                        $nextCode, 
                                         '$currency', 
                                         1, 
                                         '" . mysqli_real_escape_string($conn, $custNotes) . "'

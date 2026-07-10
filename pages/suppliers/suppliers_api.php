@@ -196,7 +196,7 @@ switch ($action) {
 
             $insertQuery = "INSERT INTO suppliers 
                             (supplier_type, name, nif, phone, email, address, payables_account_id, notes, is_active, created_by) 
-                            VALUES ('$supplier_type', '$nameEsc', '$nifEsc', '$phoneEsc', '$emailEsc', '$addressEsc', $accountId, '$notesEsc', $is_active, $userId)";
+                            VALUES ('$supplier_type', '$nameEsc', '$nifEsc', '$phoneEsc', '$emailEsc', '$addressEsc', $nextCode, '$notesEsc', $is_active, $userId)";
             
             if (mysqli_query($conn, $insertQuery)) {
                 $newId = mysqli_insert_id($conn);
