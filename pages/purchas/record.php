@@ -402,7 +402,7 @@ if ($id > 0) {
           <div class="form-grid-3">
             <div class="form-group">
               <label id="amountInCurrencyLabel" for="purchaseAmountInCurrency">Price per kg in Selected Currency *</label>
-              <input type="number" id="purchaseAmountInCurrency" name="purchase_amount_in_currency" class="form-control" placeholder="0.00" step="any" required>
+              <input type="text" id="purchaseAmountInCurrency" name="purchase_amount_in_currency" class="form-control" placeholder="0.00" step="any" readonly>
             </div>
             <div class="form-group">
               <label for="lmePrice">LME Price (USD / Ton or Unit)</label>
