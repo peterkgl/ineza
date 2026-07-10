@@ -149,6 +149,155 @@ switch ($action) {
                 throw new Exception("Failed to insert stock movement: " . mysqli_error($conn));
             }
 
+            // Create journal entry for stock adjustment
+            $dateStr = date('Ymd', strtotime($today));
+            $prefix = "JE-" . $dateStr . "-";
+            $stmt = mysqli_prepare($conn, "
+                SELECT COUNT(*) AS cnt
+                FROM journal_entries
+                WHERE journal_no LIKE CONCAT(?, '%')
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_bind_param($stmt, "s", $prefix);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $count = mysqli_fetch_assoc($result)['cnt'];
+            mysqli_stmt_close($stmt);
+
+            $journalNo = $prefix . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+
+            $stmt = mysqli_prepare($conn, "
+                SELECT
+                    p.inventory_account_id AS inventory_account_code,
+                    p.cogs_account_id AS cogs_account_code,
+                    inv.id AS inventory_account_id,
+                    inv.account_type_id AS inventory_parent_account_id,
+                    cog.id AS cogs_account_id,
+                    cog.account_type_id AS cogs_parent_account_id
+                FROM product p
+                LEFT JOIN accounts inv ON inv.account_code = p.inventory_account_id
+                LEFT JOIN accounts cog ON cog.account_code = p.cogs_account_id
+                WHERE p.id = ?
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_bind_param($stmt, "i", $product_id);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $productInfo = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$productInfo || empty($productInfo['inventory_account_id'])) {
+                throw new Exception('Inventory account was not found for the selected product.');
+            }
+
+            $inventoryAccount = (int)$productInfo['inventory_account_id'];
+            $inventoryParentAccount = isset($productInfo['inventory_parent_account_id']) ? (int)$productInfo['inventory_parent_account_id'] : 0;
+            $effectAccount = null;
+            $effectParentAccount = 0;
+            $debitAccountId = $inventoryAccount;
+            $creditAccountId = $inventoryAccount;
+            $debitParentAccountId = $inventoryParentAccount;
+            $creditParentAccountId = $inventoryParentAccount;
+
+            if ($adjustment_type === 'loss') {
+                $effectAccount = isset($productInfo['cogs_account_id']) && (int)$productInfo['cogs_account_id'] > 0 ? (int)$productInfo['cogs_account_id'] : $inventoryAccount;
+                $effectParentAccount = isset($productInfo['cogs_parent_account_id']) ? (int)$productInfo['cogs_parent_account_id'] : $inventoryParentAccount;
+                $debitAccountId = $effectAccount;
+                $creditAccountId = $inventoryAccount;
+                $debitParentAccountId = $effectParentAccount;
+                $creditParentAccountId = $inventoryParentAccount;
+                $journalDescription = 'Stock adjustment loss for product #' . $product_id;
+            } else {
+                $effectAccount = isset($productInfo['cogs_account_id']) && (int)$productInfo['cogs_account_id'] > 0 ? (int)$productInfo['cogs_account_id'] : $inventoryAccount;
+                $effectParentAccount = isset($productInfo['cogs_parent_account_id']) ? (int)$productInfo['cogs_parent_account_id'] : $inventoryParentAccount;
+                $debitAccountId = $inventoryAccount;
+                $creditAccountId = $effectAccount;
+                $debitParentAccountId = $inventoryParentAccount;
+                $creditParentAccountId = $effectParentAccount;
+                $journalDescription = 'Stock adjustment gain for product #' . $product_id;
+            }
+
+            $stmt = mysqli_prepare($conn, "
+                INSERT INTO journal_entries
+                (journal_no, entry_date, description, statuss, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?, NOW())
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            $status = 'AUTO POSTED';
+            mysqli_stmt_bind_param($stmt, "ssssi", $journalNo, $today, $journalDescription, $status, $userId);
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception(mysqli_error($conn));
+            }
+            $journalEntryId = mysqli_insert_id($conn);
+            mysqli_stmt_close($stmt);
+
+            $currencyId = isset($stock['purchase_currency_id']) && (int)$stock['purchase_currency_id'] > 0 ? (int)$stock['purchase_currency_id'] : 2;
+            $exchangeRate = isset($stock['exchange_rate']) && (float)$stock['exchange_rate'] > 0 ? (float)$stock['exchange_rate'] : 1.0;
+
+            $unitCost = null;
+            if ($currencyId === 1) {
+                $unitCost = isset($stock['avg_cost_per_kg_rwf']) ? (float)$stock['avg_cost_per_kg_rwf'] : null;
+            } else {
+                $unitCost = isset($stock['avg_cost_per_kg_usd']) ? (float)$stock['avg_cost_per_kg_usd'] : null;
+            }
+
+            if ($unitCost === null || $unitCost < 0) {
+                $unitCost = 0.0;
+            }
+
+            $amountCurrency = $unitCost * (float)$quantity;
+            $amountBase = $amountCurrency * $exchangeRate;
+            $zeroAmount = 0.0;
+            $lineStmt = mysqli_prepare($conn, "
+                INSERT INTO journal_entry_lines
+                (
+                    journal_entry_id,
+                    parent_account_id,
+                    account_id,
+                    debit,
+                    credit,
+                    currency_id,
+                    exchange_rate,
+                    amount_currency,
+                    amount_base,
+                    description
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            if (!$lineStmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+
+            if ($adjustment_type === 'loss') {
+                mysqli_stmt_bind_param($lineStmt, "iiiddiddds", $journalEntryId, $debitParentAccountId, $debitAccountId, $amountCurrency, $zeroAmount, $currencyId, $exchangeRate, $amountCurrency, $amountBase, $journalDescription);
+                if (!mysqli_stmt_execute($lineStmt)) {
+                    throw new Exception(mysqli_error($conn));
+                }
+
+                mysqli_stmt_bind_param($lineStmt, "iiiddiddds", $journalEntryId, $creditParentAccountId, $creditAccountId, $zeroAmount, $amountCurrency, $currencyId, $exchangeRate, $amountCurrency, $amountBase, $journalDescription);
+                if (!mysqli_stmt_execute($lineStmt)) {
+                    throw new Exception(mysqli_error($conn));
+                }
+            } else {
+                mysqli_stmt_bind_param($lineStmt, "iiiddiddds", $journalEntryId, $debitParentAccountId, $debitAccountId, $amountCurrency, $zeroAmount, $currencyId, $exchangeRate, $amountCurrency, $amountBase, $journalDescription);
+                if (!mysqli_stmt_execute($lineStmt)) {
+                    throw new Exception(mysqli_error($conn));
+                }
+
+                mysqli_stmt_bind_param($lineStmt, "iiiddiddds", $journalEntryId, $creditParentAccountId, $creditAccountId, $zeroAmount, $amountCurrency, $currencyId, $exchangeRate, $amountCurrency, $amountBase, $journalDescription);
+                if (!mysqli_stmt_execute($lineStmt)) {
+                    throw new Exception(mysqli_error($conn));
+                }
+            }
+
+            mysqli_stmt_close($lineStmt);
+
             logAudit($conn, 'UPDATE', 'stock', "Adjustment: " . ucfirst($adjustment_type), "Adjusted stock id $stock_id by $quantity kg (" . ucfirst($adjustment_type) . ")", $stock, [
                 'id' => $stock_id,
                 'qty_adjusted' => $new_adjusted,
