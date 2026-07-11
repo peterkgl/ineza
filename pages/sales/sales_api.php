@@ -82,6 +82,41 @@ function getNextCustomerAccountCode() {
     return (string)$nextCode;
 }
 
+function resolveAccountDetails($conn, $accountRef) {
+    if ($accountRef === null || $accountRef === '') {
+        return null;
+    }
+
+    $numericRef = is_numeric($accountRef) ? (int)$accountRef : 0;
+    $accountRefEsc = (string)$accountRef;
+
+    $stmt = mysqli_prepare($conn, "
+        SELECT id, account_code, account_type_id
+        FROM accounts
+        WHERE id = ? OR account_code = ?
+        LIMIT 1
+    ");
+    if (!$stmt) {
+        throw new Exception('Prepare failed: ' . mysqli_error($conn));
+    }
+
+    mysqli_stmt_bind_param($stmt, "is", $numericRef, $accountRefEsc);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $account = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+
+    if (!$account) {
+        return null;
+    }
+
+    return [
+        'id' => (int)$account['id'],
+        'account_code' => (string)$account['account_code'],
+        'parent_account_id' => (int)$account['account_type_id']
+    ];
+}
+
 switch ($action) {
     case 'get_stock':
         $productId = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
@@ -240,11 +275,11 @@ switch ($action) {
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
         $saleNo = isset($_POST['sale_no']) ? trim($_POST['sale_no']) : '';
 
-        // Payment fields
-        $amountPaid = isset($_POST['amount_paid']) ? (float)$_POST['amount_paid'] : 0.0;
-        $paymentMethod = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : 'CASH';
-        $accountId = isset($_POST['account_id']) ? (int)$_POST['account_id'] : 0;
-        $referenceNo = isset($_POST['reference_no']) ? trim($_POST['reference_no']) : '';
+        // Payment fields are intentionally disabled in the current sales flow.
+        // $amountPaid = isset($_POST['amount_paid']) ? (float)$_POST['amount_paid'] : 0.0;
+        // $paymentMethod = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : 'CASH';
+        // $accountId = isset($_POST['account_id']) ? (int)$_POST['account_id'] : 0;
+        // $referenceNo = isset($_POST['reference_no']) ? trim($_POST['reference_no']) : '';
 
         // Items JSON
         $itemsJson = isset($_POST['items']) ? $_POST['items'] : '[]';
@@ -291,7 +326,10 @@ switch ($action) {
                     throw new Exception('Failed to create customer account: ' . mysqli_error($conn));
                 }
                 
-                $receivableAccountId = mysqli_insert_id($conn);
+                $receivableAccountCode = $nextCode;
+                if (empty($receivableAccountCode)) {
+                    throw new Exception('Failed to resolve the newly created customer receivable account code.');
+                }
 
                 // Insert Customer
                 $custCode = 'CUST-' . date('Y') . '-' . strtoupper(bin2hex(random_bytes(2)));
@@ -306,7 +344,7 @@ switch ($action) {
                                         '" . mysqli_real_escape_string($conn, $custEmail) . "', 
                                         '" . mysqli_real_escape_string($conn, $custAddress) . "', 
                                         '" . mysqli_real_escape_string($conn, $custCountry) . "', 
-                                        $nextCode, 
+                                        '$receivableAccountCode', 
                                         '$currency', 
                                         1, 
                                         '" . mysqli_real_escape_string($conn, $custNotes) . "'
@@ -436,6 +474,10 @@ switch ($action) {
             $saleId = mysqli_insert_id($conn);
 
             // Step 5: Save Sells Items & Update Stocks
+            $cogsTotalAmountCurrency = 0.0;
+            $salesTotalAmountCurrency = 0.0;
+            $saleLineAccounts = [];
+
             foreach ($validatedItems as $vItem) {
                 $stockRow = $vItem['stock_row'];
                 $stockId = $vItem['stock_id'];
@@ -444,6 +486,8 @@ switch ($action) {
                 $avgCostRwf = (float)$stockRow['avg_cost_per_kg_rwf'];
                 $cogsTotalUsd = $vItem['quantity_kg'] * $avgCostUsd;
                 $cogsTotalRwf = $vItem['quantity_kg'] * $avgCostRwf;
+                $cogsTotalAmountCurrency = ($currency === 'USD') ? $cogsTotalUsd : $cogsTotalRwf;
+                $salesLineAmountCurrency = ($currency === 'USD') ? $vItem['line_value_usd'] : $vItem['line_value_rwf'];
 
                 // Insert sells_item
                 $insertItemQuery = "INSERT INTO sells_item (
@@ -492,6 +536,16 @@ switch ($action) {
                     throw new Exception('Failed to update inventory stock levels: ' . mysqli_error($conn));
                 }
 
+                $saleLineAccounts[] = [
+                    'product_id' => $vItem['product_id'],
+                    'cogs_amount' => $cogsTotalAmountCurrency,
+                    'sales_amount' => $salesLineAmountCurrency,
+                    'cogs_total_usd' => $cogsTotalUsd,
+                    'cogs_total_rwf' => $cogsTotalRwf,
+                    'sales_total_usd' => $vItem['line_value_usd'],
+                    'sales_total_rwf' => $vItem['line_value_rwf']
+                ];
+
                 // Log stock movement
                 $mvtNotesEsc = mysqli_real_escape_string($conn, "Sold via order: $saleNo");
                 $insertMvtQuery = "INSERT INTO stock_movement (
@@ -523,20 +577,169 @@ switch ($action) {
                 }
             }
 
-            // Step 6: Process Payment if amount_paid > 0
+            $customerAccount = null;
+            $customerAccountInfo = null;
+            $customerAccountQuery = mysqli_query($conn, "
+                SELECT c.receivable_account_id
+                FROM customer c
+                WHERE c.id = $customerId
+                LIMIT 1
+            ");
+            if ($customerAccountQuery && mysqli_num_rows($customerAccountQuery) > 0) {
+                $customerRow = mysqli_fetch_assoc($customerAccountQuery);
+                $customerAccount = $customerRow['receivable_account_id'];
+                $customerAccountInfo = resolveAccountDetails($conn, $customerAccount);
+            }
+
+            if (!$customerAccountInfo || empty($customerAccountInfo['account_code'])) {
+                throw new Exception('Customer receivable account was not found.');
+            }
+
+            $currencyId = 2;
+            $currencyQuery = mysqli_query($conn, "SELECT id FROM currencies WHERE code = '" . mysqli_real_escape_string($conn, $currency) . "' LIMIT 1");
+            if ($currencyQuery && mysqli_num_rows($currencyQuery) > 0) {
+                $currencyRow = mysqli_fetch_assoc($currencyQuery);
+                $currencyId = (int)$currencyRow['id'];
+            }
+
+            $dateStr = date('Ymd', strtotime($saleDate));
+            $prefix = 'JE-' . $dateStr . '-';
+            $journalCountQuery = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM journal_entries WHERE journal_no LIKE '" . mysqli_real_escape_string($conn, $prefix) . "%'");
+            $journalCount = 0;
+            if ($journalCountQuery) {
+                $journalCountRow = mysqli_fetch_assoc($journalCountQuery);
+                $journalCount = (int)($journalCountRow['cnt'] ?? 0);
+            }
+            $journalNo = $prefix . str_pad($journalCount + 1, 4, '0', STR_PAD_LEFT);
+            $journalDescription = 'Sales recorded: ' . $saleNo;
+
+            $insertJournalHeader = mysqli_prepare($conn, "
+                INSERT INTO journal_entries
+                (journal_no, entry_date, description, statuss, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?, NOW())
+            ");
+            if (!$insertJournalHeader) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            $journalStatus = 'AUTO POSTED';
+            mysqli_stmt_bind_param($insertJournalHeader, "ssssi", $journalNo, $saleDate, $journalDescription, $journalStatus, $userId);
+            if (!mysqli_stmt_execute($insertJournalHeader)) {
+                throw new Exception(mysqli_error($conn));
+            }
+            $journalEntryId = mysqli_insert_id($conn);
+            mysqli_stmt_close($insertJournalHeader);
+
+            $insertJournalLine = mysqli_prepare($conn, "
+                INSERT INTO journal_entry_lines
+                (
+                    journal_entry_id,
+                    parent_account_id,
+                    account_id,
+                    debit,
+                    credit,
+                    currency_id,
+                    exchange_rate,
+                    amount_currency,
+                    amount_base,
+                    description
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            if (!$insertJournalLine) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+
+            $zeroAmount = 0.0;
+
+            foreach ($saleLineAccounts as $lineAccount) {
+                $productInfoQuery = mysqli_query($conn, "
+                    SELECT p.id,
+                           p.inventory_account_id,
+                           p.cogs_account_id,
+                           p.sales_account_id,
+                           inv.id AS inventory_account_id_value,
+                           inv.account_code AS inventory_account_code_value,
+                           inv.account_type_id AS inventory_parent_account_id,
+                           cog.id AS cogs_account_id_value,
+                           cog.account_code AS cogs_account_code_value,
+                           cog.account_type_id AS cogs_parent_account_id,
+                           sal.id AS sales_account_id_value,
+                           sal.account_code AS sales_account_code_value,
+                           sal.account_type_id AS sales_parent_account_id
+                    FROM product p
+                    LEFT JOIN accounts inv ON inv.account_code = p.inventory_account_id
+                    LEFT JOIN accounts cog ON cog.account_code = p.cogs_account_id
+                    LEFT JOIN accounts sal ON sal.account_code = p.sales_account_id
+                    WHERE p.id = " . (int)$lineAccount['product_id'] . "
+                    LIMIT 1
+                ");
+                if (!$productInfoQuery || mysqli_num_rows($productInfoQuery) === 0) {
+                    throw new Exception('Product accounting accounts were not found.');
+                }
+                $productInfo = mysqli_fetch_assoc($productInfoQuery);
+
+                $inventoryAccountCode = isset($productInfo['inventory_account_code_value']) ? (int)$productInfo['inventory_account_code_value'] : 0;
+                $inventoryParentAccountId = isset($productInfo['inventory_parent_account_id']) ? (int)$productInfo['inventory_parent_account_id'] : 0;
+                $cogsAccountCode = isset($productInfo['cogs_account_code_value']) ? (int)$productInfo['cogs_account_code_value'] : 0;
+                $cogsParentAccountId = isset($productInfo['cogs_parent_account_id']) ? (int)$productInfo['cogs_parent_account_id'] : 0;
+                $salesAccountCode = isset($productInfo['sales_account_code_value']) ? (int)$productInfo['sales_account_code_value'] : 0;
+                $salesParentAccountId = isset($productInfo['sales_parent_account_id']) ? (int)$productInfo['sales_parent_account_id'] : 0;
+
+                if ($inventoryAccountCode <= 0 || $cogsAccountCode <= 0 || $salesAccountCode <= 0) {
+                    throw new Exception('Inventory, COGS, or sales account was not found for a selected product.');
+                }
+
+                $cogsAmountCurrency = $lineAccount['cogs_amount'];
+                $salesAmountCurrency = $lineAccount['sales_amount'];
+                $amountBase = $cogsAmountCurrency * $exchangeRate;
+                $revenueBaseAmount = $salesAmountCurrency * $exchangeRate;
+
+                mysqli_stmt_bind_param($insertJournalLine, "iiiddiddds", $journalEntryId, $cogsParentAccountId, $cogsAccountCode, $cogsAmountCurrency, $zeroAmount, $currencyId, $exchangeRate, $cogsAmountCurrency, $amountBase, $journalDescription);
+                if (!mysqli_stmt_execute($insertJournalLine)) {
+                    throw new Exception(mysqli_error($conn));
+                }
+
+                mysqli_stmt_bind_param($insertJournalLine, "iiiddiddds", $journalEntryId, $inventoryParentAccountId, $inventoryAccountCode, $zeroAmount, $cogsAmountCurrency, $currencyId, $exchangeRate, $cogsAmountCurrency, $amountBase, $journalDescription);
+                if (!mysqli_stmt_execute($insertJournalLine)) {
+                    throw new Exception(mysqli_error($conn));
+                }
+
+                $customerAccountCode = isset($customerAccountInfo['account_code']) ? (int)$customerAccountInfo['account_code'] : 0;
+                if ($customerAccountCode <= 0) {
+                    throw new Exception('Customer receivable account code was not found.');
+                }
+
+                mysqli_stmt_bind_param($insertJournalLine, "iiiddiddds", $journalEntryId, $customerAccountInfo['parent_account_id'], $customerAccountCode, $salesAmountCurrency, $zeroAmount, $currencyId, $exchangeRate, $salesAmountCurrency, $revenueBaseAmount, $journalDescription);
+                if (!mysqli_stmt_execute($insertJournalLine)) {
+                    throw new Exception(mysqli_error($conn));
+                }
+
+                mysqli_stmt_bind_param($insertJournalLine, "iiiddiddds", $journalEntryId, $salesParentAccountId, $salesAccountCode, $zeroAmount, $salesAmountCurrency, $currencyId, $exchangeRate, $salesAmountCurrency, $revenueBaseAmount, $journalDescription);
+                if (!mysqli_stmt_execute($insertJournalLine)) {
+                    throw new Exception(mysqli_error($conn));
+                }
+            }
+
+            mysqli_stmt_close($insertJournalLine);
+
+            /*
+            // Payment processing is disabled in the current sales flow.
+            $amountPaid = 0.0;
+            $paymentMethod = 'CASH';
+            $accountId = 0;
+            $referenceNo = '';
+
             if ($amountPaid > 0) {
                 if ($accountId <= 0) {
                     throw new Exception('Please select a valid Cash/Bank Account for the payment.');
                 }
                 
-                // Get currency ID for payment currency
-                $paymentCurrencyId = 2; // Default USD
+                $paymentCurrencyId = 2;
                 $curResult = mysqli_query($conn, "SELECT id FROM currencies WHERE code = '" . mysqli_real_escape_string($conn, $currency) . "' LIMIT 1");
                 if ($curResult && mysqli_num_rows($curResult) > 0) {
                     $paymentCurrencyId = (int)mysqli_fetch_assoc($curResult)['id'];
                 }
 
-                // Compute base currency amount (base is USD, ID = 2)
                 if ($currency === 'USD') {
                     $amountBase = $amountPaid;
                 } else {
@@ -548,7 +751,6 @@ switch ($action) {
                 $refNoEsc = mysqli_real_escape_string($conn, $referenceNo);
                 $payDescEsc = mysqli_real_escape_string($conn, "Payment received for sale order: $saleNo");
 
-                // Insert into customer_payments
                 $insertPayQuery = "INSERT INTO customer_payments (
                                        payment_number, customer_id, account_id, currency_id, exchange_rate, 
                                        amount_currency, amount_base, payment_date, payment_method, reference_no, 
@@ -574,7 +776,6 @@ switch ($action) {
                 }
                 $paymentId = mysqli_insert_id($conn);
 
-                // Insert customer_payment_allocations
                 $insertAllocQuery = "INSERT INTO customer_payment_allocations (
                                          customer_payment_id, sale_id, amount_allocated
                                      ) VALUES (
@@ -586,13 +787,17 @@ switch ($action) {
                     throw new Exception('Failed to allocate customer payment: ' . mysqli_error($conn));
                 }
 
-                // Update sells status to paid if payment covers the total value
                 $totalVal = ($currency === 'USD') ? $totalValueUsd : $totalValueRwf;
-                // Avoid tiny floating point comparison issues
                 if (($amountPaid + 0.01) >= $totalVal) {
                     mysqli_query($conn, "UPDATE sells SET status = 'paid' WHERE id = $saleId");
                 }
             }
+            */
+
+            // insert finance staff into journal entries and journale entries lines for accounting purposes
+            // record debit cogs and credit stock in journal entries
+            // record debit accounts receivable and credit sales revenue in journal entries
+            
 
             // Log Audit
             logAudit($conn, 'CREATE', 'sells', $saleNo, "Recorded sales order: $saleNo", null, [
@@ -601,7 +806,7 @@ switch ($action) {
                 'customer_id' => $customerId,
                 'total_qty_kg' => $totalQtyKg,
                 'total_value_usd' => $totalValueUsd,
-                'amount_paid' => $amountPaid
+                'amount_paid' => 0
             ]);
 
             $_SESSION['sales_token'] = bin2hex(random_bytes(32));

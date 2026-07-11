@@ -32,7 +32,7 @@ if ($lotQuery) {
 }
 
 $accounts = [];
-$accQuery = mysqli_query($conn, "SELECT id, account_code, account_name FROM accounts WHERE is_active = 1 ORDER BY account_name ASC");
+$accQuery = mysqli_query($conn, "SELECT id, account_code, account_name FROM accounts WHERE account_type_id = 1 AND is_active = 1 ORDER BY account_name ASC");
 if ($accQuery) {
     while ($row = mysqli_fetch_assoc($accQuery)) {
         $accounts[] = $row;
