@@ -478,260 +478,82 @@ if ($sheet === 'purchase_logs_ta') {
         $rows_data[] = $total_row;
     }
 } elseif ($sheet === 'monthly_transactions') {
-    $excel_accounts = [
-        4 => ['active' => 'N', 'name' => 'EQUITY - INEZA AFRICAN MINING USD'],
-        5 => ['active' => 'N', 'name' => 'EQUITY - INEZA AFRICAN MINING RWF'],
-        6 => ['active' => 'N', 'name' => 'EQUITY - INEZA AFRICAN MINING EURO'],
-        7 => ['active' => 'N', 'name' => 'Accounts Receivables'],
-        8 => ['active' => 'N', 'name' => 'Accounts Receivables - '],
-        9 => ['active' => 'N', 'name' => 'Accounts Receivables - '],
-        10 => ['active' => 'N', 'name' => 'Accounts Receivable - Others'],
-        11 => ['active' => 'N', 'name' => 'Advances - Employees'],
-        12 => ['active' => 'N', 'name' => 'Advances to Star Metal'],
-        13 => ['active' => 'Y', 'name' => 'Advances to O/E - Pierre GATAMA'],
-        14 => ['active' => 'N', 'name' => 'Advances to O/E - MUVUNYI DIEDONNE'],
-        15 => ['active' => 'N', 'name' => 'Advances to O/E - Andrew KAYITARE'],
-        16 => ['active' => 'N', 'name' => 'Advances to O/E - Daniel Makasi'],
-        17 => ['active' => 'Y', 'name' => 'Advances to O/E - Charles MUNYANEZA'],
-        18 => ['active' => 'N', 'name' => 'Advances to O/E - Olivier '],
-        19 => ['active' => 'N', 'name' => 'Advances to O/E - Yury Ilin'],
-        20 => ['active' => 'N', 'name' => 'Advances to O/E - Nsana Jean'],
-        21 => ['active' => 'N', 'name' => 'Advances to O/E - MUSABYEYEZU Justine'],
-        22 => ['active' => 'Y', 'name' => 'Advances to O/E - GEDEON'],
-        24 => ['active' => 'N', 'name' => 'Advances - Suppliers'],
-        25 => ['active' => 'N', 'name' => 'Advances to O/E - Murindwa Andre'],
-        26 => ['active' => 'N', 'name' => 'Advances to O/E - Darius BIMENYIMANA'],
-        27 => ['active' => 'N', 'name' => 'Advances to O/E - Murego Paulin'],
-        28 => ['active' => 'N', 'name' => 'Advances to O/E - Jean Bosco YAMFASHIJE'],
-        29 => ['active' => 'N', 'name' => 'Advances to O/E - Fidele BIZIMANA'],
-        30 => ['active' => 'N', 'name' => 'Advances to O/E - Jeanne MUKAMUDENGE'],
-        31 => ['active' => 'N', 'name' => 'Advances to O/E - Fanny MUKAMUGEMA'],
-        32 => ['active' => 'N', 'name' => 'Advances to O/E - Richard AKAYEZU'],
-        33 => ['active' => 'N', 'name' => 'Advances to O/E - Marc NSHIMYUMUREMYI'],
-        34 => ['active' => 'N', 'name' => 'Advances to O/E - AHADI Furaha'],
-        35 => ['active' => 'N', 'name' => 'Advances to O/E - Athanase MBARUBUKEYE'],
-        36 => ['active' => 'N', 'name' => 'Advances to O/E - Michel NSHIMIYIMANA'],
-        37 => ['active' => 'N', 'name' => 'Advances to O/E - Maman Innocent'],
-        38 => ['active' => 'N', 'name' => 'Advances to O/E - Maestro HABUMUGISHA'],
-        39 => ['active' => 'N', 'name' => 'Advances to O/E - Bertin RUTABINGWA'],
-        40 => ['active' => 'N', 'name' => 'Advances - Cooperatives'],
-        41 => ['active' => 'N', 'name' => 'Advances - Others'],
-        42 => ['active' => 'N', 'name' => 'Prepayments'],
-        43 => ['active' => 'N', 'name' => 'Prepaid Rent'],
-        44 => ['active' => 'Y', 'name' => 'Rental Deposits'],
-        45 => ['active' => 'Y', 'name' => 'Stocks - Tin'],
-        46 => ['active' => 'N', 'name' => 'Stocks - Coltan'],
-        47 => ['active' => 'N', 'name' => 'Stocks - Others'],
-        48 => ['active' => 'N', 'name' => 'Asset Under Construction - '],
-        50 => ['active' => 'N', 'name' => 'Due from EQUITY - INEZA AFRICAN MINING USD'],
-        51 => ['active' => 'Y', 'name' => 'Due from EQUITY - INEZA AFRICAN MINING RWF'],
-        52 => ['active' => 'N', 'name' => 'Due from EQUITY - INEZA AFRICAN MINING EURO'],
-        53 => ['active' => 'N', 'name' => 'Land & Buildings - @ Cost'],
-        54 => ['active' => 'N', 'name' => 'Land & Buildings - Accum Depre'],
-        55 => ['active' => 'N', 'name' => 'Motor Vehicles - @ Cost'],
-        56 => ['active' => 'N', 'name' => 'Motor Vehicles - Accum Depre'],
-        57 => ['active' => 'N', 'name' => 'Computer Equipment - @ Cost'],
-        58 => ['active' => 'N', 'name' => 'Computer Equipment - Accum Depre'],
-        59 => ['active' => 'N', 'name' => 'Office Equipment - @ Cost'],
-        60 => ['active' => 'N', 'name' => 'Office Equipment - Accum Depre'],
-        61 => ['active' => 'N', 'name' => 'Furniture & Fittings - @ Cost'],
-        62 => ['active' => 'N', 'name' => 'Furniture & Fittings - Accum Depre'],
-        63 => ['active' => 'N', 'name' => 'Other Fixed Assets - @ Cost'],
-        64 => ['active' => 'N', 'name' => 'Other Fixed Assets - Accum Depre'],
-        65 => ['active' => 'N', 'name' => 'Leasehold Improvements'],
-        66 => ['active' => 'N', 'name' => 'Leasehold Improvements - Amortization'],
-        67 => ['active' => 'Y', 'name' => 'Mineral Processing Equipment - @ Cost'],
-        68 => ['active' => 'N', 'name' => 'Mineral Processing Equipment - Accum Depre'],
-        69 => ['active' => 'N', 'name' => 'Goodwill / Intangible Assets'],
-        70 => ['active' => 'Y', 'name' => 'Investments'],
-        72 => ['active' => 'N', 'name' => 'Accounts Payable'],
-        73 => ['active' => 'N', 'name' => 'Accounts Payable - Others'],
-        74 => ['active' => 'N', 'name' => 'Accrued Liabilities'],
-        75 => ['active' => 'N', 'name' => 'Advances from METALEKSPO SIA'],
-        76 => ['active' => 'Y', 'name' => 'Advances from Star Metal Company'],
-        77 => ['active' => 'N', 'name' => 'Advances from MUREGO AND GATAMA'],
-        78 => ['active' => 'N', 'name' => 'Advances from Partner'],
-        79 => ['active' => 'N', 'name' => 'Salaries Payable'],
-        80 => ['active' => 'N', 'name' => 'Consultancy Fee Payable'],
-        81 => ['active' => 'N', 'name' => 'Rent Payable'],
-        82 => ['active' => 'N', 'name' => 'Commission Payable'],
-        83 => ['active' => 'N', 'name' => 'Severance Payable'],
-        84 => ['active' => 'N', 'name' => 'Payroll Tax Payable'],
-        85 => ['active' => 'N', 'name' => 'InCome Tax Payable'],
-        86 => ['active' => 'N', 'name' => 'Long Term Liabilities'],
-        87 => ['active' => 'N', 'name' => 'Investment from Star Metal'],
-        88 => ['active' => 'N', 'name' => 'Investment from XY'],
-        89 => ['active' => 'N', 'name' => 'Common shares'],
-        90 => ['active' => 'N', 'name' => 'Loans Payable - '],
-        91 => ['active' => 'Y', 'name' => 'Due to EQUITY - INEZA AFRICAN MINING USD'],
-        92 => ['active' => 'N', 'name' => 'Due to EQUITY - INEZA AFRICAN MINING RWF'],
-        93 => ['active' => 'N', 'name' => 'Due to EQUITY - INEZA AFRICAN MINING EURO'],
-        94 => ['active' => 'N', 'name' => 'Member\'s Equity'],
-        95 => ['active' => 'N', 'name' => 'Retained Income / (Accumulated Loss)'],
-        96 => ['active' => 'N', 'name' => 'Prior Period Adjustment'],
-        98 => ['active' => 'N', 'name' => 'Sales'],
-        100 => ['active' => 'N', 'name' => 'Export Costs'],
-        101 => ['active' => 'N', 'name' => 'Export Packaging'],
-        102 => ['active' => 'N', 'name' => 'Export Taxes'],
-        103 => ['active' => 'N', 'name' => 'Cost of Sales - Minerals Transport, Taxes & Tags'],
-        104 => ['active' => 'N', 'name' => 'Cost of Sales - Travel & Transport'],
-        105 => ['active' => 'N', 'name' => 'Cost of Sales - Salaries & Wages'],
-        106 => ['active' => 'N', 'name' => 'Cost of Sales - Others'],
-        107 => ['active' => 'N', 'name' => 'Sample Costs'],
-        108 => ['active' => 'N', 'name' => 'Cooperative Fees'],
-        110 => ['active' => 'N', 'name' => 'Advertising & Promotions'],
-        111 => ['active' => 'N', 'name' => 'Amortization'],
-        112 => ['active' => 'N', 'name' => 'Bad Debts'],
-        113 => ['active' => 'Y', 'name' => 'Bank Charges'],
-        114 => ['active' => 'N', 'name' => 'Cleaning & Hygiene'],
-        115 => ['active' => 'N', 'name' => 'Computer Supplies & Others'],
-        116 => ['active' => 'N', 'name' => 'Consulting Fees'],
-        117 => ['active' => 'N', 'name' => 'Courier & Postage'],
-        118 => ['active' => 'N', 'name' => 'Commission fees'],
-        119 => ['active' => 'N', 'name' => 'Custom Duties & Taxes'],
-        120 => ['active' => 'N', 'name' => 'Depreciation'],
-        121 => ['active' => 'N', 'name' => 'Donations'],
-        122 => ['active' => 'Y', 'name' => 'Electricity & Water'],
-        123 => ['active' => 'N', 'name' => 'Insurance Expense'],
-        124 => ['active' => 'N', 'name' => 'Legal Fees'],
-        125 => ['active' => 'N', 'name' => 'Machinery Hire'],
-        126 => ['active' => 'N', 'name' => 'Exploration and Evaluation Cost'],
-        127 => ['active' => 'N', 'name' => 'Medical Costs'],
-        128 => ['active' => 'N', 'name' => 'Membership Fees & Dues'],
-        129 => ['active' => 'Y', 'name' => 'Motor Vehicle Expenses'],
-        130 => ['active' => 'N', 'name' => 'Office Supplies'],
-        131 => ['active' => 'N', 'name' => 'Other Consumables'],
-        132 => ['active' => 'N', 'name' => 'Pft/Loss on Foreign Exchange'],
-        133 => ['active' => 'N', 'name' => 'Professional Fees'],
-        134 => ['active' => 'Y', 'name' => 'Rent Expense'],
-        135 => ['active' => 'N', 'name' => 'Rent Site'],
-        136 => ['active' => 'Y', 'name' => 'Repairs & Maintenance'],
-        137 => ['active' => 'N', 'name' => 'Representation & Entertainment'],
-        138 => ['active' => 'N', 'name' => 'Safety'],
-        139 => ['active' => 'N', 'name' => 'Salaries'],
-        140 => ['active' => 'Y', 'name' => 'Salary - Others'],
-        141 => ['active' => 'N', 'name' => 'Software License'],
-        142 => ['active' => 'N', 'name' => 'Management Fee'],
-        143 => ['active' => 'N', 'name' => 'Security'],
-        144 => ['active' => 'N', 'name' => 'Staff Training'],
-        145 => ['active' => 'Y', 'name' => 'Staff Welfare'],
-        146 => ['active' => 'N', 'name' => 'Staff Welfare Site'],
-        147 => ['active' => 'N', 'name' => 'Taxes, Permits & Licenses'],
-        148 => ['active' => 'N', 'name' => 'Concession License Fee'],
-        149 => ['active' => 'N', 'name' => 'Telecommunications'],
-        150 => ['active' => 'Y', 'name' => 'Transport'],
-        151 => ['active' => 'Y', 'name' => 'Travel & Accommodation'],
-        152 => ['active' => 'N', 'name' => 'Visa Fees'],
-        153 => ['active' => 'N', 'name' => 'Sundry Account'],
-        154 => ['active' => 'Y', 'name' => 'Miscellaneous Expense'],
-        156 => ['active' => 'N', 'name' => 'Interest Income'],
-        157 => ['active' => 'N', 'name' => 'Interest Expense'],
-        158 => ['active' => 'N', 'name' => 'Bad Debts Recovered'],
-        159 => ['active' => 'N', 'name' => 'Pft/Loss on Sale of Non Current Assets'],
-        160 => ['active' => 'N', 'name' => 'Other Income'],
-        161 => ['active' => 'N', 'name' => 'Other Loss'],
-        162 => ['active' => 'N', 'name' => 'Provision for Income Tax'],
-        164 => ['active' => 'Y', 'name' => 'Total Cash-Out Net of Cash-In'],
-        168 => ['active' => 'Y', 'name' => 'Petty Cash Fund - INEZA'],
-        169 => ['active' => 'N', 'name' => 'Funds to Sites - Rubaya'],
-        171 => ['active' => '', 'name' => 'Equity $ Withdrawals'],
-        172 => ['active' => '', 'name' => 'Petty Cash Payments'],
-        174 => ['active' => '', 'name' => 'Monthly Exp -2025'],
-        175 => ['active' => '', 'name' => 'Monthly Exp -2026'],
-        176 => ['active' => '', 'name' => 'Petty Cash Fund - 2025'],
-        177 => ['active' => '', 'name' => 'Petty Cash Fund - 2026'],
-        178 => ['active' => '', 'name' => 'Equity $ Deposits'],
-    ];
+    // Fetch distinct months dynamically
+    $month_cols = [];
+    $months_res = mysqli_query($conn, "SELECT DISTINCT DATE_FORMAT(je.entry_date, '%Y-%m') as tx_month FROM journal_entries je WHERE je.statuss = 'POSTED' {$date_cond} ORDER BY tx_month ASC");
+    if ($months_res) {
+        while ($m_row = mysqli_fetch_assoc($months_res)) {
+            $month_cols[] = $m_row['tx_month'];
+        }
+    }
+    if (empty($month_cols)) {
+        $month_cols[] = date('Y-m');
+    }
 
-    $translation = [
-        'Stocks - Tin' => 'Stocks - Tin',
-        'Stocks - Coltan' => 'Stocks - Coltan',
-        'Stocks - Tantalum' => 'Stocks - Tin',
-        'Sales - Tin' => 'Sales',
-        'Sales - Coltan' => 'Sales',
-        'Sales - Tantalum' => 'Sales',
-        'Trade Receivables' => 'Accounts Receivables',
-        'Long Term Loans' => 'Long Term Liabilities',
-        'Eugene ndayishimiye - Accounts Payable' => 'Accounts Payable',
-        'EQUITY US$ ACCOUNT' => 'EQUITY - INEZA AFRICAN MINING USD',
-        'Investments' => 'Investments',
-        'Bank Charges' => 'Bank Charges',
-        'Petty Cash Fund - INEZA' => 'Petty Cash Fund - INEZA',
-        'Due from EQUITY - INEZA AFRICAN MINING RWF' => 'Due from EQUITY - INEZA AFRICAN MINING RWF',
-        'Advances from Star Metal Company' => 'Advances from Star Metal Company',
-        'Funds to Sites - Rubaya' => 'Funds to Sites - Rubaya',
-        'Advances to O/E - Charles MUNYANEZA' => 'Advances to O/E - Charles MUNYANEZA',
-        'Travel & Accommodation' => 'Travel & Accommodation',
-        'Staff Welfare' => 'Staff Welfare',
-        'Transport' => 'Transport',
-        'Miscellaneous Expense' => 'Miscellaneous Expense',
-        'Advances to O/E - GEDEON' => 'Advances to O/E - GEDEON'
-    ];
+    // Fetch distinct accounts with posted transactions dynamically
+    $accounts = [];
+    $acc_res = mysqli_query($conn, "SELECT DISTINCT a.id, a.account_code, a.account_name, a.is_active FROM accounts a JOIN journal_entry_lines jel ON a.id = jel.account_id JOIN journal_entries je ON jel.journal_entry_id = je.id WHERE je.statuss = 'POSTED' {$date_cond} ORDER BY a.account_code ASC");
+    if ($acc_res) {
+        while ($a_row = mysqli_fetch_assoc($acc_res)) {
+            $accounts[] = $a_row;
+        }
+    }
 
-    $month_cols = ['2025-05', '2025-06', '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12'];
-
+    // Build matrix
     $matrix = [];
-    foreach ($excel_accounts as $rowId => $acc) {
-        $matrix[$rowId] = [
-            'active' => $acc['active'],
-            'name' => $acc['name'],
+    foreach ($accounts as $acc) {
+        $matrix[$acc['id']] = [
+            'active' => $acc['is_active'] ? 'Y' : 'N',
+            'name' => $acc['account_name'],
+            'code' => $acc['account_code'],
             'months' => array_fill_keys($month_cols, 0.0),
             'total' => 0.0
         ];
     }
 
-    $name_to_row_ids = [];
-    foreach ($excel_accounts as $rowId => $acc) {
-        $name_to_row_ids[strtolower(trim($acc['name']))][] = $rowId;
-    }
-
-    // Query details
-    $q = "SELECT DATE_FORMAT(je.entry_date, '%Y-%m') as tx_month,
-                 a.account_name,
-                 SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit
-          FROM journal_entry_lines jel
-          JOIN journal_entries je ON jel.journal_entry_id = je.id
-          JOIN accounts a ON jel.account_id = a.id
-          WHERE je.statuss = 'POSTED' {$date_cond}
-          GROUP BY tx_month, a.id";
-    $db_res = mysqli_query($conn, $q);
-    if ($db_res) {
-        while ($db_row = mysqli_fetch_assoc($db_res)) {
-            $db_name = $db_row['account_name'];
-            $m = $db_row['tx_month'];
-            $debit = (float)$db_row['total_debit'];
-            $credit = (float)$db_row['total_credit'];
-            $net = $debit - $credit;
-            
-            $target_name = $translation[$db_name] ?? $db_name;
-            $key = strtolower(trim($target_name));
-            
-            if (isset($name_to_row_ids[$key])) {
-                foreach ($name_to_row_ids[$key] as $rowId) {
-                    if (isset($matrix[$rowId]['months'][$m])) {
-                        $matrix[$rowId]['months'][$m] += $net;
-                    }
-                }
+    // Fetch balances
+    $bal_query = "SELECT DATE_FORMAT(je.entry_date, '%Y-%m') as tx_month,
+                         a.id as account_id,
+                         SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit
+                  FROM journal_entry_lines jel
+                  JOIN journal_entries je ON jel.journal_entry_id = je.id
+                  JOIN accounts a ON jel.account_id = a.id
+                  WHERE je.statuss = 'POSTED' {$date_cond}
+                  GROUP BY tx_month, a.id";
+    $bal_res = mysqli_query($conn, $bal_query);
+    if ($bal_res) {
+        while ($b_row = mysqli_fetch_assoc($bal_res)) {
+            $acc_id = $b_row['account_id'];
+            $m = $b_row['tx_month'];
+            $net = (float)$b_row['total_debit'] - (float)$b_row['total_credit'];
+            if (isset($matrix[$acc_id])) {
+                $matrix[$acc_id]['months'][$m] = $net;
             }
         }
     }
 
-    foreach ($matrix as $rowId => $row_data) {
+    foreach ($matrix as $acc_id => $row_data) {
         $row_total = 0.0;
         foreach ($row_data['months'] as $m => $val) {
             $row_total += $val;
         }
         
-        $row_vals = array_fill(0, 16, '');
+        $row_vals = [];
         $row_vals[0] = $row_data['active'];
         $row_vals[1] = $row_data['name'];
         $row_vals[2] = '';
-        foreach ($month_cols as $idx => $m) {
-            $row_vals[3 + $idx] = $row_data['months'][$m] != 0 ? $row_data['months'][$m] : 0.0;
+        
+        $col_idx = 3;
+        foreach ($month_cols as $m) {
+            $row_vals[$col_idx] = $row_data['months'][$m] != 0 ? (float)$row_data['months'][$m] : 0.0;
+            $col_idx++;
         }
-        $row_vals[11] = $row_total;
-        $row_vals[12] = '';
-        $row_vals[13] = $row_total; // Grand total
+        
+        $row_vals[$col_idx] = $row_total; // TOTAL
+        $col_idx++;
+        $row_vals[$col_idx] = ''; // (empty spacer/formula column)
+        $col_idx++;
+        $row_vals[$col_idx] = $row_total; // GRAND TOTAL
         
         $rows_data[] = $row_vals;
     }
@@ -1257,20 +1079,19 @@ function injectTabularRows($dom, $sheetData, $rows_data, $start_row) {
         }
     }
     
-    for ($c = 1; $c <= $num_cols; $c++) {
-        $cellRef = getColLetter($c) . $start_row;
-        $style = null;
-        if ($template_row_node) {
-            foreach ($template_row_node->getElementsByTagName('c') as $cell_node) {
-                if ($cell_node->getAttribute('r') === $cellRef) {
-                    if ($cell_node->hasAttribute('s')) {
-                        $style = $cell_node->getAttribute('s');
-                    }
-                    break;
-                }
+    if ($template_row_node) {
+        foreach ($template_row_node->getElementsByTagName('c') as $cell_node) {
+            $ref = $cell_node->getAttribute('r');
+            $col_letter = preg_replace('/[0-9]/', '', $ref);
+            $col_idx = 0;
+            $len = strlen($col_letter);
+            for ($i = 0; $i < $len; $i++) {
+                $col_idx = $col_idx * 26 + (ord($col_letter[$i]) - 64);
+            }
+            if ($cell_node->hasAttribute('s')) {
+                $template_styles[$col_idx] = $cell_node->getAttribute('s');
             }
         }
-        $template_styles[$c] = $style;
     }
     
     $row_ht = null;
@@ -1316,13 +1137,24 @@ function injectTabularRows($dom, $sheetData, $rows_data, $start_row) {
             $cell_node->setAttribute('r', $cellRef);
             
             $style = isset($template_styles[$col_idx]) ? $template_styles[$col_idx] : null;
-            global $sheet, $elements;
+            global $sheet, $elements, $month_cols;
             if ($sheet === 'tin_summary' || $sheet === 'ta_summary') {
                 $lme_col_idx = 6 + count($elements);
                 if ($col_idx >= 6 && $col_idx < $lme_col_idx) {
                     $style = $template_styles[6] ?? null;
                 } elseif ($col_idx === $lme_col_idx) {
                     $style = $template_styles[5] ?? null;
+                }
+            } elseif ($sheet === 'monthly_transactions') {
+                $num_months = count($month_cols);
+                if ($col_idx >= 4 && $col_idx < 4 + $num_months) {
+                    $style = $template_styles[4] ?? null;
+                } elseif ($col_idx === 4 + $num_months) {
+                    $style = $template_styles[12] ?? null;
+                } elseif ($col_idx === 5 + $num_months) {
+                    $style = $template_styles[13] ?? null;
+                } elseif ($col_idx === 6 + $num_months) {
+                    $style = $template_styles[14] ?? null;
                 }
             }
             if ($style !== null) {
@@ -1599,6 +1431,49 @@ if ($sheet === 'bank_recon_usd' || $sheet === 'bank_recon_rwf') {
         $col_idx++;
         while ($col_idx <= 9) {
             $extra_cell = getCellByRef($sheetData, getColLetter($col_idx) . '4');
+            if ($extra_cell) {
+                setCellValue($sheet_dom, $extra_cell, '');
+            }
+            $col_idx++;
+        }
+    } elseif ($sheet === 'monthly_transactions') {
+        // Clear old GRAND header in Row 1 (columns 4 to 14)
+        $col_clear = 4;
+        while ($col_clear <= 14) {
+            $extra_cell1 = getCellByRef($sheetData, getColLetter($col_clear) . '1');
+            if ($extra_cell1) {
+                setCellValue($sheet_dom, $extra_cell1, '');
+            }
+            $col_clear++;
+        }
+
+        // Overwrite month headers in Row 2 (Column D onwards, index 4 onwards)
+        $col_idx = 4;
+        foreach ($month_cols as $m) {
+            $header_cell = getOrCreateCell($sheet_dom, $sheetData, 2, $col_idx);
+            setCellValue($sheet_dom, $header_cell, $m . '-01');
+            $col_idx++;
+        }
+        $total_cell = getOrCreateCell($sheet_dom, $sheetData, 2, $col_idx);
+        setCellValue($sheet_dom, $total_cell, 'TOTAL');
+        $col_idx++;
+        
+        // Clear spacer cell
+        $spacer_cell = getOrCreateCell($sheet_dom, $sheetData, 2, $col_idx);
+        setCellValue($sheet_dom, $spacer_cell, '');
+        $col_idx++;
+        
+        $grand_cell = getOrCreateCell($sheet_dom, $sheetData, 2, $col_idx);
+        setCellValue($sheet_dom, $grand_cell, 'TOTAL');
+        
+        // Write GRAND in Row 1 above the new GRAND TOTAL column
+        $grand_cell_r1 = getOrCreateCell($sheet_dom, $sheetData, 1, $col_idx);
+        setCellValue($sheet_dom, $grand_cell_r1, 'GRAND');
+        
+        // Clear any remaining template headers in Row 2 (original columns were D to N: indexes 4 to 14)
+        $col_idx++;
+        while ($col_idx <= 14) {
+            $extra_cell = getCellByRef($sheetData, getColLetter($col_idx) . '2');
             if ($extra_cell) {
                 setCellValue($sheet_dom, $extra_cell, '');
             }
