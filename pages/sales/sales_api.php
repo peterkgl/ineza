@@ -113,6 +113,36 @@ switch ($action) {
         }
         break;
 
+    case 'get_lot_inventory':
+        $lotId = isset($_GET['lot_id']) ? (int)$_GET['lot_id'] : 0;
+        if ($lotId <= 0) {
+            sendResponse(false, 'Valid lot_id is required.');
+        }
+
+        $query = "SELECT s.product_id, p.product_name, p.product_code, s.warehouse_id, w.warehouse_name, w.warehouse_code, s.qty_on_hand
+                  FROM stock s
+                  JOIN product p ON s.product_id = p.id
+                  JOIN warehouses w ON s.warehouse_id = w.id
+                  WHERE s.lot_id = $lotId AND s.qty_on_hand > 0
+                  ORDER BY p.product_name ASC, w.warehouse_name ASC";
+        $res = mysqli_query($conn, $query);
+        $inventory = [];
+        if ($res) {
+            while ($row = mysqli_fetch_assoc($res)) {
+                $inventory[] = [
+                    'product_id' => (int)$row['product_id'],
+                    'product_name' => $row['product_name'],
+                    'product_code' => $row['product_code'],
+                    'warehouse_id' => (int)$row['warehouse_id'],
+                    'warehouse_name' => $row['warehouse_name'],
+                    'warehouse_code' => $row['warehouse_code'],
+                    'qty_on_hand' => (float)$row['qty_on_hand']
+                ];
+            }
+        }
+        sendResponse(true, 'Lot inventory retrieved successfully.', $inventory);
+        break;
+
     case 'list':
         if (!hasPermission($conn, $userId, 'view_sales')) {
             http_response_code(403);
@@ -196,8 +226,6 @@ switch ($action) {
         $custName = isset($_POST['cust_name']) ? trim($_POST['cust_name']) : '';
         $custType = isset($_POST['cust_type']) ? trim($_POST['cust_type']) : 'company';
         $custNif = isset($_POST['cust_nif']) ? trim($_POST['cust_nif']) : '';
-        $custVat = isset($_POST['cust_vat_reg_no']) ? trim($_POST['cust_vat_reg_no']) : '';
-        $custContact = isset($_POST['cust_contact_person']) ? trim($_POST['cust_contact_person']) : '';
         $custPhone = isset($_POST['cust_phone']) ? trim($_POST['cust_phone']) : '';
         $custEmail = isset($_POST['cust_email']) ? trim($_POST['cust_email']) : '';
         $custAddress = isset($_POST['cust_address']) ? trim($_POST['cust_address']) : '';
@@ -207,10 +235,6 @@ switch ($action) {
         // Sale header fields
         $saleDate = isset($_POST['sale_date']) ? trim($_POST['sale_date']) : '';
         $deliveryDate = isset($_POST['delivery_date']) ? trim($_POST['delivery_date']) : '';
-        $paymentTerms = isset($_POST['payment_terms']) ? trim($_POST['payment_terms']) : '';
-        $incoterms = isset($_POST['incoterms']) ? trim($_POST['incoterms']) : '';
-        $exportPermitNo = isset($_POST['export_permit_no']) ? trim($_POST['export_permit_no']) : '';
-        $destinationCountry = isset($_POST['destination_country']) ? trim($_POST['destination_country']) : '';
         $currency = isset($_POST['currency']) ? trim($_POST['currency']) : 'USD';
         $exchangeRate = isset($_POST['exchange_rate']) ? (float)$_POST['exchange_rate'] : 1.0;
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
@@ -272,14 +296,12 @@ switch ($action) {
                 // Insert Customer
                 $custCode = 'CUST-' . date('Y') . '-' . strtoupper(bin2hex(random_bytes(2)));
                 $insertCustQuery = "INSERT INTO customer 
-                                    (customer_code, customer_type, name, nif, vat_reg_no, contact_person, phone, email, address, country, receivable_account_id, currency, is_active, notes)
+                                    (customer_code, customer_type, name, nif, phone, email, address, country, receivable_account_id, currency, is_active, notes)
                                     VALUES (
                                         '$custCode', 
                                         '" . mysqli_real_escape_string($conn, $custType) . "', 
                                         '$custNameEsc', 
                                         '" . mysqli_real_escape_string($conn, $custNif) . "', 
-                                        '" . mysqli_real_escape_string($conn, $custVat) . "', 
-                                        '" . mysqli_real_escape_string($conn, $custContact) . "', 
                                         '" . mysqli_real_escape_string($conn, $custPhone) . "', 
                                         '" . mysqli_real_escape_string($conn, $custEmail) . "', 
                                         '" . mysqli_real_escape_string($conn, $custAddress) . "', 
@@ -396,22 +418,16 @@ switch ($action) {
 
             // Step 4: Insert Sells Header
             $delDateVal = !empty($deliveryDate) ? "'" . mysqli_real_escape_string($conn, $deliveryDate) . "'" : "NULL";
-            $payTermsEsc = mysqli_real_escape_string($conn, $paymentTerms);
-            $incotermsEsc = mysqli_real_escape_string($conn, $incoterms);
-            $expPermitEsc = mysqli_real_escape_string($conn, $exportPermitNo);
-            $destCountryEsc = mysqli_real_escape_string($conn, $destinationCountry);
             $notesEsc = mysqli_real_escape_string($conn, $notes);
 
             $insertSaleQuery = "INSERT INTO sells (
                                     sale_no, customer_id, sale_date, delivery_date, warehouse_id, 
                                     total_qty_kg, total_value_rwf, total_value_usd, exchange_rate, currency, 
-                                    payment_terms, incoterms, export_permit_no, destination_country, status, 
-                                    notes, created_by
+                                    status, notes, created_by
                                 ) VALUES (
                                     '$saleNoEsc', $customerId, '$saleDate', $delDateVal, $headerWarehouseId, 
                                     $totalQtyKg, $totalValueRwf, $totalValueUsd, $exchangeRate, '$currency', 
-                                    '$payTermsEsc', '$incotermsEsc', '$expPermitEsc', '$destCountryEsc', 'confirmed', 
-                                    '$notesEsc', $userId
+                                    'confirmed', '$notesEsc', $userId
                                 )";
             
             if (!mysqli_query($conn, $insertSaleQuery)) {

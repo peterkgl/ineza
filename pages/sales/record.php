@@ -23,27 +23,11 @@ if ($custQuery) {
     }
 }
 
-$warehouses = [];
-$whQuery = mysqli_query($conn, "SELECT id, warehouse_name, warehouse_code FROM warehouses WHERE is_active = 1 ORDER BY warehouse_name ASC");
-if ($whQuery) {
-    while ($row = mysqli_fetch_assoc($whQuery)) {
-        $warehouses[] = $row;
-    }
-}
-
 $lots = [];
 $lotQuery = mysqli_query($conn, "SELECT id, lots_code FROM lots WHERE closing_date IS NULL ORDER BY lots_code ASC");
 if ($lotQuery) {
     while ($row = mysqli_fetch_assoc($lotQuery)) {
         $lots[] = $row;
-    }
-}
-
-$products = [];
-$prodQuery = mysqli_query($conn, "SELECT id, product_code, product_name, uom_id FROM product WHERE is_active = 1 ORDER BY product_name ASC");
-if ($prodQuery) {
-    while ($row = mysqli_fetch_assoc($prodQuery)) {
-        $products[] = $row;
     }
 }
 
@@ -179,21 +163,10 @@ if ($curQuery) {
               </div>
             </div>
 
-            <div class="form-grid-2">
+            <div class="form-grid-3">
               <div class="form-group">
                 <label for="custNif">NIF / Tax ID</label>
                 <input type="text" id="custNif" name="cust_nif" class="form-control" placeholder="e.g. 100293021">
-              </div>
-              <div class="form-group">
-                <label for="custVat">VAT Registration No</label>
-                <input type="text" id="custVat" name="cust_vat_reg_no" class="form-control" placeholder="e.g. VAT-RWA-102938">
-              </div>
-            </div>
-
-            <div class="form-grid-3">
-              <div class="form-group">
-                <label for="custContact">Contact Person</label>
-                <input type="text" id="custContact" name="cust_contact_person" class="form-control" placeholder="Full Name">
               </div>
               <div class="form-group">
                 <label for="custPhone">Phone Number</label>
@@ -236,59 +209,33 @@ if ($curQuery) {
             </div>
           </div>
 
-          <div class="form-grid-3">
-            <div class="form-group">
-              <label for="paymentTerms">Payment Terms</label>
-              <input type="text" id="paymentTerms" name="payment_terms" class="form-control" placeholder="e.g. Net 30, COD">
-            </div>
-            <div class="form-group">
-              <label for="incoterms">Incoterms</label>
-              <input type="text" id="incoterms" name="incoterms" class="form-control" placeholder="e.g. FOB Kigali, CIF Antwerp">
-            </div>
-            <div class="form-group">
-              <label for="exportPermitNo">Export Permit No</label>
-              <input type="text" id="exportPermitNo" name="export_permit_no" class="form-control" placeholder="e.g. EXP-RMA-2026-928">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="destinationCountry">Destination Country</label>
-            <input type="text" id="destinationCountry" name="destination_country" class="form-control" placeholder="e.g. China, Belgium, USA">
-          </div>
-
           <!-- Product Line Builder -->
           <div class="line-builder-box" style="margin-top: 24px; border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: var(--bg2);">
             <div style="font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
               <span>Add Product Line Item</span>
-              <span id="stockCheckStatus" style="font-weight: 500; font-family: monospace; text-transform: none; color: var(--text3);">Select Warehouse/Product/Lot</span>
+              <span id="stockCheckStatus" style="font-weight: 500; font-family: monospace; text-transform: none; color: var(--text3);">Select Lot</span>
             </div>
             
             <div class="form-grid-3">
               <div class="form-group">
-                <label for="lineWarehouseId">Warehouse *</label>
-                <select id="lineWarehouseId" class="form-control">
-                  <option value="">-- Select --</option>
-                  <?php foreach ($warehouses as $w): ?>
-                    <option value="<?php echo $w['id']; ?>"><?php echo htmlspecialchars($w['warehouse_name'] . ' (' . $w['warehouse_code'] . ')'); ?></option>
+                <label for="lineLotId">Lot *</label>
+                <select id="lineLotId" class="form-control">
+                  <option value="">-- Select Lot --</option>
+                  <?php foreach ($lots as $l): ?>
+                    <option value="<?php echo $l['id']; ?>"><?php echo htmlspecialchars($l['lots_code']); ?></option>
                   <?php endforeach; ?>
                 </select>
               </div>
               <div class="form-group">
                 <label for="lineProductId">Product *</label>
-                <select id="lineProductId" class="form-control">
-                  <option value="">-- Select --</option>
-                  <?php foreach ($products as $p): ?>
-                    <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['product_name']); ?></option>
-                  <?php endforeach; ?>
+                <select id="lineProductId" class="form-control" disabled>
+                  <option value="">-- Select Lot First --</option>
                 </select>
               </div>
               <div class="form-group">
-                <label for="lineLotId">Lot *</label>
-                <select id="lineLotId" class="form-control">
-                  <option value="">-- Select --</option>
-                  <?php foreach ($lots as $l): ?>
-                    <option value="<?php echo $l['id']; ?>"><?php echo htmlspecialchars($l['lots_code']); ?></option>
-                  <?php endforeach; ?>
+                <label for="lineWarehouseId">Warehouse *</label>
+                <select id="lineWarehouseId" class="form-control" disabled>
+                  <option value="">-- Select Product First --</option>
                 </select>
               </div>
             </div>

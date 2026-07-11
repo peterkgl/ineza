@@ -323,8 +323,22 @@
       var prodId = lineProduct.value;
       var lotId = lineLot.value;
 
-      if (!whId || !prodId || !lotId) {
-        stockCheckStatus.textContent = 'Select Warehouse/Product/Lot';
+      if (!lotId) {
+        stockCheckStatus.textContent = 'Select Lot';
+        stockCheckStatus.style.color = 'var(--text3)';
+        selectedStockQty = 0.0;
+        selectedStockCost = 0.0;
+        return;
+      }
+      if (!prodId) {
+        stockCheckStatus.textContent = 'Select Product';
+        stockCheckStatus.style.color = 'var(--text3)';
+        selectedStockQty = 0.0;
+        selectedStockCost = 0.0;
+        return;
+      }
+      if (!whId) {
+        stockCheckStatus.textContent = 'Select Warehouse';
         stockCheckStatus.style.color = 'var(--text3)';
         selectedStockQty = 0.0;
         selectedStockCost = 0.0;
@@ -363,9 +377,103 @@
         });
     }
 
-    [lineWarehouse, lineProduct, lineLot].forEach(function(el) {
-      el.addEventListener('change', checkStockAvailability);
+    var currentLotInventory = [];
+
+    lineLot.addEventListener('change', function() {
+      var lotId = lineLot.value;
+      
+      // Clear and disable downstream dropdowns
+      lineProduct.innerHTML = '<option value="">-- Select Product --</option>';
+      lineProduct.disabled = true;
+      lineWarehouse.innerHTML = '<option value="">-- Select Warehouse --</option>';
+      lineWarehouse.disabled = true;
+      currentLotInventory = [];
+      
+      checkStockAvailability();
+
+      if (!lotId) {
+        return;
+      }
+
+      stockCheckStatus.textContent = 'Loading products...';
+      stockCheckStatus.style.color = 'var(--text3)';
+
+      fetch('sales_api.php?action=get_lot_inventory&lot_id=' + lotId)
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+          if (res.success) {
+            currentLotInventory = res.data;
+            
+            // Get unique products
+            var productsMap = {};
+            currentLotInventory.forEach(function(item) {
+              productsMap[item.product_id] = {
+                id: item.product_id,
+                name: item.product_name,
+                code: item.product_code
+              };
+            });
+            
+            var uniqueProducts = Object.values(productsMap);
+            
+            if (uniqueProducts.length === 0) {
+              lineProduct.innerHTML = '<option value="">No products available in this lot</option>';
+              stockCheckStatus.textContent = 'No stock available in this lot';
+              stockCheckStatus.style.color = 'var(--red)';
+            } else {
+              var prodHtml = '<option value="">-- Select Product --</option>';
+              uniqueProducts.forEach(function(p) {
+                prodHtml += '<option value="' + p.id + '">' + escapeHtml(p.name) + '</option>';
+              });
+              lineProduct.innerHTML = prodHtml;
+              lineProduct.disabled = false;
+              stockCheckStatus.textContent = 'Select Product';
+              stockCheckStatus.style.color = 'var(--text3)';
+            }
+          } else {
+            stockCheckStatus.textContent = 'Error loading products';
+            stockCheckStatus.style.color = 'var(--red)';
+          }
+        })
+        .catch(function(err) {
+          console.error(err);
+          stockCheckStatus.textContent = 'Error loading products';
+          stockCheckStatus.style.color = 'var(--red)';
+        });
     });
+
+    lineProduct.addEventListener('change', function() {
+      var prodId = parseInt(lineProduct.value, 10);
+      
+      lineWarehouse.innerHTML = '<option value="">-- Select Warehouse --</option>';
+      lineWarehouse.disabled = true;
+      
+      checkStockAvailability();
+
+      if (!prodId) {
+        return;
+      }
+
+      // Filter warehouses for the selected product
+      var warehouses = currentLotInventory.filter(function(item) {
+        return item.product_id === prodId;
+      });
+
+      if (warehouses.length === 0) {
+        lineWarehouse.innerHTML = '<option value="">No warehouses have this product</option>';
+      } else {
+        var whHtml = '<option value="">-- Select Warehouse --</option>';
+        warehouses.forEach(function(w) {
+          whHtml += '<option value="' + w.warehouse_id + '">' + escapeHtml(w.warehouse_name) + ' (' + escapeHtml(w.warehouse_code) + ')</option>';
+        });
+        lineWarehouse.innerHTML = whHtml;
+        lineWarehouse.disabled = false;
+        stockCheckStatus.textContent = 'Select Warehouse';
+        stockCheckStatus.style.color = 'var(--text3)';
+      }
+    });
+
+    lineWarehouse.addEventListener('change', checkStockAvailability);
 
     // Add Product Line Builder Item
     if (addLineBtn) {
@@ -423,8 +531,14 @@
         });
 
         // Reset inputs
+        lineLot.value = '';
+        lineProduct.innerHTML = '<option value="">-- Select Lot First --</option>';
+        lineProduct.disabled = true;
+        lineWarehouse.innerHTML = '<option value="">-- Select Product First --</option>';
+        lineWarehouse.disabled = true;
         lineQuantity.value = '';
         linePrice.value = '';
+        currentLotInventory = [];
         
         renderLinesTable();
         checkStockAvailability(); // Refresh stock label
