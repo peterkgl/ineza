@@ -350,33 +350,132 @@ if ($sheet === 'purchase_logs_ta') {
         $rows_data[] = $total_row;
     }
 } elseif ($sheet === 'ta_summary') {
-    $product_id = 2;
-    $grade_elem_id = 1;
-    $query = "SELECT p.purchase_date as tx_date, s.name as supplier_name, p.purchase_no,
-                SUM(p.quantity_kg) as total_weight, AVG(peg.grade_pct) as avg_grade, AVG(p.lme_price) as avg_lme
+    if (!function_exists('formatGradeExcel')) {
+        // Excel percentage formats are stored as fraction (e.g. 0.5469 for 54.69%)
+        function formatGradeExcel($val) {
+            if (is_null($val) || $val === '') return '';
+            $val = (float)$val;
+            if ($val > 1.0) {
+                $val = $val / 100;
+            }
+            return $val;
+        }
+    }
+
+    // Query active/used product elements dynamically for Tantalum (product_id = 2)
+    $elements_query = "SELECT DISTINCT pe.id, pe.element_code, pe.element_name, pe.symbol, COALESCE(pec.display_order, 999) as display_order
+                       FROM product_element pe
+                       JOIN purchasing_element_grade peg ON pe.id = peg.product_element_id
+                       JOIN purchasing p ON peg.purchasing_id = p.id
+                       LEFT JOIN product_element_composition pec ON pe.id = pec.product_element_id AND pec.product_id = 2
+                       WHERE p.product_id = 2 {$date_cond}
+                       ORDER BY display_order ASC, pe.element_code ASC";
+    $elements_res = mysqli_query($conn, $elements_query);
+    if (!$elements_res || mysqli_num_rows($elements_res) === 0) {
+        $elements_query = "SELECT DISTINCT pe.id, pe.element_code, pe.element_name, pe.symbol, COALESCE(pec.display_order, 999) as display_order
+                           FROM product_element pe
+                           LEFT JOIN product_element_composition pec ON pe.id = pec.product_element_id AND pec.product_id = 2
+                           WHERE pec.product_id = 2
+                           ORDER BY display_order ASC, pe.element_code ASC";
+        $elements_res = mysqli_query($conn, $elements_query);
+    }
+    $elements = [];
+    while ($elem = mysqli_fetch_assoc($elements_res)) {
+        $elements[] = $elem;
+    }
+
+    // Fetch grades for mapping
+    $grades_map = [];
+    $all_grades_query = "SELECT peg.purchasing_id, peg.product_element_id, peg.grade_pct
+                         FROM purchasing_element_grade peg
+                         JOIN purchasing p ON peg.purchasing_id = p.id
+                         WHERE p.product_id = 2 {$date_cond}";
+    $all_grades_res = mysqli_query($conn, $all_grades_query);
+    if ($all_grades_res) {
+        while ($g_row = mysqli_fetch_assoc($all_grades_res)) {
+            $grades_map[$g_row['purchasing_id']][$g_row['product_element_id']] = $g_row['grade_pct'];
+        }
+    }
+
+    // Fetch average grades for total row
+    $avg_grades_query = "SELECT pe.id, pe.element_name, pe.element_code, AVG(peg.grade_pct) as avg_pct
+                         FROM purchasing_element_grade peg
+                         JOIN product_element pe ON peg.product_element_id = pe.id
+                         JOIN purchasing p ON peg.purchasing_id = p.id
+                         WHERE p.product_id = 2 {$date_cond}
+                         GROUP BY pe.id, pe.element_name, pe.element_code";
+    $avg_grades_res = mysqli_query($conn, $avg_grades_query);
+    $avg_grades = [];
+    if ($avg_grades_res) {
+        while ($ag = mysqli_fetch_assoc($avg_grades_res)) {
+            $avg_grades[(int)$ag['id']] = $ag;
+        }
+    }
+
+    $query = "SELECT p.id, p.purchase_date as tx_date, p.negociant, s.name as supplier_name, p.purchase_no,
+                p.quantity_kg as total_weight,
+                p.lme_price as avg_lme
               FROM purchasing p 
               JOIN suppliers s ON p.supplier_id = s.id
-              LEFT JOIN purchasing_element_grade peg ON peg.purchasing_id = p.id AND peg.product_element_id = {$grade_elem_id}
-              WHERE p.product_id = {$product_id} {$date_cond}
-              GROUP BY s.id, p.purchase_date, p.purchase_no 
-              ORDER BY p.purchase_date ASC";
+              WHERE p.product_id = 2 {$date_cond}
+              ORDER BY p.purchase_date ASC, s.name ASC";
     $db_res = mysqli_query($conn, $query);
     $idx = 0;
+    $total_w = 0.0;
     if ($db_res) {
         while ($db_row = mysqli_fetch_assoc($db_res)) {
             $idx++;
-            $row_vals = array_fill(0, 10, '');
+            $weight = (float)$db_row['total_weight'];
+            $total_w += $weight;
+            
+            $row_vals = [];
             $row_vals[0] = '';
             $row_vals[1] = $db_row['tx_date'];
-            $row_vals[2] = $db_row['supplier_name'];
+            $row_vals[2] = $db_row['negociant'] ?? '';
             $row_vals[3] = $db_row['purchase_no'];
-            $row_vals[4] = (float)$db_row['total_weight'] > 0 ? (float)$db_row['total_weight'] : '';
-            $row_vals[5] = (float)$db_row['avg_grade'] > 0 ? (float)$db_row['avg_grade'] : '';
-            $row_vals[6] = ''; // Nb2O5
-            $row_vals[7] = ''; // Fe
+            $row_vals[4] = $weight > 0 ? $weight : '';
+            
+            $col_idx = 5;
+            foreach ($elements as $elem) {
+                $elem_id = (int)$elem['id'];
+                $grade_val = isset($grades_map[$db_row['id']][$elem_id]) ? $grades_map[$db_row['id']][$elem_id] : null;
+                $row_vals[$col_idx] = formatGradeExcel($grade_val);
+                $col_idx++;
+            }
+            
+            $row_vals[$col_idx] = (float)$db_row['avg_lme'] > 0 ? (float)$db_row['avg_lme'] : '';
+            $col_idx++;
+
+            while (count($row_vals) < 10) {
+                $row_vals[] = '';
+            }
 
             $rows_data[] = $row_vals;
         }
+    }
+
+    if ($idx > 0) {
+        $total_row = [];
+        $total_row[0] = '';
+        $total_row[1] = '';
+        $total_row[2] = 'Under processing:';
+        $total_row[3] = '';
+        $total_row[4] = $total_w > 0 ? $total_w : '';
+        
+        $col_idx = 5;
+        foreach ($elements as $elem) {
+            $elem_id = (int)$elem['id'];
+            $avg_val = isset($avg_grades[$elem_id]) ? $avg_grades[$elem_id]['avg_pct'] : null;
+            $total_row[$col_idx] = formatGradeExcel($avg_val);
+            $col_idx++;
+        }
+        $total_row[$col_idx] = '';
+        $col_idx++;
+        
+        while (count($total_row) < 10) {
+            $total_row[] = '';
+        }
+        $rows_data[] = $total_row;
     }
 } elseif ($sheet === 'monthly_transactions') {
     $excel_accounts = [
@@ -1218,7 +1317,7 @@ function injectTabularRows($dom, $sheetData, $rows_data, $start_row) {
             
             $style = isset($template_styles[$col_idx]) ? $template_styles[$col_idx] : null;
             global $sheet, $elements;
-            if ($sheet === 'tin_summary') {
+            if ($sheet === 'tin_summary' || $sheet === 'ta_summary') {
                 $lme_col_idx = 6 + count($elements);
                 if ($col_idx >= 6 && $col_idx < $lme_col_idx) {
                     $style = $template_styles[6] ?? null;
@@ -1450,13 +1549,14 @@ if ($sheet === 'bank_recon_usd' || $sheet === 'bank_recon_rwf') {
 } elseif ($sheet === 'equity_report') {
     handleEquityReport($sheet_dom, $sheetData, $opening_capital, $opening_retained, $capital_movement, $profit, $closing_capital, $closing_retained, $startDate, $endDate, $periodLabel);
 } else {
-    if ($sheet === 'tin_summary') {
+    if ($sheet === 'tin_summary' || $sheet === 'ta_summary') {
+        $product_id = ($sheet === 'tin_summary') ? 1 : 2;
         // Fetch product UOM
         $uom_code = 'Kgs';
         $uom_query = "SELECT uom.code 
                       FROM product p
                       LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
-                      WHERE p.id = 1";
+                      WHERE p.id = $product_id";
         $uom_res = mysqli_query($conn, $uom_query);
         if ($uom_res && $uom_row = mysqli_fetch_assoc($uom_res)) {
             $uom_code = $uom_row['code'] ?: 'Kgs';
@@ -1469,15 +1569,15 @@ if ($sheet === 'bank_recon_usd' || $sheet === 'bank_recon_rwf') {
                            FROM product_element pe
                            JOIN purchasing_element_grade peg ON pe.id = peg.product_element_id
                            JOIN purchasing p ON peg.purchasing_id = p.id
-                           LEFT JOIN product_element_composition pec ON pe.id = pec.product_element_id AND pec.product_id = 1
-                           WHERE p.product_id = 1 {$date_cond}
+                           LEFT JOIN product_element_composition pec ON pe.id = pec.product_element_id AND pec.product_id = $product_id
+                           WHERE p.product_id = $product_id {$date_cond}
                            ORDER BY display_order ASC, pe.element_code ASC";
         $elements_res = mysqli_query($conn, $elements_query);
         if (!$elements_res || mysqli_num_rows($elements_res) === 0) {
             $elements_query = "SELECT DISTINCT pe.id, pe.element_code, pe.element_name, pe.symbol, COALESCE(pec.display_order, 999) as display_order
                                FROM product_element pe
-                               LEFT JOIN product_element_composition pec ON pe.id = pec.product_element_id AND pec.product_id = 1
-                               WHERE pec.product_id = 1
+                               LEFT JOIN product_element_composition pec ON pe.id = pec.product_element_id AND pec.product_id = $product_id
+                               WHERE pec.product_id = $product_id
                                ORDER BY display_order ASC, pe.element_code ASC";
             $elements_res = mysqli_query($conn, $elements_query);
         }
