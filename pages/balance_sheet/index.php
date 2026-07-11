@@ -11,106 +11,126 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
     exit();
 }
 
-function getBalanceForCategory($conn, $category, $asOfDate) {
+function getAccountTypeBalance($conn, $accountTypeId, $asOfDate) {
+    $accountTypeId = (int)$accountTypeId;
     $asOfDateEsc = mysqli_real_escape_string($conn, $asOfDate);
-    $whereClause = "";
-    switch ($category) {
-        case 'ppe':
-            $whereClause = "(a.account_code LIKE '15%' OR a.account_code LIKE '16%' OR LOWER(a.account_name) LIKE '%property%' OR LOWER(a.account_name) LIKE '%plant%' OR LOWER(a.account_name) LIKE '%equipment%') AND t.parent_id = -1";
-            break;
-        case 'inventory':
-            $whereClause = "(a.account_code LIKE '13%' OR a.account_code LIKE '14%' OR LOWER(a.account_name) LIKE '%inventory%' OR LOWER(a.account_name) LIKE '%stock%') AND t.parent_id = -1";
-            break;
-        case 'receivables':
-            $whereClause = "(a.account_type_id = 6 OR LOWER(a.account_name) LIKE '%receivable%' OR a.account_code LIKE '11%') AND t.parent_id = -1";
-            break;
-        case 'cash':
-            $whereClause = "(a.account_code LIKE '10%' OR LOWER(a.account_name) LIKE '%cash%' OR LOWER(a.account_name) LIKE '%bank%' OR LOWER(a.account_name) LIKE '%bk%' OR LOWER(a.account_name) LIKE '%momo%') AND t.parent_id = -1 AND a.account_type_id != 6";
-            break;
-        case 'share_capital':
-            $whereClause = "(a.account_code LIKE '30%' OR LOWER(a.account_name) LIKE '%share%' OR LOWER(a.account_name) LIKE '%capital%') AND t.parent_id = -3";
-            break;
-        case 'retained_earnings':
-            $whereClause = "(a.account_code LIKE '32%' OR LOWER(a.account_name) LIKE '%retained%' OR LOWER(a.account_name) LIKE '%earnings%') AND t.parent_id = -3";
-            break;
-        case 'long_term_loans':
-            $whereClause = "(a.account_code LIKE '22%' OR LOWER(a.account_name) LIKE '%loan%' OR LOWER(a.account_name) LIKE '%long term%') AND t.parent_id = -2";
-            break;
-        case 'payables':
-            $whereClause = "(a.account_type_id = 3 OR LOWER(a.account_name) LIKE '%payable%' OR a.account_code LIKE '200%' OR a.account_code LIKE '201%') AND t.parent_id = -2";
-            break;
-        case 'tax_payable':
-            $whereClause = "(LOWER(a.account_name) LIKE '%tax%' OR LOWER(a.account_name) LIKE '%vat%' OR LOWER(a.account_name) LIKE '%rra%') AND t.parent_id = -2";
-            break;
-        case 'other_liabilities':
-            $whereClause = "t.parent_id = -2 AND NOT (a.account_type_id = 3 OR LOWER(a.account_name) LIKE '%payable%' OR a.account_code LIKE '200%' OR a.account_code LIKE '201%' OR a.account_code LIKE '22%' OR LOWER(a.account_name) LIKE '%loan%' OR LOWER(a.account_name) LIKE '%long term%' OR LOWER(a.account_name) LIKE '%tax%' OR LOWER(a.account_name) LIKE '%vat%' OR LOWER(a.account_name) LIKE '%rra%')";
-            break;
-        default:
-            return 0.0;
+
+    $stmt = mysqli_prepare($conn, "
+        SELECT COALESCE(SUM(jel.debit), 0.00) AS debits,
+               COALESCE(SUM(jel.credit), 0.00) AS credits
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON a.account_code = CAST(jel.account_id AS CHAR)
+                      AND a.account_type_id = jel.parent_account_id
+        WHERE je.entry_date <= ?
+          AND a.account_type_id = ?
+    ");
+
+    if (!$stmt) {
+        return 0.0;
     }
 
-    $isDebitNormal = in_array($category, ['ppe', 'inventory', 'receivables', 'cash']);
+    mysqli_stmt_bind_param($stmt, 'si', $asOfDateEsc, $accountTypeId);
+    mysqli_stmt_execute($stmt);
+    $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
 
-    $sql = "
-        SELECT COALESCE(SUM(jel.debit), 0.00) as debits,
-               COALESCE(SUM(jel.credit), 0.00) as credits
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND $whereClause";
-        
-    $res = mysqli_query($conn, $sql);
-    if ($res && $row = mysqli_fetch_assoc($res)) {
-        $deb = (float)$row['debits'];
-        $cred = (float)$row['credits'];
-        return $isDebitNormal ? ($deb - $cred) : ($cred - $deb);
+    if (!$row) {
+        return 0.0;
     }
-    return 0.0;
+
+    $debits = (float)$row['debits'];
+    $credits = (float)$row['credits'];
+    return $debits - $credits;
 }
 
-function getRetainedEarningsWithNetIncome($conn, $asOfDate) {
-    $asOfDateEsc = mysqli_real_escape_string($conn, $asOfDate);
-    $retainedRaw = getBalanceForCategory($conn, 'retained_earnings', $asOfDate);
-    
-    $revenueSql = "
-        SELECT COALESCE(SUM(jel.credit - jel.debit), 0.00) as net_revenue
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND t.parent_id = -4";
-    $revRes = mysqli_query($conn, $revenueSql);
-    $revRow = mysqli_fetch_assoc($revRes);
-    $netRevenue = (float)($revRow['net_revenue'] ?? 0.0);
+function getAccountTypeChildren($conn, $parentId) {
+    $parentId = (int)$parentId;
+    $stmt = mysqli_prepare($conn, "
+        SELECT id, code, name, parent_id
+        FROM account_types
+        WHERE parent_id = ?
+        ORDER BY code ASC, name ASC
+    ");
 
-    $cogsSql = "
-        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_cogs
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND t.parent_id = -5";
-    $cogsRes = mysqli_query($conn, $cogsSql);
-    $cogsRow = mysqli_fetch_assoc($cogsRes);
-    $netCogs = (float)($cogsRow['net_cogs'] ?? 0.0);
+    if (!$stmt) {
+        return [];
+    }
 
-    $expSql = "
-        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_exp
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND t.parent_id = -6";
-    $expRes = mysqli_query($conn, $expSql);
-    $expRow = mysqli_fetch_assoc($expRes);
-    $netExp = (float)($expRow['net_exp'] ?? 0.0);
+    mysqli_stmt_bind_param($stmt, 'i', $parentId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $rows = [];
 
-    $currentPeriodNetIncome = $netRevenue - $netCogs - $netExp;
-    return $retainedRaw + $currentPeriodNetIncome;
+    while ($row = mysqli_fetch_assoc($result)) {
+        $rows[] = [
+            'id' => (int)$row['id'],
+            'code' => $row['code'],
+            'name' => $row['name'],
+            'parent_id' => (int)$row['parent_id']
+        ];
+    }
+
+    mysqli_stmt_close($stmt);
+    return $rows;
 }
 
-$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : 2022;
+function getBalanceForTypeRows($rows, $keywords) {
+    $search = implode(' ', array_map('strtolower', $keywords));
+    $total = 0.0;
+
+    foreach ($rows as $row) {
+        $name = strtolower($row['name']);
+        $matched = true;
+        foreach ($keywords as $keyword) {
+            if (strpos($name, strtolower($keyword)) === false) {
+                $matched = false;
+                break;
+            }
+        }
+
+        if ($matched) {
+            $total += (float)$row['balance'];
+        }
+    }
+
+    return $total;
+}
+
+function isNonCurrentAssetType($name) {
+    $name = strtolower($name);
+    return strpos($name, 'property') !== false || strpos($name, 'plant') !== false || strpos($name, 'equipment') !== false || strpos($name, 'intangible') !== false || strpos($name, 'deferred') !== false || strpos($name, 'advance') !== false || strpos($name, 'prepayment') !== false;
+}
+
+function isNonCurrentLiabilityType($name) {
+    $name = strtolower($name);
+    return strpos($name, 'loan') !== false || strpos($name, 'lease') !== false || strpos($name, 'deferred') !== false || strpos($name, 'provision') !== false;
+}
+
+function buildBalanceSheetRows($conn, $parentId, $asOfDate) {
+    $rows = [];
+    foreach (getAccountTypeChildren($conn, $parentId) as $type) {
+        $rows[] = [
+            'id' => $type['id'],
+            'name' => $type['name'],
+            'balance' => getAccountTypeBalance($conn, $type['id'], $asOfDate)
+        ];
+    }
+    return $rows;
+}
+
+function sumBalances($rows, $filterCallback = null) {
+    $total = 0.0;
+    foreach ($rows as $row) {
+        if ($filterCallback && !$filterCallback($row['name'])) {
+            continue;
+        }
+        $total += (float)$row['balance'];
+    }
+    return $total;
+}
+
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 
 // Query distinct years from POSTED entries
 $yearsQuery = "SELECT DISTINCT YEAR(entry_date) as yr FROM journal_entries WHERE statuss = 'POSTED' ORDER BY yr DESC";
@@ -122,7 +142,9 @@ if ($yearsRes) {
     }
 }
 if (empty($availableYears)) {
-    $availableYears = [2022, 2021, 2020];
+  for ($y = date('Y'); $y >= 2025; $y--) {
+      $availableYears[] = $y;
+  }
 }
 if (!in_array($selectedYear, $availableYears)) {
     $availableYears[] = $selectedYear;
@@ -133,41 +155,116 @@ $year1 = $selectedYear;
 $year2 = $selectedYear - 1;
 $year3 = $selectedYear - 2;
 
-// Calculate Year 1
-$ppe_22 = getBalanceForCategory($conn, 'ppe', "$year1-12-31");
-$inv_22 = getBalanceForCategory($conn, 'inventory', "$year1-12-31");
-$rec_22 = getBalanceForCategory($conn, 'receivables', "$year1-12-31");
-$cash_22 = getBalanceForCategory($conn, 'cash', "$year1-12-31");
-$capital_22 = getBalanceForCategory($conn, 'share_capital', "$year1-12-31");
-$retained_22 = getRetainedEarningsWithNetIncome($conn, "$year1-12-31");
-$loans_22 = getBalanceForCategory($conn, 'long_term_loans', "$year1-12-31");
-$pay_22 = getBalanceForCategory($conn, 'payables', "$year1-12-31");
-$other_liab_22 = getBalanceForCategory($conn, 'other_liabilities', "$year1-12-31");
-$tax_22 = getBalanceForCategory($conn, 'tax_payable', "$year1-12-31");
+function calculateYearBalances($conn, $year) {
+    $asOfDate = "$year-12-31";
+    $assetRows = buildBalanceSheetRows($conn, -1, $asOfDate);
+    $liabilityRows = buildBalanceSheetRows($conn, -2, $asOfDate);
+    $equityRows = buildBalanceSheetRows($conn, -3, $asOfDate);
 
-// Calculate Year 2
-$ppe_21 = getBalanceForCategory($conn, 'ppe', "$year2-12-31");
-$inv_21 = getBalanceForCategory($conn, 'inventory', "$year2-12-31");
-$rec_21 = getBalanceForCategory($conn, 'receivables', "$year2-12-31");
-$cash_21 = getBalanceForCategory($conn, 'cash', "$year2-12-31");
-$capital_21 = getBalanceForCategory($conn, 'share_capital', "$year2-12-31");
-$retained_21 = getRetainedEarningsWithNetIncome($conn, "$year2-12-31");
-$loans_21 = getBalanceForCategory($conn, 'long_term_loans', "$year2-12-31");
-$pay_21 = getBalanceForCategory($conn, 'payables', "$year2-12-31");
-$other_liab_21 = getBalanceForCategory($conn, 'other_liabilities', "$year2-12-31");
-$tax_21 = getBalanceForCategory($conn, 'tax_payable', "$year2-12-31");
+    $ppe = getBalanceForTypeRows($assetRows, ['property', 'plant', 'equipment']);
+    $inv = getBalanceForTypeRows($assetRows, ['inventory']);
+    $rec = getBalanceForTypeRows($assetRows, ['receivable']);
+    $cash = getBalanceForTypeRows($assetRows, ['cash']);
+    $capital = getBalanceForTypeRows($equityRows, ['share', 'capital']);
+    $retained = getBalanceForTypeRows($equityRows, ['retained', 'earnings']) + getBalanceForTypeRows($equityRows, ['current', 'year', 'earnings']);
+    $loans = getBalanceForTypeRows($liabilityRows, ['loan']) + getBalanceForTypeRows($liabilityRows, ['lease']);
+    $pay = getBalanceForTypeRows($liabilityRows, ['payable']);
+    $tax = getBalanceForTypeRows($liabilityRows, ['tax']);
 
-// Calculate Year 3
-$ppe_20 = getBalanceForCategory($conn, 'ppe', "$year3-12-31");
-$inv_20 = getBalanceForCategory($conn, 'inventory', "$year3-12-31");
-$rec_20 = getBalanceForCategory($conn, 'receivables', "$year3-12-31");
-$cash_20 = getBalanceForCategory($conn, 'cash', "$year3-12-31");
-$capital_20 = getBalanceForCategory($conn, 'share_capital', "$year3-12-31");
-$retained_20 = getRetainedEarningsWithNetIncome($conn, "$year3-12-31");
-$loans_20 = getBalanceForCategory($conn, 'long_term_loans', "$year3-12-31");
-$pay_20 = getBalanceForCategory($conn, 'payables', "$year3-12-31");
-$other_liab_20 = getBalanceForCategory($conn, 'other_liabilities', "$year3-12-31");
-$tax_20 = getBalanceForCategory($conn, 'tax_payable', "$year3-12-31");
+    $totalNca = sumBalances($assetRows, 'isNonCurrentAssetType');
+    $totalCa = sumBalances($assetRows, function($name) { return !isNonCurrentAssetType($name); });
+    $totalAssets = $totalNca + $totalCa;
+
+    $totalNcl = sumBalances($liabilityRows, 'isNonCurrentLiabilityType');
+    $totalCl = sumBalances($liabilityRows, function($name) { return !isNonCurrentLiabilityType($name); });
+    $otherLiab = $totalCl - $pay - $tax - $loans;
+    $totalLiabilities = $totalNcl + $totalCl;
+
+    $totalEquity = $capital + $retained;
+    $totalEqLiab = $totalEquity + $totalLiabilities;
+
+    return [
+        'ppe' => $ppe,
+        'inv' => $inv,
+        'rec' => $rec,
+        'cash' => $cash,
+        'capital' => $capital,
+        'retained' => $retained,
+        'loans' => $loans,
+        'pay' => $pay,
+        'other_liab' => $otherLiab,
+        'tax' => $tax,
+        'total_nca' => $totalNca,
+        'total_ca' => $totalCa,
+        'total_assets' => $totalAssets,
+        'total_equity' => $totalEquity,
+        'total_ncl' => $totalNcl,
+        'total_cl' => $totalCl,
+        'total_liabilities' => $totalLiabilities,
+        'total_eq_liab' => $totalEqLiab,
+    ];
+}
+
+$balancesYear1 = calculateYearBalances($conn, $year1);
+$balancesYear2 = calculateYearBalances($conn, $year2);
+$balancesYear3 = calculateYearBalances($conn, $year3);
+
+$ppe_22 = $balancesYear1['ppe'];
+$inv_22 = $balancesYear1['inv'];
+$rec_22 = $balancesYear1['rec'];
+$cash_22 = $balancesYear1['cash'];
+$capital_22 = $balancesYear1['capital'];
+$retained_22 = $balancesYear1['retained'];
+$loans_22 = $balancesYear1['loans'];
+$pay_22 = $balancesYear1['pay'];
+$other_liab_22 = $balancesYear1['other_liab'];
+$tax_22 = $balancesYear1['tax'];
+$total_nca_22 = $balancesYear1['total_nca'];
+$total_ca_22 = $balancesYear1['total_ca'];
+$total_assets_22 = $balancesYear1['total_assets'];
+$total_equity_22 = $balancesYear1['total_equity'];
+$total_ncl_22 = $balancesYear1['total_ncl'];
+$total_cl_22 = $balancesYear1['total_cl'];
+$total_liabilities_22 = $balancesYear1['total_liabilities'];
+$total_eq_liab_22 = $balancesYear1['total_eq_liab'];
+
+$ppe_21 = $balancesYear2['ppe'];
+$inv_21 = $balancesYear2['inv'];
+$rec_21 = $balancesYear2['rec'];
+$cash_21 = $balancesYear2['cash'];
+$capital_21 = $balancesYear2['capital'];
+$retained_21 = $balancesYear2['retained'];
+$loans_21 = $balancesYear2['loans'];
+$pay_21 = $balancesYear2['pay'];
+$other_liab_21 = $balancesYear2['other_liab'];
+$tax_21 = $balancesYear2['tax'];
+$total_nca_21 = $balancesYear2['total_nca'];
+$total_ca_21 = $balancesYear2['total_ca'];
+$total_assets_21 = $balancesYear2['total_assets'];
+$total_equity_21 = $balancesYear2['total_equity'];
+$total_ncl_21 = $balancesYear2['total_ncl'];
+$total_cl_21 = $balancesYear2['total_cl'];
+$total_liabilities_21 = $balancesYear2['total_liabilities'];
+$total_eq_liab_21 = $balancesYear2['total_eq_liab'];
+
+$ppe_20 = $balancesYear3['ppe'];
+$inv_20 = $balancesYear3['inv'];
+$rec_20 = $balancesYear3['rec'];
+$cash_20 = $balancesYear3['cash'];
+$capital_20 = $balancesYear3['capital'];
+$retained_20 = $balancesYear3['retained'];
+$loans_20 = $balancesYear3['loans'];
+$pay_20 = $balancesYear3['pay'];
+$other_liab_20 = $balancesYear3['other_liab'];
+$tax_20 = $balancesYear3['tax'];
+$total_nca_20 = $balancesYear3['total_nca'];
+$total_ca_20 = $balancesYear3['total_ca'];
+$total_assets_20 = $balancesYear3['total_assets'];
+$total_equity_20 = $balancesYear3['total_equity'];
+$total_ncl_20 = $balancesYear3['total_ncl'];
+$total_cl_20 = $balancesYear3['total_cl'];
+$total_liabilities_20 = $balancesYear3['total_liabilities'];
+$total_eq_liab_20 = $balancesYear3['total_eq_liab'];
 
 // Subtotals and Totals Calculations
 $total_nca_22 = $ppe_22;

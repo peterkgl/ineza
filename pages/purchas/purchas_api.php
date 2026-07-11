@@ -378,8 +378,32 @@ switch ($action) {
                 $row['converted_amount'] = $row['converted_amount'] !== null ? (float)$row['converted_amount'] : null;
                 $row['currency_code'] = $row['currency_code'] ?? 'USD';
                 
+                $paymentsQuery = "SELECT spa.id, sp.payment_date, sp.amount_currency, sp.amount_base, sp.exchange_rate, sp.status, spa.amount_allocated, cur.code as currency_code
+                                  FROM supplier_payment_allocations spa
+                                  JOIN supplier_payments sp ON spa.supplier_payment_id = sp.id
+                                  LEFT JOIN currencies cur ON sp.currency_id = cur.id
+                                  WHERE spa.purchase_id = $pId
+                                  ORDER BY sp.payment_date ASC, sp.id ASC";
+                $paymentsResult = mysqli_query($conn, $paymentsQuery);
+                $paymentHistory = [];
+                if ($paymentsResult) {
+                    while ($payRow = mysqli_fetch_assoc($paymentsResult)) {
+                        $paymentHistory[] = [
+                            'id' => (int)$payRow['id'],
+                            'payment_date' => $payRow['payment_date'],
+                            'status' => $payRow['status'],
+                            'currency_code' => $payRow['currency_code'] ?? 'USD',
+                            'amount_currency' => (float)$payRow['amount_currency'],
+                            'amount_base' => (float)$payRow['amount_base'],
+                            'exchange_rate' => (float)$payRow['exchange_rate'],
+                            'amount_allocated' => (float)$payRow['amount_allocated']
+                        ];
+                    }
+                }
+
                 $row['grades'] = $grades;
                 $row['primary_element_id'] = $primaryElementId;
+                $row['payment_history'] = $paymentHistory;
                 
                 $purchases[] = $row;
             }

@@ -244,6 +244,35 @@ document.addEventListener("DOMContentLoaded", function () {
       gradesHtml = '<div style="color:var(--text3); font-size:12px; font-style:italic;">No grades recorded.</div>';
     }
 
+    function formatAmountValue(amount, currency) {
+      if (amount === null || amount === undefined || isNaN(amount)) {
+        return '—';
+      }
+      var formatted = parseFloat(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return currency === 'RWF' ? formatted + ' RWF' : '$' + formatted;
+    }
+
+    var paymentHistoryHtml = '';
+    if (p.payment_history && p.payment_history.length > 0) {
+      paymentHistoryHtml = '<div style="margin-top: 20px;">' +
+        '<div style="font-size: 11px; text-transform: uppercase; color: var(--text3); font-weight: 500; margin-bottom: 8px;">Payment History</div>' +
+        '<table class="data-table" style="margin-top: 0; font-size: 12px;"><thead><tr><th>Payment ID</th><th>Date</th><th>Status</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Applied</th></tr></thead><tbody>';
+
+      p.payment_history.forEach(function(payment) {
+        paymentHistoryHtml += '<tr>' +
+          '<td><strong>#' + escapeHtml(payment.id) + '</strong></td>' +
+          '<td>' + escapeHtml(payment.payment_date || '—') + '</td>' +
+          '<td>' + escapeHtml(payment.status || '—') + '</td>' +
+          '<td style="text-align:right;">' + formatAmountValue(payment.amount_currency || payment.amount_allocated || 0, payment.currency_code || 'USD') + '</td>' +
+          '<td style="text-align:right;">' + formatAmountValue(payment.amount_allocated || 0, payment.currency_code || 'USD') + '</td>' +
+          '</tr>';
+      });
+
+      paymentHistoryHtml += '</tbody></table></div>';
+    } else {
+      paymentHistoryHtml = '<div style="margin-top: 16px; color: var(--text3); font-size: 13px;">No payment history recorded yet.</div>';
+    }
+
     var html = '<div class="detail-modal-list">' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Purchase Reference</div><div class="detail-modal-val">' + escapeHtml(p.purchase_no) + '</div></div>' +
       '<div class="detail-modal-item"><div class="detail-modal-label">Status</div><div class="detail-modal-val">' + escapeHtml(p.status.toUpperCase()) + '</div></div>' +
@@ -281,6 +310,8 @@ document.addEventListener("DOMContentLoaded", function () {
       '<div style="margin-top: 20px;">' +
       '<div style="font-size: 11px; text-transform: uppercase; color: var(--text3); font-weight: 500; margin-bottom: 8px;">Product Elements Analysis</div>' +
       gradesHtml +
+      '</div>' +
+      paymentHistoryHtml +
       '</div>';
 
     detailContent.innerHTML = html;

@@ -96,6 +96,8 @@
         html += '<div style="display: flex; gap: 6px; justify-content: center;">';
         html += '<button class="btn-sm btn-outline view-btn" data-id="' + row.id + '" title="View Details"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>';
         html += '<button class="btn-sm btn-outline delete-btn text-danger" data-id="' + row.id + '" data-no="' + escapeHtml(row.sale_no) + '" title="Delete"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
+        // add receive payment button
+        html += '<a class="btn-sm btn-outline" href="receive_payment.php?sale_id=' + row.id + '" title="Receive Payment"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M12 2v20"/><path d="M17 7l-5-5-5 5"/><path d="M7 17l5 5 5-5"/></svg></a>';
         html += '</div>';
         html += '</td>';
         html += '</tr>';
@@ -192,6 +194,29 @@
       var outstanding = sale.total_value_usd - sale.total_paid;
       var statusClass = 'status-' + sale.status.toLowerCase();
       var statusLabel = sale.status.toUpperCase();
+      var paymentHistoryHtml = '';
+
+      if (sale.payment_history && sale.payment_history.length > 0) {
+        paymentHistoryHtml = '<div style="margin-top: 20px;">' +
+          '<div style="font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; margin-bottom: 8px;">Payment History</div>' +
+          '<table class="data-table" style="font-size:12px;">' +
+          '<thead><tr><th>Receipt No.</th><th>Date</th><th>Method</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Applied</th></tr></thead>' +
+          '<tbody>';
+
+        sale.payment_history.forEach(function(payment) {
+          paymentHistoryHtml += '<tr>' +
+            '<td><strong>' + escapeHtml(payment.payment_number || ('#' + payment.id)) + '</strong></td>' +
+            '<td>' + escapeHtml(payment.payment_date || '—') + '</td>' +
+            '<td>' + escapeHtml(payment.payment_method || '—') + '</td>' +
+            '<td style="text-align:right;">' + formatCurrency(payment.amount_currency || payment.amount_allocated || 0, payment.currency_code || 'USD') + '</td>' +
+            '<td style="text-align:right;">' + formatCurrency(payment.amount_allocated || 0, payment.currency_code || 'USD') + '</td>' +
+            '</tr>';
+        });
+
+        paymentHistoryHtml += '</tbody></table></div>';
+      } else {
+        paymentHistoryHtml = '<div style="margin-top: 20px; color: var(--text3); font-size: 13px;">No payment history recorded yet.</div>';
+      }
 
       detailsBody.innerHTML = 
         '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size:13px; margin-bottom: 20px;">' +
@@ -200,12 +225,9 @@
             '<p style="margin: 4px 0;"><span style="color:var(--text3);">Customer Code:</span> <code style="background:var(--bg2); padding:2px 4px; border-radius:3px;">' + escapeHtml(sale.customer_code) + '</code></p>' +
             '<p style="margin: 4px 0;"><span style="color:var(--text3);">Billing Currency:</span> <strong>' + escapeHtml(sale.currency) + '</strong></p>' +
             '<p style="margin: 4px 0;"><span style="color:var(--text3);">Exchange Rate:</span> <strong>' + sale.exchange_rate + ' RWF/USD</strong></p>' +
-            '<p style="margin: 4px 0;"><span style="color:var(--text3);">Export Permit:</span> <strong>' + escapeHtml(sale.export_permit_no || '—') + '</strong></p>' +
           '</div>' +
           '<div>' +
             '<p style="margin: 4px 0;"><span style="color:var(--text3);">Order Date:</span> <strong>' + escapeHtml(sale.sale_date) + '</strong></p>' +
-            '<p style="margin: 4px 0;"><span style="color:var(--text3);">Incoterms:</span> <strong>' + escapeHtml(sale.incoterms || '—') + '</strong></p>' +
-            '<p style="margin: 4px 0;"><span style="color:var(--text3);">Payment Terms:</span> <strong>' + escapeHtml(sale.payment_terms || '—') + '</strong></p>' +
             '<p style="margin: 4px 0;"><span style="color:var(--text3);">Destination:</span> <strong>' + escapeHtml(sale.destination_country || '—') + '</strong></p>' +
             '<p style="margin: 4px 0;"><span style="color:var(--text3);">Status:</span> <span class="status-badge ' + statusClass + '">' + statusLabel + '</span></p>' +
           '</div>' +
@@ -229,6 +251,7 @@
           '<div style="font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase;">Sold Mineral Products</div>' +
           itemsHtml +
         '</div>' +
+        paymentHistoryHtml +
         (sale.notes ? '<div style="margin-top: 15px; font-size: 13px;"><strong style="display:block;">Notes:</strong><span style="color:var(--text3);">' + escapeHtml(sale.notes) + '</span></div>' : '');
 
       viewModal.classList.add('active');
@@ -287,8 +310,6 @@
     // Header Inputs
     var currencySelect = document.getElementById('currency');
     var exchangeRateInput = document.getElementById('exchangeRate');
-    var amountPaidInput = document.getElementById('amountPaid');
-    var accountSelect = document.getElementById('accountId');
     
     // Wizard navigation controls
     var prevBtn = document.getElementById('prevBtn');
@@ -608,17 +629,6 @@
       updatePaymentDetails();
     });
 
-    amountPaidInput.addEventListener('input', function() {
-      var val = parseFloat(amountPaidInput.value);
-      if (val > 0) {
-        accountSelect.required = true;
-        accountSelect.parentElement.querySelector('label').textContent = 'Cash/Bank Account *';
-      } else {
-        accountSelect.required = false;
-        accountSelect.parentElement.querySelector('label').textContent = 'Cash/Bank Account';
-      }
-    });
-
     // Step Validation
     function validateStep(step) {
       if (step === 1) {
@@ -647,11 +657,7 @@
           return false;
         }
       } else if (step === 3) {
-        var amountPaid = parseFloat(amountPaidInput.value);
-        if (amountPaid > 0 && !accountSelect.value) {
-          showAlert('danger', 'Please select a Cash/Bank Account for recording the payment amount.', 'formAlertPlaceholder');
-          return false;
-        }
+        // No payment fields are required in the current sales flow.
       }
       // Clear alert placeholder
       var placeholder = document.getElementById('formAlertPlaceholder');
@@ -738,7 +744,7 @@
         total += line.total;
       });
 
-      var amountPaid = parseFloat(amountPaidInput.value) || 0;
+      var amountPaid = 0;
       var balance = total - amountPaid;
 
       document.getElementById('sumTotalVal').textContent = currencySymbol + ' ' + total.toLocaleString(undefined, { minimumFractionDigits: 2 });

@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 09, 2026 at 11:08 AM
+-- Generation Time: Jul 11, 2026 at 01:28 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -43,37 +43,19 @@ CREATE TABLE `accounts` (
 --
 
 INSERT INTO `accounts` (`id`, `account_type_id`, `account_code`, `account_name`, `is_active`, `description`, `created_at`, `updated_at`) VALUES
-(11, 4, '1024', 'Stocks - Tin', 1, '', '2026-07-02 18:41:13', '2026-07-02 18:41:13'),
-(12, 4, '1034', 'Stocks - Coltan', 1, '', '2026-07-02 18:41:32', '2026-07-02 18:41:32'),
-(13, 4, '1044', 'Stocks - Tantalum', 1, '', '2026-07-02 18:57:54', '2026-07-02 18:57:54'),
-(14, 37, '4011', 'Sales - Tin', 1, '', '2026-07-02 18:59:27', '2026-07-02 18:59:27'),
-(15, 37, '4021', 'Sales - Coltan', 1, '', '2026-07-02 18:59:57', '2026-07-02 18:59:57'),
-(16, 37, '4031', 'Sales - Tantalum', 1, '', '2026-07-02 19:00:32', '2026-07-02 19:00:32'),
-(17, -1, '1500', 'Property, Plant and Equipment', 1, 'Long term physical assets', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(18, -1, '1300', 'Merchandise Inventory', 1, 'Inventory held for sale', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(19, 6, '1100', 'Trade Receivables', 1, 'Accounts receivable from customers', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(20, -1, '1010', 'Cash and Bank Balances', 1, 'Cash on hand and in bank accounts', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(21, -3, '3000', 'Share Capital', 1, 'Owner contributed capital', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(22, -3, '3200', 'Retained Earnings', 1, 'Accumulated historical earnings', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(23, -2, '2200', 'Long Term Loans', 1, 'Long term liabilities and bank loans', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(24, 3, '2001', 'Trade Payables', 1, 'Accounts payable to suppliers', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(25, -2, '2100', 'Other Current Liabilities', 1, 'Accrued current liabilities', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(26, -2, '2400', 'Current Tax Payable', 1, 'Tax liabilities payable to RRA', '2026-07-03 23:50:46', '2026-07-03 23:50:46'),
-(27, 15, '2014', 'Eugene ndayishimiye - Accounts Payable', 1, 'Auto-created account for supplier: Eugene ndayishimiye', '2026-07-06 13:45:03', '2026-07-06 13:45:03'),
-(28, 1, '1010-01', 'EQUITY US$ ACCOUNT', 1, 'Equity USD bank account', '2026-07-07 12:07:53', '2026-07-07 12:07:53'),
-(29, 28, '3000-01', 'Investments', 1, 'Investments account', '2026-07-07 12:07:53', '2026-07-07 12:07:53'),
-(30, 60, '6013-01', 'Bank Charges', 1, 'Bank charges expense', '2026-07-07 12:07:53', '2026-07-07 12:07:53'),
-(31, 1, '1010-02', 'Petty Cash Fund - INEZA', 1, 'Petty cash asset account', '2026-07-07 12:07:53', '2026-07-07 12:07:53'),
-(32, 1, '1010-03', 'Due from EQUITY - INEZA AFRICAN MINING RWF', 1, 'Due from RWF equity account', '2026-07-07 12:07:53', '2026-07-07 12:07:53'),
-(33, 19, '2005-01', 'Advances from Star Metal Company', 1, 'Customer advances liability', '2026-07-07 12:07:53', '2026-07-07 12:07:53'),
-(34, 1, '1010-04', 'PC INEZA RUB', 1, 'Rubaya petty cash account', '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(35, 60, '6000-RUB-001', 'Funds to Sites - Rubaya', 1, 'Seeded from Rubaya Petty Cash', '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(36, 60, '6000-RUB-002', 'Advances to O/E - Charles MUNYANEZA', 1, 'Seeded from Rubaya Petty Cash', '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(37, 60, '6000-RUB-003', 'Travel & Accommodation', 1, 'Seeded from Rubaya Petty Cash', '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(38, 60, '6000-RUB-004', 'Staff Welfare', 1, 'Seeded from Rubaya Petty Cash', '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(39, 60, '6000-RUB-005', 'Transport', 1, 'Seeded from Rubaya Petty Cash', '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(40, 60, '6000-RUB-008', 'Miscellaneous Expense', 1, 'Seeded from Rubaya Petty Cash', '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(41, 60, '6000-RUB-009', 'Advances to O/E - GEDEON', 1, 'Seeded from Rubaya Petty Cash', '2026-07-07 15:08:13', '2026-07-07 15:08:13');
+(1, 4, '1024', 'Stock - Tin', 1, '', '2026-07-10 09:10:49', '2026-07-10 09:10:49'),
+(2, 4, '1034', 'Stock - Tantalum', 1, '', '2026-07-10 09:11:07', '2026-07-10 09:11:07'),
+(3, 37, '4011', 'sales - Tin', 1, '', '2026-07-10 09:13:12', '2026-07-10 09:13:12'),
+(4, 37, '4021', 'sales - Tantalum', 1, '', '2026-07-10 09:13:38', '2026-07-10 09:13:38'),
+(5, 41, '5011', 'Mineral Cost', 1, '', '2026-07-10 09:14:35', '2026-07-10 09:14:35'),
+(6, 15, '2014', 'Eugene ndayishimiye - Accounts Payable', 1, 'Auto-created account for supplier: Eugene ndayishimiye', '2026-07-10 09:15:31', '2026-07-10 09:15:31'),
+(7, 15, '2015', 'Mr Peter Umupapa mwiza - Accounts Payable', 1, 'Auto-created account for supplier: Mr Peter Umupapa mwiza', '2026-07-10 09:16:12', '2026-07-10 09:16:12'),
+(9, 15, '2016', 'Jean Nepo - Accounts Payable', 1, 'Auto-created account for supplier: Jean Nepo', '2026-07-10 16:27:48', '2026-07-10 16:27:48'),
+(10, 1, '1021', 'IAM Petty Cash Fund HQ - NSANA Jean', 1, '', '2026-07-11 07:54:52', '2026-07-11 07:54:52'),
+(11, 1, '1031', 'EQUITY RWF Account - INEZA AFRICAN MINING', 1, '', '2026-07-11 07:55:07', '2026-07-11 07:55:07'),
+(12, 1, '1041', 'EQUITY $ Account - INEZA AFRICAN MINING', 1, '', '2026-07-11 07:55:23', '2026-07-11 07:55:23'),
+(13, 1, '1051', 'EQUITY € Account - INEZA AFRICAN MINING', 1, '', '2026-07-11 07:55:36', '2026-07-11 07:55:36'),
+(14, 1, '1061', 'IAM Petty Cash on Site RUB - Gedeon HARERIMANA', 1, '', '2026-07-11 07:55:51', '2026-07-11 07:55:51');
 
 -- --------------------------------------------------------
 
@@ -103,7 +85,7 @@ INSERT INTO `account_types` (`id`, `code`, `name`, `parent_id`, `is_editable`, `
 (-3, '3000', 'Equity', NULL, 0, 0, '2026-06-24 00:50:00', '2026-06-24 00:50:00'),
 (-2, '2000', 'Liabilities', NULL, 0, 0, '2026-06-24 00:50:00', '2026-06-24 00:50:00'),
 (-1, '1000', 'Assets', NULL, 0, 0, '2026-06-24 00:50:00', '2026-06-24 00:50:00'),
-(1, '1001', 'Cash & Cash Equivalenta', -1, 1, 1, '2026-07-02 08:49:04', '2026-07-02 08:49:04'),
+(1, '1001', 'Cash & Cash Equivalents', -1, 1, 1, '2026-07-02 08:49:04', '2026-07-11 07:52:48'),
 (2, '1002', 'Accounts Receivable', -1, 1, 1, '2026-07-02 08:49:19', '2026-07-02 08:49:19'),
 (3, '1003', 'Other Receivables', -1, 1, 1, '2026-07-02 08:49:38', '2026-07-02 08:49:38'),
 (4, '1004', 'Inventory', -1, 1, 1, '2026-07-02 08:50:38', '2026-07-02 08:50:38'),
@@ -203,6 +185,81 @@ CREATE TABLE `audit_log` (
   `performed_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Complete immutable audit trail - every action by every user is logged here';
 
+--
+-- Dumping data for table `audit_log`
+--
+
+INSERT INTO `audit_log` (`id`, `user_full_name`, `action`, `target_table`, `target_name`, `target_description`, `old_values`, `new_values`, `ip_address`, `user_agent`, `session_id`, `notes`, `performed_at`) VALUES
+(1, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:03:05'),
+(2, 'Super Admin', 'CREATE', 'accounts', '1024', 'Created new account: Stock - Tin (1024)', NULL, '{\"id\":1,\"account_type_id\":4,\"account_code\":\"1024\",\"account_name\":\"Stock - Tin\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:10:49'),
+(3, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:10:49'),
+(4, 'Super Admin', 'CREATE', 'accounts', '1034', 'Created new account: Stock - Tantalum (1034)', NULL, '{\"id\":2,\"account_type_id\":4,\"account_code\":\"1034\",\"account_name\":\"Stock - Tantalum\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:11:07'),
+(5, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:11:07'),
+(6, 'Super Admin', 'CREATE', 'accounts', '4011', 'Created new account: sales - Tin (4011)', NULL, '{\"id\":3,\"account_type_id\":37,\"account_code\":\"4011\",\"account_name\":\"sales - Tin\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:13:12'),
+(7, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:13:12'),
+(8, 'Super Admin', 'CREATE', 'accounts', '4021', 'Created new account: sales - Tantalum (4021)', NULL, '{\"id\":4,\"account_type_id\":37,\"account_code\":\"4021\",\"account_name\":\"sales - Tantalum\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:13:38'),
+(9, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:13:38'),
+(10, 'Super Admin', 'CREATE', 'accounts', '5011', 'Created new account: Mineral Cost (5011)', NULL, '{\"id\":5,\"account_type_id\":41,\"account_code\":\"5011\",\"account_name\":\"Mineral Cost\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:14:35'),
+(11, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:14:35'),
+(12, 'Super Admin', 'CREATE', 'suppliers', 'Eugene ndayishimiye', 'Created supplier: Eugene ndayishimiye (individual)', NULL, '{\"id\":1,\"supplier_type\":\"individual\",\"name\":\"Eugene ndayishimiye\",\"nif\":\"\",\"phone\":\"+250785750117\",\"email\":\"nendayishimye@gmail.com\",\"address\":\"Unnamed Road\",\"payables_account_id\":6,\"is_active\":1,\"notes\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:15:31'),
+(13, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:15:31'),
+(14, 'Super Admin', 'CREATE', 'suppliers', 'Mr Peter Umupapa mwiza', 'Created supplier: Mr Peter Umupapa mwiza (individual)', NULL, '{\"id\":2,\"supplier_type\":\"individual\",\"name\":\"Mr Peter Umupapa mwiza\",\"nif\":\"\",\"phone\":\"+250789887655\",\"email\":\"mrpeter@gmail.com\",\"address\":\"musanze faraja\",\"payables_account_id\":7,\"is_active\":1,\"notes\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:16:12'),
+(15, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:16:12'),
+(16, 'Super Admin', 'CREATE', 'product', 'SN', 'Created product: Tin', NULL, '{\"id\":1,\"product_code\":\"SN\",\"product_name\":\"Tin\",\"uom_id\":1,\"inventory_account_id\":1024,\"sales_account_id\":4011,\"cogs_account_id\":5011,\"description\":\"\",\"is_active\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:17:28'),
+(17, 'Super Admin', 'VIEW', 'product', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:17:28'),
+(18, 'Super Admin', 'CREATE', 'lots', 'Lot 1-Ta', 'Created lot: Lot 1-Ta', NULL, '{\"id\":1,\"lots_code\":\"Lot 1-Ta\",\"product_id\":1,\"opening_date\":\"2026-07-10\",\"closing_date\":null}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:18:22'),
+(19, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:18:22'),
+(20, 'Super Admin', 'CREATE', 'product', 'TA', 'Created product: Tantalum', NULL, '{\"id\":2,\"product_code\":\"TA\",\"product_name\":\"Tantalum\",\"uom_id\":1,\"inventory_account_id\":1034,\"sales_account_id\":4021,\"cogs_account_id\":5011,\"description\":\"\",\"is_active\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:19:18'),
+(21, 'Super Admin', 'VIEW', 'product', 'Products List', 'User viewed the products list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:19:18'),
+(22, 'Super Admin', 'UPDATE', 'lots', 'Lot 1-Ta', 'Updated lot: Lot 1-Ta', '{\"id\":\"1\",\"lots_code\":\"Lot 1-Ta\",\"product_id\":\"1\",\"opening_date\":\"2026-07-10\",\"closing_date\":null,\"statuss\":\"1\"}', '{\"id\":1,\"lots_code\":\"Lot 1-SN\",\"product_id\":1,\"opening_date\":\"2026-07-10\",\"closing_date\":null}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:20:12'),
+(23, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:20:12'),
+(24, 'Super Admin', 'CREATE', 'lots', 'Lot 1-Ta', 'Created lot: Lot 1-Ta', NULL, '{\"id\":2,\"lots_code\":\"Lot 1-Ta\",\"product_id\":2,\"opening_date\":\"2026-07-10\",\"closing_date\":null}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:20:34'),
+(25, 'Super Admin', 'VIEW', 'lots', 'Lots List', 'User viewed the lots list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:20:34'),
+(26, 'Super Admin', 'CREATE', 'purchasing', 'PUR-20260710-9FDB', 'Recorded mining purchase: PUR-20260710-9FDB', NULL, '{\"id\":1,\"purchase_no\":\"PUR-20260710-9FDB\",\"product_id\":1,\"quantity_kg\":1343.5,\"purchase_value_usd\":20069.63292}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:34:29'),
+(27, 'Super Admin', 'UPDATE', 'purchasing', 'PUR-20260710-9FDB', 'Status changed from pending to received', '{\"status\":\"pending\"}', '{\"status\":\"received\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:37:35'),
+(28, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', '46dhdu729ucs6hs5sdmebo679i', NULL, '2026-07-10 09:43:29'),
+(29, 'Super Admin', 'CREATE', 'purchasing', 'PUR-20260710-CEF4', 'Recorded mining purchase: PUR-20260710-CEF4', NULL, '{\"id\":2,\"purchase_no\":\"PUR-20260710-CEF4\",\"product_id\":1,\"quantity_kg\":71.9,\"purchase_value_usd\":1109.204176}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 10:36:23'),
+(30, 'Super Admin', 'CREATE', 'purchasing', 'PUR-20260710-F36C', 'Recorded mining purchase: PUR-20260710-F36C', NULL, '{\"id\":3,\"purchase_no\":\"PUR-20260710-F36C\",\"product_id\":1,\"quantity_kg\":71.9,\"purchase_value_usd\":1109.204176}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 10:41:58'),
+(31, 'Super Admin', 'UPDATE', 'purchasing', 'PUR-20260710-F36C', 'Status changed from pending to received', '{\"status\":\"pending\"}', '{\"status\":\"received\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 10:42:09'),
+(32, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:00:24'),
+(33, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:00:28'),
+(34, 'Super Admin', 'CREATE', 'purchasing', 'PUR-20260710-91AC', 'Recorded mining purchase: PUR-20260710-91AC', NULL, '{\"id\":1,\"purchase_no\":\"PUR-20260710-91AC\",\"product_id\":1,\"quantity_kg\":1343.5,\"purchase_value_usd\":20069.63292}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:02:45'),
+(35, 'Super Admin', 'UPDATE', 'purchasing', 'PUR-20260710-91AC', 'Status changed from pending to received', '{\"status\":\"pending\"}', '{\"status\":\"received\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:03:27'),
+(36, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:06:21'),
+(37, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:07:09'),
+(38, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:07:26'),
+(39, 'Super Admin', 'CREATE', 'sells', 'SALE-20260710-C5D9', 'Recorded sales order: SALE-20260710-C5D9', NULL, '{\"id\":1,\"sale_no\":\"SALE-20260710-C5D9\",\"customer_id\":1,\"total_qty_kg\":200,\"total_value_usd\":500000,\"amount_paid\":3000}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:26:01'),
+(40, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:26:04'),
+(41, 'Super Admin', 'CREATE', 'journal_entries', 'JE-20260710-0005', 'Created manual journal entry: JE-20260710-0005', NULL, '{\"id\":5,\"journal_no\":\"JE-20260710-0005\",\"entry_date\":\"2026-07-10\",\"total_debit\":45000,\"description\":\"to viewing all details only\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0', 'jdv6femo33h5m3k4gvt5khas25', NULL, '2026-07-10 11:38:05'),
+(42, 'Super Admin', 'CREATE', 'suppliers', 'Jean Nepo', 'Created supplier: Jean Nepo (individual)', NULL, '{\"id\":3,\"supplier_type\":\"individual\",\"name\":\"Jean Nepo\",\"nif\":\"12345678\",\"phone\":\"+250789028963\",\"email\":\"ndahayoptr@gmail.com\",\"address\":\"KN 1 Rd, Kigali\",\"payables_account_id\":9,\"is_active\":1,\"notes\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 16:27:48'),
+(43, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 16:27:48'),
+(44, 'Super Admin', 'UPDATE', 'suppliers', 'Jean Nepo Supplier', 'Updated supplier: Jean Nepo Supplier (individual)', '{\"id\":\"3\",\"supplier_type\":\"individual\",\"name\":\"Jean Nepo\",\"nif\":\"12345678\",\"vat_reg_no\":null,\"phone\":\"+250789028963\",\"email\":\"ndahayoptr@gmail.com\",\"address\":\"KN 1 Rd, Kigali\",\"payables_account_id\":\"2016\",\"currency_id\":null,\"region\":null,\"is_active\":\"1\",\"notes\":\"\",\"created_at\":\"2026-07-10 18:27:48\",\"updated_at\":\"2026-07-10 18:27:48\",\"created_by\":\"2\",\"updated_by\":null}', '{\"id\":3,\"supplier_type\":\"individual\",\"name\":\"Jean Nepo Supplier\",\"nif\":\"12345678\",\"phone\":\"+250789028963\",\"email\":\"ndahayoptr@gmail.com\",\"address\":\"KN 1 Rd, Kigali\",\"is_active\":1,\"notes\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 16:29:03'),
+(45, 'Super Admin', 'VIEW', 'suppliers', 'Suppliers List', 'User viewed the suppliers list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 16:29:03'),
+(46, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 17:27:20'),
+(76, 'Super Admin', 'CREATE', 'purchasing', 'PUR-20260710-0524', 'Recorded mining purchase: PUR-20260710-0524', NULL, '{\"id\":34,\"purchase_no\":\"PUR-20260710-0524\",\"product_id\":1,\"quantity_kg\":1343.5,\"purchase_value_usd\":20069.63292}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '08o7drta8645qskbidanp7cp7c', NULL, '2026-07-10 21:51:46'),
+(77, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 21:53:50'),
+(78, 'Super Admin', 'UPDATE', 'purchasing', 'PUR-20260710-0524', 'Status changed from pending to received', '{\"status\":\"pending\"}', '{\"status\":\"received\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 21:58:05'),
+(79, 'Super Admin', 'UPDATE', 'stock', 'Adjustment: Loss', 'Adjusted stock id 1 by 2 kg (Loss)', '{\"id\":\"1\",\"warehouse_id\":\"1\",\"product_id\":\"1\",\"lot_id\":\"1\",\"uom_id\":\"1\",\"qty_purchased\":\"1343.5000\",\"qty_sold\":\"0.0000\",\"qty_adjusted\":\"0.0000\",\"qty_on_hand\":\"1343.5000\",\"avg_cost_per_kg_rwf\":\"21588.8601\",\"avg_cost_per_kg_usd\":\"14.9383\",\"purchase_currency_id\":\"2\",\"purchase_amount_in_currency\":\"20069.6329\",\"exchange_rate\":\"1445.2000\",\"converted_amount\":\"29004633.4960\",\"total_value_rwf\":\"29004633.50\",\"total_value_usd\":\"20069.6329\",\"last_updated\":\"2026-07-11 00:01:47\",\"notes\":null,\"opening\":\"1343.5000\",\"closing\":\"1343.5000\",\"last_rolled_over_at\":\"2026-07-11\"}', '{\"id\":1,\"qty_adjusted\":-2,\"closing\":1341.5}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 22:22:26'),
+(80, 'Super Admin', 'UPDATE', 'stock', 'Adjustment: Gain', 'Adjusted stock id 1 by 2 kg (Gain)', '{\"id\":\"1\",\"warehouse_id\":\"1\",\"product_id\":\"1\",\"lot_id\":\"1\",\"uom_id\":\"1\",\"qty_purchased\":\"1343.5000\",\"qty_sold\":\"0.0000\",\"qty_adjusted\":\"-2.0000\",\"qty_on_hand\":\"1341.5000\",\"avg_cost_per_kg_rwf\":\"21588.8601\",\"avg_cost_per_kg_usd\":\"14.9383\",\"purchase_currency_id\":\"2\",\"purchase_amount_in_currency\":\"20069.6329\",\"exchange_rate\":\"1445.2000\",\"converted_amount\":\"29004633.4960\",\"total_value_rwf\":\"29004633.50\",\"total_value_usd\":\"20069.6329\",\"last_updated\":\"2026-07-11 00:22:26\",\"notes\":null,\"opening\":\"1343.5000\",\"closing\":\"1341.5000\",\"last_rolled_over_at\":\"2026-07-11\"}', '{\"id\":1,\"qty_adjusted\":0,\"closing\":1343.5}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 22:28:47'),
+(81, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 22:30:13'),
+(82, 'Super Admin', 'UPDATE', 'stock', 'Adjustment: Loss', 'Adjusted stock id 1 by 3 kg (Loss)', '{\"id\":\"1\",\"warehouse_id\":\"1\",\"product_id\":\"1\",\"lot_id\":\"1\",\"uom_id\":\"1\",\"qty_purchased\":\"1343.5000\",\"qty_sold\":\"0.0000\",\"qty_adjusted\":\"0.0000\",\"qty_on_hand\":\"1343.5000\",\"avg_cost_per_kg_rwf\":\"21588.8601\",\"avg_cost_per_kg_usd\":\"14.9383\",\"purchase_currency_id\":\"2\",\"purchase_amount_in_currency\":\"20069.6329\",\"exchange_rate\":\"1445.2000\",\"converted_amount\":\"29004633.4960\",\"total_value_rwf\":\"29004633.50\",\"total_value_usd\":\"20069.6329\",\"last_updated\":\"2026-07-11 00:28:47\",\"notes\":null,\"opening\":\"1343.5000\",\"closing\":\"1343.5000\",\"last_rolled_over_at\":\"2026-07-11\"}', '{\"id\":1,\"qty_adjusted\":-3,\"closing\":1340.5}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'rfsfqole0em439g056edsn7ojb', NULL, '2026-07-10 22:35:15'),
+(83, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:48:13'),
+(84, 'Super Admin', 'UPDATE', 'account_types', '1001', 'Updated account type: Cash & Cash Equivalents (1001)', '{\"id\":\"1\",\"code\":\"1001\",\"name\":\"Cash & Cash Equivalenta\",\"parent_id\":\"-1\",\"is_editable\":\"1\",\"is_deletable\":\"1\",\"created_at\":\"2026-07-02 10:49:04\",\"updated_at\":\"2026-07-02 10:49:04\"}', '{\"id\":1,\"code\":\"1001\",\"name\":\"Cash & Cash Equivalents\",\"parent_id\":-1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:52:48'),
+(85, 'Super Admin', 'VIEW', 'account_types', 'Account Types List', 'User viewed the account types list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:52:48'),
+(86, 'Super Admin', 'CREATE', 'accounts', '1021', 'Created new account: IAM Petty Cash Fund HQ - NSANA Jean (1021)', NULL, '{\"id\":10,\"account_type_id\":1,\"account_code\":\"1021\",\"account_name\":\"IAM Petty Cash Fund HQ - NSANA Jean\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:54:52'),
+(87, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:54:52'),
+(88, 'Super Admin', 'CREATE', 'accounts', '1031', 'Created new account: EQUITY RWF Account - INEZA AFRICAN MINING (1031)', NULL, '{\"id\":11,\"account_type_id\":1,\"account_code\":\"1031\",\"account_name\":\"EQUITY RWF Account - INEZA AFRICAN MINING\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:55:07'),
+(89, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:55:07'),
+(90, 'Super Admin', 'CREATE', 'accounts', '1041', 'Created new account: EQUITY $ Account - INEZA AFRICAN MINING (1041)', NULL, '{\"id\":12,\"account_type_id\":1,\"account_code\":\"1041\",\"account_name\":\"EQUITY $ Account - INEZA AFRICAN MINING\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:55:23'),
+(91, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:55:23'),
+(92, 'Super Admin', 'CREATE', 'accounts', '1051', 'Created new account: EQUITY € Account - INEZA AFRICAN MINING (1051)', NULL, '{\"id\":13,\"account_type_id\":1,\"account_code\":\"1051\",\"account_name\":\"EQUITY € Account - INEZA AFRICAN MINING\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:55:36'),
+(93, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:55:36'),
+(94, 'Super Admin', 'CREATE', 'accounts', '1061', 'Created new account: IAM Petty Cash on Site RUB - Gedeon HARERIMANA (1061)', NULL, '{\"id\":14,\"account_type_id\":1,\"account_code\":\"1061\",\"account_name\":\"IAM Petty Cash on Site RUB - Gedeon HARERIMANA\",\"is_active\":1,\"description\":\"\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:55:51'),
+(95, 'Super Admin', 'VIEW', 'accounts', 'Accounts List', 'User viewed the financial accounts list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 07:55:51'),
+(96, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 08:21:30'),
+(97, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'grnvmrfsu458cs56l9d553h3rg', NULL, '2026-07-11 09:40:18'),
+(98, 'Super Admin', 'VIEW', 'sells', 'Sales List', 'User viewed the sales list', NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '95us1fnq7tkcmtnkmtnk2deom0', NULL, '2026-07-11 09:42:55');
+
 -- --------------------------------------------------------
 
 --
@@ -233,14 +290,6 @@ CREATE TABLE `bank_statement_balances` (
   `balance` decimal(18,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `bank_statement_balances`
---
-
-INSERT INTO `bank_statement_balances` (`id`, `report_slug`, `as_of_date`, `balance`) VALUES
-(1, 'bank_recon_usd', '2026-01-05', 36477.40),
-(2, 'bank_recon_rwf', '2026-01-05', 2508.74);
-
 -- --------------------------------------------------------
 
 --
@@ -255,16 +304,6 @@ CREATE TABLE `cash_counts` (
   `currency` varchar(10) NOT NULL COMMENT 'RWF or USD',
   `quantity` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `cash_counts`
---
-
-INSERT INTO `cash_counts` (`id`, `report_slug`, `count_date`, `denomination`, `currency`, `quantity`) VALUES
-(1, 'cash_count_hq', '2025-12-23', '5000', 'RWF', 110000),
-(2, 'cash_count_hq', '2025-12-23', '1', 'RWF', 4434),
-(4, 'cash_count_rub', '2026-01-05', '100', 'RWF', 15100),
-(5, 'cash_count_rub', '2026-01-05', '1', 'RWF', 14);
 
 -- --------------------------------------------------------
 
@@ -384,7 +423,7 @@ CREATE TABLE `exchange_rates` (
 --
 
 INSERT INTO `exchange_rates` (`id`, `from_currency_id`, `to_currency_id`, `rate`, `rate_date`, `source`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
-(2, 1, 2, 1400.00000000, '2026-06-17', 'bnr', 2, '2026-06-17 11:49:17', 2, '2026-06-17 11:49:48');
+(2, 1, 2, 1445.20000000, '2026-06-17', 'bnr', 2, '2026-06-17 11:49:17', 2, '2026-07-10 16:38:38');
 
 -- --------------------------------------------------------
 
@@ -454,30 +493,10 @@ CREATE TABLE `journal_entries` (
 --
 
 INSERT INTO `journal_entries` (`id`, `journal_no`, `entry_date`, `description`, `statuss`, `created_by`, `created_at`) VALUES
-(1, 'JE-USD-EQ-0001', '2025-05-25', 'To/From: AFRICAN FRESH PRODUCTS LTD | Details: Investment from African Fresh Products', 'POSTED', 2, '2026-07-07 12:07:53'),
-(2, 'JE-USD-EQ-0002', '2025-05-25', 'To/From: Equity Bank | Details: SEARCH FEE /4001650050117', 'POSTED', 2, '2026-07-07 12:07:53'),
-(3, 'JE-USD-EQ-0003', '2025-05-29', 'To/From: MUVUNYI DIEUDONNE | Details: Cash withdraw for Petty Cash replenishment', 'POSTED', 2, '2026-07-07 12:07:53'),
-(4, 'JE-USD-EQ-0004', '2025-05-29', 'To/From: MUVUNYI DIEUDONNE | Details: Cash withdraw for Petty Cash replenishment', 'POSTED', 2, '2026-07-07 12:07:53'),
-(5, 'JE-USD-EQ-0005', '2025-05-29', 'To/From: Equity Bank | Details: Cash W/D No Chq Charge', 'POSTED', 2, '2026-07-07 12:07:53'),
-(6, 'JE-USD-EQ-0006', '2025-05-29', 'To/From: Equity Bank | Details: Cash Withdrawal Charge', 'POSTED', 2, '2026-07-07 12:07:53'),
-(7, 'JE-USD-EQ-0007', '2025-05-29', 'To/From: Equity Bank | Details: SUPREME NON-MEMBER FEE', 'POSTED', 2, '2026-07-07 12:07:53'),
-(8, 'JE-USD-EQ-0008', '2025-06-04', 'To/From: MUVUNYI DIEUDONNE | Details: Cash withdraw for Petty Cash replenishment', 'POSTED', 2, '2026-07-07 12:07:53'),
-(9, 'JE-USD-EQ-0009', '2025-06-04', 'To/From: Equity Bank | Details: Cash W/D No Chq Charge', 'POSTED', 2, '2026-07-07 12:07:53'),
-(10, 'JE-USD-EQ-0010', '2025-06-04', 'To/From: Equity Bank | Details: Inter Sol Cash Wdrawal charge', 'POSTED', 2, '2026-07-07 12:07:53'),
-(11, 'JE-USD-EQ-0011', '2025-06-05', 'To/From: STAR METAL COMPANY LTD | Details: TRF FROM STAR METALS COMPANY LTD', 'POSTED', 2, '2026-07-07 12:07:53'),
-(12, 'JE-USD-EQ-0012', '2025-06-05', 'To/From: BETTER OFF EQUIPMENTS AND SOLUTIONS | Details: Purchase of plant equipment, magnetic separator and shaking table - TRANSFER TO BETTER OFF EQUIPMENTS AND SOLUTIONS', 'POSTED', 2, '2026-07-07 12:07:53'),
-(13, 'JE-RUB-EQ-0001', '2025-06-25', 'To/From: HARERIMANA ZIRUNGUYE Gedeon | Details: Aprovisionnement YURY 3000$ & D.G 5000', 'POSTED', 2, '2026-07-07 15:08:13'),
-(14, 'JE-RUB-EQ-0002', '2025-06-25', 'To/From: CHARLES MUNYANEZA | Details: Avance CHARLES MUNYANEZA', 'POSTED', 2, '2026-07-07 15:08:13'),
-(15, 'JE-RUB-EQ-0003', '2025-06-25', 'To/From: HARERIMANA ZIRUNGUYE Gedeon | Details: Logement Gdeon & Abel', 'POSTED', 2, '2026-07-07 15:08:13'),
-(16, 'JE-RUB-EQ-0004', '2025-06-25', 'To/From: HARERIMANA ZIRUNGUYE Gedeon | Details: Restauration GEDEON & Abel', 'POSTED', 2, '2026-07-07 15:08:13'),
-(17, 'JE-RUB-EQ-0005', '2025-06-25', 'To/From: ABEL NYAMUGIRA | Details: Avance Abel', 'POSTED', 2, '2026-07-07 15:08:13'),
-(18, 'JE-RUB-EQ-0006', '2025-06-25', 'To/From: HARERIMANA ZIRUNGUYE Gedeon | Details: Transport matelas', 'POSTED', 2, '2026-07-07 15:08:13'),
-(19, 'JE-RUB-EQ-0007', '2025-06-25', 'To/From: HARERIMANA ZIRUNGUYE Gedeon | Details: Achat de 160kgs @12$', 'POSTED', 2, '2026-07-07 15:08:13'),
-(20, 'JE-RUB-EQ-0008', '2025-06-25', 'To/From: Commissionnaire | Details: Commissionnaire', 'POSTED', 2, '2026-07-07 15:08:13'),
-(21, 'JE-RUB-EQ-0009', '2025-06-25', 'To/From: HARERIMANA ZIRUNGUYE Gedeon | Details: Avance GEDEON - Salary', 'POSTED', 2, '2026-07-07 15:08:13'),
-(22, 'JE-20201231-0001', '2020-12-31', 'Opening Statement of Financial Position 2020', 'CANCELLED', 2, '2026-07-07 22:20:19'),
-(23, 'JE-20211231-0001', '2021-12-31', 'Statement of Financial Position Movements 2021', 'POSTED', 2, '2026-07-07 22:20:19'),
-(24, 'JE-20221231-0001', '2022-12-31', 'Statement of Financial Position Movements 2022', 'POSTED', 2, '2026-07-07 22:20:19');
+(18, 'JE-20260710-0001', '2026-07-10', 'Purchase recorded: PUR-20260710-0524', '', 2, '2026-07-10 21:51:46'),
+(23, 'JE-20260711-0001', '2026-07-11', 'Stock adjustment loss for product #1', '', 2, '2026-07-10 22:22:26'),
+(24, 'JE-20260711-0002', '2026-07-11', 'Stock adjustment gain for product #1', '', 2, '2026-07-10 22:28:47'),
+(25, 'JE-20260711-0003', '2026-07-11', 'Stock adjustment loss for product #1', '', 2, '2026-07-10 22:35:15');
 
 -- --------------------------------------------------------
 
@@ -488,6 +507,7 @@ INSERT INTO `journal_entries` (`id`, `journal_no`, `entry_date`, `description`, 
 CREATE TABLE `journal_entry_lines` (
   `id` bigint(20) NOT NULL,
   `journal_entry_id` bigint(20) NOT NULL,
+  `parent_account_id` bigint(20) NOT NULL,
   `account_id` bigint(20) NOT NULL,
   `debit` decimal(18,2) DEFAULT 0.00,
   `credit` decimal(18,2) DEFAULT 0.00,
@@ -502,76 +522,15 @@ CREATE TABLE `journal_entry_lines` (
 -- Dumping data for table `journal_entry_lines`
 --
 
-INSERT INTO `journal_entry_lines` (`id`, `journal_entry_id`, `account_id`, `debit`, `credit`, `currency_id`, `exchange_rate`, `amount_currency`, `amount_base`, `description`) VALUES
-(1, 1, 28, 26449.00, 0.00, 2, 1400.000000, 26449.00, 37028600.00, 'Investment from African Fresh Products'),
-(2, 1, 29, 0.00, 26449.00, 2, 1400.000000, 26449.00, 37028600.00, 'Investment from African Fresh Products'),
-(3, 2, 28, 0.00, 6.25, 2, 1400.000000, 6.25, 8750.00, 'SEARCH FEE /4001650050117'),
-(4, 2, 30, 6.25, 0.00, 2, 1400.000000, 6.25, 8750.00, 'SEARCH FEE /4001650050117'),
-(5, 3, 28, 0.00, 450.35, 2, 1400.000000, 450.35, 630490.00, 'Cash withdraw for Petty Cash replenishment'),
-(6, 3, 31, 450.35, 0.00, 2, 1400.000000, 450.35, 630490.00, 'Cash withdraw for Petty Cash replenishment'),
-(7, 4, 28, 0.00, 8899.65, 2, 1400.000000, 8899.65, 12459510.00, 'Cash withdraw for Petty Cash replenishment'),
-(8, 4, 32, 8899.65, 0.00, 2, 1400.000000, 8899.65, 12459510.00, 'Cash withdraw for Petty Cash replenishment'),
-(9, 5, 28, 0.00, 2.47, 2, 1400.000000, 2.47, 3458.00, 'Cash W/D No Chq Charge'),
-(10, 5, 30, 2.47, 0.00, 2, 1400.000000, 2.47, 3458.00, 'Cash W/D No Chq Charge'),
-(11, 6, 28, 0.00, 5.01, 2, 1400.000000, 5.01, 7014.00, 'Cash Withdrawal Charge'),
-(12, 6, 30, 5.01, 0.00, 2, 1400.000000, 5.01, 7014.00, 'Cash Withdrawal Charge'),
-(13, 7, 28, 0.00, 8.34, 2, 1400.000000, 8.34, 11676.00, 'SUPREME NON-MEMBER FEE'),
-(14, 7, 30, 8.34, 0.00, 2, 1400.000000, 8.34, 11676.00, 'SUPREME NON-MEMBER FEE'),
-(15, 8, 28, 0.00, 1000.00, 2, 1400.000000, 1000.00, 1400000.00, 'Cash withdraw for Petty Cash replenishment'),
-(16, 8, 31, 1000.00, 0.00, 2, 1400.000000, 1000.00, 1400000.00, 'Cash withdraw for Petty Cash replenishment'),
-(17, 9, 28, 0.00, 2.47, 2, 1400.000000, 2.47, 3458.00, 'Cash W/D No Chq Charge'),
-(18, 9, 30, 2.47, 0.00, 2, 1400.000000, 2.47, 3458.00, 'Cash W/D No Chq Charge'),
-(19, 10, 28, 0.00, 5.01, 2, 1400.000000, 5.01, 7014.00, 'Inter Sol Cash Wdrawal charge'),
-(20, 10, 30, 5.01, 0.00, 2, 1400.000000, 5.01, 7014.00, 'Inter Sol Cash Wdrawal charge'),
-(21, 11, 28, 15000.00, 0.00, 2, 1400.000000, 15000.00, 21000000.00, 'TRF FROM STAR METALS COMPANY LTD'),
-(22, 11, 33, 0.00, 15000.00, 2, 1400.000000, 15000.00, 21000000.00, 'TRF FROM STAR METALS COMPANY LTD'),
-(23, 12, 28, 0.00, 29000.00, 2, 1400.000000, 29000.00, 40600000.00, 'Purchase of plant equipment, magnetic separator and shaking table - TRANSFER TO BETTER OFF EQUIPMENTS AND SOLUTIONS'),
-(24, 12, 31, 29000.00, 0.00, 2, 1400.000000, 29000.00, 40600000.00, 'Purchase of plant equipment, magnetic separator and shaking table - TRANSFER TO BETTER OFF EQUIPMENTS AND SOLUTIONS'),
-(25, 13, 34, 35000.00, 0.00, 2, 1.000000, 35000.00, 35000.00, 'Aprovisionnement YURY 3000$ & D.G 5000'),
-(26, 13, 35, 0.00, 35000.00, 2, 1.000000, 35000.00, 35000.00, 'Aprovisionnement YURY 3000$ & D.G 5000'),
-(27, 14, 34, 0.00, 32500.00, 2, 1.000000, 32500.00, 32500.00, 'Avance CHARLES MUNYANEZA'),
-(28, 14, 36, 32500.00, 0.00, 2, 1.000000, 32500.00, 32500.00, 'Avance CHARLES MUNYANEZA'),
-(29, 15, 34, 0.00, 120.00, 2, 1.000000, 120.00, 120.00, 'Logement Gdeon & Abel'),
-(30, 15, 37, 120.00, 0.00, 2, 1.000000, 120.00, 120.00, 'Logement Gdeon & Abel'),
-(31, 16, 34, 0.00, 96.00, 2, 1.000000, 96.00, 96.00, 'Restauration GEDEON & Abel'),
-(32, 16, 38, 96.00, 0.00, 2, 1.000000, 96.00, 96.00, 'Restauration GEDEON & Abel'),
-(33, 17, 34, 0.00, 60.00, 2, 1.000000, 60.00, 60.00, 'Avance Abel'),
-(34, 17, 39, 60.00, 0.00, 2, 1.000000, 60.00, 60.00, 'Avance Abel'),
-(35, 18, 34, 0.00, 10.00, 2, 1.000000, 10.00, 10.00, 'Transport matelas'),
-(36, 18, 39, 10.00, 0.00, 2, 1.000000, 10.00, 10.00, 'Transport matelas'),
-(37, 19, 34, 0.00, 1920.00, 2, 1.000000, 1920.00, 1920.00, 'Achat de 160kgs @12$'),
-(38, 19, 11, 1920.00, 0.00, 2, 1.000000, 1920.00, 1920.00, 'Achat de 160kgs @12$'),
-(39, 20, 34, 0.00, 20.00, 2, 1.000000, 20.00, 20.00, 'Commissionnaire'),
-(40, 20, 40, 20.00, 0.00, 2, 1.000000, 20.00, 20.00, 'Commissionnaire'),
-(41, 21, 34, 0.00, 100.00, 2, 1.000000, 100.00, 100.00, 'Avance GEDEON - Salary'),
-(42, 21, 41, 100.00, 0.00, 2, 1.000000, 100.00, 100.00, 'Avance GEDEON - Salary'),
-(43, 22, 17, 51175000.00, 0.00, 1, 1.000000, 51175000.00, 51175000.00, 'PPE opening balance 2020'),
-(44, 22, 18, 464009712.00, 0.00, 1, 1.000000, 464009712.00, 464009712.00, 'Inventory opening balance 2020'),
-(45, 22, 19, 185174448.00, 0.00, 1, 1.000000, 185174448.00, 185174448.00, 'Accounts receivable opening 2020'),
-(46, 22, 20, 44507100.00, 0.00, 1, 1.000000, 44507100.00, 44507100.00, 'Cash and cash equivalents opening 2020'),
-(47, 22, 21, 0.00, 15000000.00, 1, 1.000000, 15000000.00, 15000000.00, 'Share capital opening 2020'),
-(48, 22, 22, 0.00, 381297812.00, 1, 1.000000, 381297812.00, 381297812.00, 'Retained earnings opening 2020'),
-(49, 22, 24, 0.00, 149525000.00, 1, 1.000000, 149525000.00, 149525000.00, 'Accounts payable opening 2020'),
-(50, 22, 25, 0.00, 35630100.00, 1, 1.000000, 35630100.00, 35630100.00, 'Other current liabilities opening 2020'),
-(51, 22, 26, 0.00, 163413348.00, 1, 1.000000, 163413348.00, 163413348.00, 'Current tax payable opening 2020'),
-(52, 23, 17, 379480062.00, 0.00, 1, 1.000000, 379480062.00, 379480062.00, 'PPE additions movement 2021'),
-(53, 23, 18, 309189158.00, 0.00, 1, 1.000000, 309189158.00, 309189158.00, 'Inventory change movement 2021'),
-(54, 23, 19, 185390724.00, 0.00, 1, 1.000000, 185390724.00, 185390724.00, 'Accounts receivable change 2021'),
-(55, 23, 20, 51479230.00, 0.00, 1, 1.000000, 51479230.00, 51479230.00, 'Cash movement 2021'),
-(56, 23, 22, 0.00, 491979478.00, 1, 1.000000, 491979478.00, 491979478.00, 'Retained earnings change 2021'),
-(57, 23, 23, 0.00, 247055474.00, 1, 1.000000, 247055474.00, 247055474.00, 'Long term loan addition 2021'),
-(58, 23, 24, 0.00, 107669092.00, 1, 1.000000, 107669092.00, 107669092.00, 'Accounts payable change 2021'),
-(59, 23, 25, 0.00, 31400130.00, 1, 1.000000, 31400130.00, 31400130.00, 'Other current liabilities change 2021'),
-(60, 23, 26, 0.00, 47435000.00, 1, 1.000000, 47435000.00, 47435000.00, 'Current tax payable change 2021'),
-(61, 24, 17, 271496138.00, 0.00, 1, 1.000000, 271496138.00, 271496138.00, 'PPE additions movement 2022'),
-(62, 24, 18, 18425051.00, 0.00, 1, 1.000000, 18425051.00, 18425051.00, 'Inventory change movement 2022'),
-(63, 24, 19, 71434513.00, 0.00, 1, 1.000000, 71434513.00, 71434513.00, 'Accounts receivable change 2022'),
-(64, 24, 23, 43716697.00, 0.00, 1, 1.000000, 43716697.00, 43716697.00, 'Long term loan principal repayment 2022'),
-(65, 24, 24, 144445786.00, 0.00, 1, 1.000000, 144445786.00, 144445786.00, 'Accounts payable change 2022'),
-(66, 24, 25, 17030230.00, 0.00, 1, 1.000000, 17030230.00, 17030230.00, 'Other current liabilities change 2022'),
-(67, 24, 20, 0.00, 20180230.00, 1, 1.000000, 20180230.00, 20180230.00, 'Cash reduction movement 2022'),
-(68, 24, 22, 0.00, 530051923.00, 1, 1.000000, 530051923.00, 530051923.00, 'Retained earnings change 2022'),
-(69, 24, 26, 0.00, 16316762.00, 1, 1.000000, 16316762.00, 16316762.00, 'Current tax payable change 2022');
+INSERT INTO `journal_entry_lines` (`id`, `journal_entry_id`, `parent_account_id`, `account_id`, `debit`, `credit`, `currency_id`, `exchange_rate`, `amount_currency`, `amount_base`, `description`) VALUES
+(2, 18, 4, 1024, 14611.55, 0.00, 2, 1445.200000, 14611.55, 21116610.35, 'Purchase recorded: PUR-20260710-0524'),
+(3, 18, 15, 2016, 0.00, 14611.55, 2, 1445.200000, 14611.55, 21116610.35, 'Purchase recorded: PUR-20260710-0524'),
+(4, 23, 4, 5011, 2.00, 0.00, 2, 1.000000, 2.00, 2.00, 'Stock adjustment loss for product #1'),
+(5, 23, 4, 1024, 0.00, 2.00, 2, 1.000000, 2.00, 2.00, 'Stock adjustment loss for product #1'),
+(6, 24, 4, 1024, 29.88, 0.00, 2, 1445.200000, 29.88, 43177.66, 'Stock adjustment gain for product #1'),
+(7, 24, 4, 5011, 0.00, 29.88, 2, 1445.200000, 29.88, 43177.66, 'Stock adjustment gain for product #1'),
+(8, 25, 41, 5, 44.81, 0.00, 2, 1445.200000, 44.81, 64766.49, 'Stock adjustment loss for product #1'),
+(9, 25, 4, 1, 0.00, 44.81, 2, 1445.200000, 44.81, 64766.49, 'Stock adjustment loss for product #1');
 
 -- --------------------------------------------------------
 
@@ -593,169 +552,11 @@ CREATE TABLE `login` (
 --
 
 INSERT INTO `login` (`id`, `user_id`, `email`, `login_time`, `ip_address`, `status`) VALUES
-(1, NULL, 'admin@inezamining.rw', '2026-06-14 20:02:19', '127.0.0.1', 'invalid_email'),
-(4, 2, 'admin@gmail.com', '2026-06-14 20:19:11', '::1', 'invalid_password'),
-(5, 2, 'admin@gmail.com', '2026-06-14 20:19:18', '::1', 'invalid_password'),
-(7, 2, 'admin@gmail.com', '2026-06-14 20:21:41', '::1', 'success'),
-(8, 2, 'admin@gmail.com', '2026-06-14 20:50:23', '::1', 'invalid_password'),
-(9, 2, 'admin@gmail.com', '2026-06-14 20:51:24', '::1', 'success'),
-(10, 2, 'admin@gmail.com', '2026-06-14 20:53:58', '::1', 'success'),
-(11, 2, 'admin@gmail.com', '2026-06-14 21:04:37', '::1', 'success'),
-(12, 2, 'admin@gmail.com', '2026-06-14 21:04:54', '::1', 'success'),
-(13, 2, 'admin@gmail.com', '2026-06-14 21:10:38', '::1', 'success'),
-(14, 2, 'admin@gmail.com', '2026-06-14 21:10:50', '::1', 'success'),
-(15, 2, 'admin@gmail.com', '2026-06-14 21:11:01', '::1', 'success'),
-(16, 2, 'admin@gmail.com', '2026-06-14 21:13:58', '::1', 'success'),
-(17, 2, 'admin@gmail.com', '2026-06-14 21:14:37', '::1', 'success'),
-(18, 2, 'admin@gmail.com', '2026-06-14 21:15:00', '::1', 'success'),
-(19, 2, 'admin@gmail.com', '2026-06-15 17:41:58', '::1', 'success'),
-(20, 2, 'admin@gmail.com', '2026-06-15 18:04:56', '::1', 'success'),
-(21, 2, 'admin@gmail.com', '2026-06-15 18:07:19', '::1', 'success'),
-(22, NULL, 'manzi@gmail.com', '2026-06-16 20:37:31', '::1', 'invalid_email'),
-(23, 2, 'admin@gmail.com', '2026-06-16 20:37:40', '::1', 'success'),
-(24, 2, 'admin@gmail.com', '2026-06-17 08:12:27', '::1', 'success'),
-(25, 2, 'admin@gmail.com', '2026-06-17 08:32:22', '::1', 'success'),
-(26, 2, 'admin@gmail.com', '2026-06-17 08:53:55', '::1', 'invalid_password'),
-(27, 2, 'admin@gmail.com', '2026-06-17 08:54:01', '::1', 'invalid_password'),
-(28, 2, 'admin@gmail.com', '2026-06-17 08:54:24', '::1', 'success'),
-(29, 2, 'admin@gmail.com', '2026-06-17 09:01:21', '::1', 'success'),
-(30, 2, 'admin@gmail.com', '2026-06-17 09:08:47', '::1', 'success'),
-(31, 2, 'admin@gmail.com', '2026-06-19 08:57:12', '::1', 'success'),
-(32, 2, 'admin@gmail.com', '2026-06-20 14:59:06', '::1', 'success'),
-(33, 2, 'admin@gmail.com', '2026-06-20 15:23:30', '::1', 'success'),
-(34, 5, 'eugene@gmail.com', '2026-06-20 15:26:58', '::1', 'success'),
-(35, 2, 'admin@gmail.com', '2026-06-20 15:27:54', '::1', 'success'),
-(36, NULL, 'manzi@gmail.com', '2026-06-20 15:28:25', '::1', 'invalid_email'),
-(37, 5, 'eugene@gmail.com', '2026-06-20 15:28:38', '::1', 'success'),
-(38, 2, 'admin@gmail.com', '2026-06-20 15:30:53', '::1', 'success'),
-(39, 5, 'eugene@gmail.com', '2026-06-20 16:01:33', '::1', 'success'),
-(40, 2, 'admin@gmail.com', '2026-06-20 16:04:06', '::1', 'success'),
-(41, 5, 'eugene@gmail.com', '2026-06-20 16:05:05', '::1', 'success'),
-(42, 2, 'admin@gmail.com', '2026-06-20 16:05:30', '::1', 'success'),
-(43, 5, 'eugene@gmail.com', '2026-06-20 16:17:17', '::1', 'success'),
-(44, 2, 'admin@gmail.com', '2026-06-20 16:17:50', '::1', 'success'),
-(45, 2, 'admin@gmail.com', '2026-06-21 13:34:43', '::1', 'success'),
-(46, 2, 'admin@gmail.com', '2026-06-21 22:40:04', '::1', 'success'),
-(47, 5, 'eugene@gmail.com', '2026-06-21 23:01:26', '::1', 'success'),
-(48, 2, 'admin@gmail.com', '2026-06-21 23:01:42', '::1', 'success'),
-(49, 2, 'admin@gmail.com', '2026-06-21 23:16:33', '::1', 'success'),
-(50, 2, 'admin@gmail.com', '2026-06-21 23:26:50', '::1', 'success'),
-(51, 2, 'admin@gmail.com', '2026-06-21 23:33:53', '::1', 'success'),
-(52, 2, 'admin@gmail.com', '2026-06-21 23:44:34', '::1', 'success'),
-(53, 2, 'admin@gmail.com', '2026-06-22 00:05:49', '::1', 'success'),
-(54, 2, 'admin@gmail.com', '2026-06-22 00:12:11', '::1', 'success'),
-(55, 2, 'admin@gmail.com', '2026-06-22 08:26:55', '::1', 'success'),
-(56, 5, 'eugene@gmail.com', '2026-06-22 08:59:14', '::1', 'success'),
-(57, 5, 'eugene@gmail.com', '2026-06-22 08:59:53', '::1', 'success'),
-(58, 2, 'admin@gmail.com', '2026-06-22 09:00:03', '::1', 'success'),
-(59, 2, 'admin@gmail.com', '2026-06-22 13:03:42', '::1', 'success'),
-(60, 2, 'admin@gmail.com', '2026-06-22 20:33:57', '::1', 'success'),
-(61, 2, 'admin@gmail.com', '2026-06-23 13:51:23', '::1', 'success'),
-(62, 2, 'admin@gmail.com', '2026-06-23 13:55:33', '::1', 'success'),
-(63, 5, 'eugene@gmail.com', '2026-06-23 21:03:20', '::1', 'success'),
-(64, 2, 'admin@gmail.com', '2026-06-24 00:17:30', '::1', 'success'),
-(65, 2, 'admin@gmail.com', '2026-06-24 00:28:07', '::1', 'success'),
-(66, 2, 'admin@gmail.com', '2026-06-24 00:34:38', '::1', 'success'),
-(67, 2, 'admin@gmail.com', '2026-06-24 02:08:22', '::1', 'success'),
-(68, 2, 'admin@gmail.com', '2026-06-24 02:35:12', '::1', 'success'),
-(69, 2, 'admin@gmail.com', '2026-06-24 03:27:22', '::1', 'success'),
-(70, 2, 'admin@gmail.com', '2026-06-24 04:12:06', '::1', 'success'),
-(71, 2, 'admin@gmail.com', '2026-06-24 04:36:54', '::1', 'success'),
-(72, 2, 'admin@gmail.com', '2026-06-24 20:31:19', '::1', 'success'),
-(73, 2, 'admin@gmail.com', '2026-06-25 20:11:49', '::1', 'success'),
-(74, 2, 'admin@gmail.com', '2026-06-25 20:45:06', '::1', 'success'),
-(75, 2, 'admin@gmail.com', '2026-06-25 21:03:26', '::1', 'success'),
-(76, 2, 'admin@gmail.com', '2026-06-25 21:39:31', '::1', 'success'),
-(77, 2, 'admin@gmail.com', '2026-06-25 21:49:47', '::1', 'success'),
-(78, 2, 'admin@gmail.com', '2026-06-25 22:14:48', '::1', 'success'),
-(79, 2, 'admin@gmail.com', '2026-06-25 22:21:00', '::1', 'success'),
-(80, 5, 'eugene@gmail.com', '2026-06-25 22:25:22', '::1', 'success'),
-(81, 2, 'admin@gmail.com', '2026-06-25 22:25:49', '::1', 'success'),
-(82, 5, 'eugene@gmail.com', '2026-06-25 22:28:15', '::1', 'success'),
-(83, 2, 'admin@gmail.com', '2026-06-25 22:28:35', '::1', 'success'),
-(84, NULL, 'admin@pt.com', '2026-06-26 07:21:40', '::1', 'invalid_email'),
-(85, 2, 'admin@gmail.com', '2026-06-26 07:23:46', '::1', 'success'),
-(86, 2, 'admin@gmail.com', '2026-06-26 08:59:36', '::1', 'success'),
-(87, 2, 'admin@gmail.com', '2026-06-26 09:34:24', '::1', 'success'),
-(88, 2, 'admin@gmail.com', '2026-06-26 09:59:29', '::1', 'success'),
-(89, 2, 'admin@gmail.com', '2026-06-26 09:59:55', '::1', 'success'),
-(90, 2, 'admin@gmail.com', '2026-06-26 10:27:22', '::1', 'success'),
-(91, 2, 'admin@gmail.com', '2026-06-26 12:41:58', '::1', 'success'),
-(92, 2, 'admin@gmail.com', '2026-06-26 14:08:04', '::1', 'success'),
-(93, 2, 'admin@gmail.com', '2026-06-26 17:19:18', '::1', 'success'),
-(94, 2, 'admin@gmail.com', '2026-06-26 18:46:36', '::1', 'success'),
-(95, 2, 'admin@gmail.com', '2026-06-26 18:55:06', '::1', 'success'),
-(96, 2, 'admin@gmail.com', '2026-06-26 19:43:57', '::1', 'success'),
-(97, 2, 'admin@gmail.com', '2026-06-26 19:56:30', '::1', 'success'),
-(98, 2, 'admin@gmail.com', '2026-06-26 20:17:19', '::1', 'success'),
-(99, 2, 'admin@gmail.com', '2026-06-26 21:01:59', '::1', 'success'),
-(100, 2, 'admin@gmail.com', '2026-06-27 19:02:40', '::1', 'success'),
-(101, 2, 'admin@gmail.com', '2026-06-29 13:54:53', '::1', 'success'),
-(102, 2, 'admin@gmail.com', '2026-06-29 22:41:54', '::1', 'success'),
-(103, 2, 'admin@gmail.com', '2026-06-29 22:42:24', '::1', 'success'),
-(104, 2, 'admin@gmail.com', '2026-06-29 22:45:03', '::1', 'success'),
-(105, 2, 'admin@gmail.com', '2026-06-29 23:11:57', '::1', 'success'),
-(106, 2, 'admin@gmail.com', '2026-06-29 23:36:02', '::1', 'success'),
-(107, 2, 'admin@gmail.com', '2026-06-29 23:36:56', '::1', 'success'),
-(108, 2, 'admin@gmail.com', '2026-06-30 08:58:01', '::1', 'success'),
-(109, 2, 'admin@gmail.com', '2026-06-30 09:19:20', '::1', 'success'),
-(110, 2, 'admin@gmail.com', '2026-06-30 09:25:57', '::1', 'success'),
-(111, 2, 'admin@gmail.com', '2026-06-30 10:20:31', '::1', 'success'),
-(112, 2, 'admin@gmail.com', '2026-06-30 10:22:21', '::1', 'success'),
-(113, 2, 'admin@gmail.com', '2026-06-30 19:11:02', '127.0.0.1', 'success'),
-(114, 2, 'admin@gmail.com', '2026-06-30 19:30:26', '::1', 'success'),
-(115, 2, 'admin@gmail.com', '2026-06-30 21:18:57', '::1', 'success'),
-(116, 2, 'admin@gmail.com', '2026-06-30 22:08:02', '::1', 'success'),
-(117, 2, 'admin@gmail.com', '2026-06-30 22:38:30', '::1', 'success'),
-(118, 2, 'admin@gmail.com', '2026-06-30 22:46:47', '::1', 'success'),
-(119, 2, 'admin@gmail.com', '2026-06-30 22:59:05', '::1', 'success'),
-(120, 2, 'admin@gmail.com', '2026-06-30 23:21:16', '::1', 'success'),
-(121, 2, 'admin@gmail.com', '2026-06-30 23:39:53', '::1', 'success'),
-(122, 2, 'admin@gmail.com', '2026-07-01 13:03:08', '::1', 'success'),
-(123, 2, 'admin@gmail.com', '2026-07-01 13:03:08', '::1', 'success'),
-(124, 2, 'admin@gmail.com', '2026-07-01 21:03:09', '::1', 'success'),
-(125, 2, 'admin@gmail.com', '2026-07-01 21:25:48', '::1', 'success'),
-(126, 2, 'admin@gmail.com', '2026-07-01 23:40:44', '::1', 'success'),
-(127, 2, 'admin@gmail.com', '2026-07-02 00:08:49', '::1', 'success'),
-(128, 2, 'admin@gmail.com', '2026-07-02 00:20:04', '::1', 'success'),
-(129, 2, 'admin@gmail.com', '2026-07-02 00:30:22', '::1', 'success'),
-(130, 2, 'admin@gmail.com', '2026-07-02 00:33:56', '::1', 'success'),
-(131, 2, 'admin@gmail.com', '2026-07-02 00:40:48', '::1', 'success'),
-(132, 2, 'admin@gmail.com', '2026-07-02 01:42:12', '::1', 'success'),
-(133, 2, 'admin@gmail.com', '2026-07-02 13:58:31', '::1', 'success'),
-(134, 2, 'admin@gmail.com', '2026-07-02 17:02:27', '::1', 'success'),
-(135, 2, 'admin@gmail.com', '2026-07-03 11:39:04', '::1', 'success'),
-(136, 2, 'admin@gmail.com', '2026-07-03 18:56:47', '::1', 'success'),
-(137, 2, 'admin@gmail.com', '2026-07-03 21:04:03', '::1', 'success'),
-(138, 2, 'admin@gmail.com', '2026-07-03 21:28:22', '::1', 'success'),
-(139, 2, 'admin@gmail.com', '2026-07-03 21:42:12', '::1', 'success'),
-(140, 2, 'admin@gmail.com', '2026-07-03 21:43:29', '::1', 'success'),
-(141, 2, 'admin@gmail.com', '2026-07-03 22:24:43', '::1', 'success'),
-(142, 2, 'admin@gmail.com', '2026-07-03 22:51:54', '::1', 'success'),
-(143, 2, 'admin@gmail.com', '2026-07-03 23:52:56', '::1', 'success'),
-(144, 2, 'admin@gmail.com', '2026-07-04 00:01:29', '::1', 'success'),
-(145, 2, 'admin@gmail.com', '2026-07-06 13:44:18', '::1', 'success'),
-(146, 2, 'admin@gmail.com', '2026-07-06 13:59:27', '::1', 'success'),
-(147, 2, 'admin@gmail.com', '2026-07-07 07:44:11', '::1', 'success'),
-(148, 2, 'admin@gmail.com', '2026-07-07 08:47:17', '::1', 'success'),
-(149, 2, 'admin@gmail.com', '2026-07-07 09:40:44', '::1', 'success'),
-(150, 2, 'admin@gmail.com', '2026-07-07 10:21:04', '::1', 'success'),
-(151, 2, 'admin@gmail.com', '2026-07-07 10:44:10', '::1', 'success'),
-(152, 2, 'admin@gmail.com', '2026-07-07 10:47:43', '::1', 'success'),
-(153, 2, 'admin@gmail.com', '2026-07-07 16:05:10', '::1', 'success'),
-(154, 2, 'admin@gmail.com', '2026-07-07 16:51:09', '::1', 'success'),
-(155, 2, 'admin@gmail.com', '2026-07-07 22:04:03', '::1', 'success'),
-(156, 2, 'admin@gmail.com', '2026-07-07 22:56:47', '::1', 'success'),
-(157, 2, 'admin@gmail.com', '2026-07-08 10:08:40', '::1', 'success'),
-(158, 2, 'admin@gmail.com', '2026-07-08 10:51:18', '::1', 'success'),
-(159, 2, 'admin@gmail.com', '2026-07-08 11:01:13', '::1', 'success'),
-(160, 2, 'admin@gmail.com', '2026-07-08 15:07:19', '::1', 'success'),
-(161, 2, 'admin@gmail.com', '2026-07-08 15:19:57', '::1', 'success'),
-(162, 2, 'admin@gmail.com', '2026-07-08 18:33:46', '::1', 'success'),
-(163, 2, 'admin@gmail.com', '2026-07-09 07:53:17', '::1', 'success'),
-(164, 2, 'admin@gmail.com', '2026-07-09 08:10:43', '::1', 'success'),
-(165, 2, 'admin@gmail.com', '2026-07-09 08:16:38', '::1', 'success'),
-(166, 2, 'admin@gmail.com', '2026-07-09 08:56:12', '::1', 'success');
+(1, 2, 'admin@gmail.com', '2026-07-10 10:23:24', '::1', 'success'),
+(2, 2, 'admin@gmail.com', '2026-07-10 10:28:02', '::1', 'success'),
+(3, 2, 'admin@gmail.com', '2026-07-10 21:44:01', '::1', 'success'),
+(4, 2, 'admin@gmail.com', '2026-07-11 07:48:07', '::1', 'success'),
+(5, 2, 'admin@gmail.com', '2026-07-11 09:42:43', '::1', 'success');
 
 -- --------------------------------------------------------
 
@@ -777,12 +578,8 @@ CREATE TABLE `lots` (
 --
 
 INSERT INTO `lots` (`id`, `lots_code`, `product_id`, `opening_date`, `closing_date`, `statuss`) VALUES
-(1, 'Lot 1-Ta', 1, '2026-07-06', NULL, 1),
-(2, 'Lot 2-Ta', 2, '2025-01-01', NULL, 1),
-(3, 'Lot 01-Tin', 1, '2025-01-01', NULL, 1),
-(4, 'Lot 03-Tin', 1, '2025-01-01', NULL, 1),
-(5, 'Lot 4-Ta', 2, '2025-01-01', NULL, 1),
-(6, 'Lot 05-Tin', 1, '2025-01-01', NULL, 1);
+(1, 'Lot 1-SN', 1, '2026-07-10', NULL, 1),
+(2, 'Lot 1-Ta', 2, '2026-07-10', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -895,8 +692,8 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`id`, `product_code`, `product_name`, `uom_id`, `inventory_account_id`, `sales_account_id`, `cogs_account_id`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'TIN', 'Tantalum', 1, 1024, 4021, NULL, '', 1, '2026-07-06 13:45:32', '2026-07-06 13:47:14'),
-(2, 'NE', 'Coltan', 1, 1034, 4021, NULL, '', 1, '2026-07-06 14:01:20', '2026-07-06 14:01:20');
+(1, 'SN', 'Tin', 1, 1024, 4011, 5011, '', 1, '2026-07-10 09:17:28', '2026-07-10 09:17:28'),
+(2, 'TA', 'Tantalum', 1, 1034, 4021, 5011, '', 1, '2026-07-10 09:19:18', '2026-07-10 09:19:18');
 
 -- --------------------------------------------------------
 
@@ -947,8 +744,7 @@ CREATE TABLE `product_element_composition` (
 --
 
 INSERT INTO `product_element_composition` (`id`, `product_id`, `product_element_id`, `is_primary_grade`, `display_order`, `notes`) VALUES
-(1, 1, 6, 0, 0, NULL),
-(2, 1, 1, 1, 0, NULL);
+(1, 1, 5, 1, 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -965,6 +761,13 @@ CREATE TABLE `purchase_items` (
   `unit_price` decimal(18,2) DEFAULT NULL,
   `amount` decimal(18,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `purchase_items`
+--
+
+INSERT INTO `purchase_items` (`id`, `purchase_id`, `lot_id`, `product_id`, `quantity`, `unit_price`, `amount`) VALUES
+(30, 34, 1, 1, 1343.500, 14.94, 20069.63);
 
 -- --------------------------------------------------------
 
@@ -1018,30 +821,7 @@ CREATE TABLE `purchasing` (
 --
 
 INSERT INTO `purchasing` (`id`, `purchase_no`, `delivery_no`, `inventory_code`, `account_id`, `delivery_date`, `purchase_date`, `lot_id`, `product_id`, `supplier_id`, `negociant`, `warehouse_id`, `quantity_kg`, `uom_id`, `price_per_kg_rwf`, `purchase_value_rwf`, `exchange_rate`, `purchase_currency_id`, `purchase_amount_in_currency`, `converted_amount`, `purchase_value_usd`, `net_paid_supplier_usd`, `charges_per_kg`, `production_charges_per_kg`, `price_per_ta_unit`, `price_per_kg_usd`, `pricing_method`, `lme_price`, `tc_charges`, `tax_rra`, `tax_rma`, `tax_inkomane`, `production_charges`, `status`, `notes`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'PUR-TA-0001', 'DD 1', NULL, NULL, '2025-07-15', '2025-07-15', 1, 2, 2, NULL, 1, 0.0000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 0.0000, 0.0000, 0.0000, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12'),
-(2, 'PUR-TA-0003', 'DD 1', NULL, NULL, '2025-07-16', '2025-07-16', 1, 2, 3, NULL, 1, 186.1000, 1, 78333.1610, 14577801.26, 1445.0000, NULL, NULL, NULL, 10088.4438, 9075.9703, 3.7000, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12'),
-(3, 'PUR-TA-0004', 'DD 1', NULL, NULL, '2025-07-16', '2025-07-16', 1, 2, 4, NULL, 1, 116.3000, 1, 33193.0950, 3860356.95, 1445.0000, NULL, NULL, NULL, 6411.6655, 5543.1256, 5.7000, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12'),
-(4, 'PUR-TA-0005', 'DD 1', NULL, NULL, '2025-07-16', '2025-07-16', 1, 2, 5, NULL, 1, 166.1000, 1, 29295.2075, 4865933.97, 1445.0000, NULL, NULL, NULL, 8081.8280, 6873.6368, 5.7000, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12'),
-(5, 'PUR-TA-0006', 'DD 1', NULL, NULL, '2025-07-16', '2025-07-16', 1, 2, 6, NULL, 1, 1009.2000, 1, 31962.6775, 32256734.13, 1445.0000, NULL, NULL, NULL, 54262.0601, 46867.4409, 5.6000, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12'),
-(6, 'PUR-TA-0007', 'DD 1', NULL, NULL, '2025-07-16', '2025-07-16', 1, 2, 7, NULL, 1, 327.0000, 1, 45789.1600, 14973055.32, 1445.0000, NULL, NULL, NULL, 19040.1309, 16567.6879, 5.7000, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12'),
-(7, 'PUR-TA-0008', 'DD 1', NULL, NULL, '2025-07-16', '2025-07-16', 1, 2, 8, NULL, 1, 182.1000, 1, 23434.2875, 4267383.75, 1445.0000, NULL, NULL, NULL, 6678.7907, 5419.6635, 5.7000, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12'),
-(8, 'PUR-TA-0009', 'DD 1', NULL, NULL, '2025-07-16', '2025-07-16', 1, 2, 9, NULL, 1, 171.0000, 1, 38407.6000, 6567699.60, 1450.0000, NULL, NULL, NULL, 8945.6598, 7683.1314, 5.7000, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12'),
-(9, 'PUR-TA-0010', 'DD 1', NULL, NULL, '2025-09-15', '2025-09-15', 2, 2, 10, NULL, 1, 1570.5000, 1, 28850.3648, 45309497.85, 1450.0000, NULL, NULL, NULL, 97866.6498, 85800.0882, 5.7000, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12'),
-(10, 'PUR-SN-0001', NULL, NULL, NULL, '2025-07-15', '2025-07-15', 3, 1, 2, NULL, 1, 0.0000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 0.0000, 0.0000, 0.0000, NULL, NULL, NULL, 'lme', 0.0000, 0.0000, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(11, 'PUR-SN-0003', NULL, NULL, NULL, '2025-07-16', '2025-07-16', 3, 1, 11, NULL, 1, 1343.5000, 1, 21588.8601, 29004633.50, 1445.2000, NULL, NULL, NULL, 20069.6329, 14611.5489, 3.5000, NULL, NULL, NULL, 'lme', 32800.0000, 3000.0000, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(12, 'PUR-SN-0004', NULL, NULL, NULL, '2025-07-16', '2025-07-16', 3, 1, 12, NULL, 1, 71.9000, 1, 22295.1582, 1603021.88, 1445.2000, NULL, NULL, NULL, 1109.2042, 816.0501, 3.5000, NULL, NULL, NULL, 'lme', 32800.0000, 3000.0000, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(13, 'PUR-SN-0005', NULL, NULL, NULL, '2025-07-16', '2025-07-16', 3, 1, 13, NULL, 1, 61.4000, 1, 21778.4703, 1337198.08, 1445.2000, NULL, NULL, NULL, 925.2685, 675.5841, 3.5000, NULL, NULL, NULL, 'lme', 32800.0000, 3000.0000, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(14, 'PUR-SN-0006', NULL, NULL, NULL, '2025-07-16', '2025-07-16', 3, 1, 4, NULL, 1, 312.2000, 1, 28867.2341, 9012350.49, 1445.2000, NULL, NULL, NULL, 6236.0576, 4925.2319, 3.5000, NULL, NULL, NULL, 'lme', 32800.0000, 2500.0000, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(15, 'PUR-AP-0004', NULL, NULL, NULL, '2026-12-31', '2026-12-31', 3, 1, 14, NULL, 1, 0.0000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 206085.3100, 206085.3100, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(16, 'PUR-AP-0005', NULL, NULL, NULL, '2026-12-31', '2026-12-31', 4, 1, 14, NULL, 1, 3241.9000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 65052.6330, 65052.6330, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(17, 'PUR-AP-0006', NULL, NULL, NULL, '2026-12-31', '2026-12-31', 4, 1, 15, NULL, 1, 1178.4000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 28200.0000, 28200.0000, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(18, 'PUR-AP-0007', NULL, NULL, NULL, '2026-12-31', '2026-12-31', 4, 1, 16, NULL, 1, 354.0000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 7557.8512, 7557.8512, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(19, 'PUR-AP-0008', NULL, NULL, NULL, '2026-12-31', '2026-12-31', 4, 1, 17, NULL, 1, 1843.0000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 40617.0799, 40617.0799, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(20, 'PUR-AP-0009', NULL, NULL, NULL, '2026-12-31', '2026-12-31', 4, 1, 18, NULL, 1, 484.1000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 11593.3767, 11593.3767, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(21, 'PUR-AP-0010', NULL, NULL, NULL, '2026-12-31', '2026-12-31', 4, 1, 19, NULL, 1, 2599.8000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 54322.2378, 54322.2378, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(22, 'PUR-AP-0011', NULL, NULL, NULL, '2026-12-31', '2026-12-31', 5, 2, 19, NULL, 1, 1087.4000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 64670.0000, 64670.0000, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(23, 'PUR-AP-0012', NULL, NULL, NULL, '2026-01-05', '2026-01-05', 6, 1, 20, NULL, 1, 1407.5000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 35402.5269, 35402.5269, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13'),
-(24, 'PUR-AP-0013', NULL, NULL, NULL, '2026-12-31', '2026-12-31', 4, 1, 20, NULL, 1, 949.4000, 1, 0.0000, 0.00, 1400.0000, NULL, NULL, NULL, 23240.0500, 23240.0500, NULL, NULL, NULL, NULL, 'lme', NULL, NULL, NULL, NULL, NULL, NULL, 'received', NULL, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13');
+(34, 'PUR-20260710-0524', 'DN-001', 'INV-001', 2016, NULL, '2026-07-10', 1, 1, 3, 'Furaha', 1, 1343.5000, 1, 21588.8601, 29004633.50, 1445.2000, 2, 20069.6329, 29004633.4960, 20069.6329, 14611.5488, NULL, 3.5000, NULL, 14.9383, 'lme', 32800.0000, 3000.0000, 690.7600, 46.4815, 18.5926, 4702.2500, 'received', '', 2, '2026-07-10 21:51:46', '2026-07-10 21:58:05');
 
 -- --------------------------------------------------------
 
@@ -1062,18 +842,7 @@ CREATE TABLE `purchasing_element_grade` (
 --
 
 INSERT INTO `purchasing_element_grade` (`id`, `purchasing_id`, `product_element_id`, `grade_pct`, `notes`) VALUES
-(1, 2, 1, 0.418582, NULL),
-(2, 3, 1, 0.431148, NULL),
-(3, 4, 1, 0.380518, NULL),
-(4, 5, 1, 0.415166, NULL),
-(5, 6, 1, 0.483242, NULL),
-(6, 7, 1, 0.304390, NULL),
-(7, 8, 1, 0.403942, NULL),
-(8, 9, 1, 0.362300, NULL),
-(9, 11, 4, 0.546900, NULL),
-(10, 12, 4, 0.561800, NULL),
-(11, 13, 4, 0.550900, NULL),
-(12, 14, 4, 0.685200, NULL);
+(30, 34, 5, 54.690000, '');
 
 -- --------------------------------------------------------
 
@@ -1244,6 +1013,13 @@ CREATE TABLE `stock` (
   `last_rolled_over_at` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Running stock balance per warehouse, product, and lot. qty_on_hand is auto-computed.';
 
+--
+-- Dumping data for table `stock`
+--
+
+INSERT INTO `stock` (`id`, `warehouse_id`, `product_id`, `lot_id`, `uom_id`, `qty_purchased`, `qty_sold`, `qty_adjusted`, `avg_cost_per_kg_rwf`, `avg_cost_per_kg_usd`, `purchase_currency_id`, `purchase_amount_in_currency`, `exchange_rate`, `converted_amount`, `total_value_rwf`, `total_value_usd`, `last_updated`, `notes`, `opening`, `closing`, `last_rolled_over_at`) VALUES
+(1, 1, 1, 1, 1, 1343.5000, 0.0000, -3.0000, 21588.8601, 14.9383, 2, 20069.6329, 1445.2000, 29004633.4960, 29004633.50, 20069.6329, '2026-07-10 22:35:15', NULL, 1343.5000, 1340.5000, '2026-07-11');
+
 -- --------------------------------------------------------
 
 --
@@ -1276,6 +1052,16 @@ CREATE TABLE `stock_movement` (
   `closing` decimal(14,4) NOT NULL DEFAULT 0.0000
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Full audit trail of every stock movement (in, out, transfer, adjustment)';
 
+--
+-- Dumping data for table `stock_movement`
+--
+
+INSERT INTO `stock_movement` (`id`, `movement_type`, `warehouse_id`, `product_id`, `lot_id`, `uom_id`, `qty_kg`, `unit_cost_rwf`, `unit_cost_usd`, `purchase_currency_id`, `purchase_amount_in_currency`, `exchange_rate`, `converted_amount`, `total_value_rwf`, `total_value_usd`, `reference_type`, `reference_id`, `movement_date`, `notes`, `created_by`, `created_at`, `opening`, `closing`) VALUES
+(1, 'PURCHASE_IN', 1, 1, 1, 1, 1343.5000, 21588.8601, 14.9383, 2, 20069.6329, 1445.2000, 29004633.4960, 29004633.50, 20069.6329, 'purchasing', 34, '2026-07-10', '', 2, '2026-07-10 21:58:05', 0.0000, 1343.5000),
+(6, 'ADJUSTMENT_OUT', 1, 1, 1, 1, 2.0000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-11', 'counting error', 2, '2026-07-10 22:22:26', 1343.5000, 1341.5000),
+(7, 'ADJUSTMENT_IN', 1, 1, 1, 1, 2.0000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-11', 'counting error', 2, '2026-07-10 22:28:47', 1343.5000, 1343.5000),
+(8, 'ADJUSTMENT_OUT', 1, 1, 1, 1, 3.0000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-11', 'counting error', 2, '2026-07-10 22:35:15', 1343.5000, 1340.5000);
+
 -- --------------------------------------------------------
 
 --
@@ -1307,26 +1093,9 @@ CREATE TABLE `suppliers` (
 --
 
 INSERT INTO `suppliers` (`id`, `supplier_type`, `name`, `nif`, `vat_reg_no`, `phone`, `email`, `address`, `payables_account_id`, `currency_id`, `region`, `is_active`, `notes`, `created_at`, `updated_at`, `created_by`, `updated_by`) VALUES
-(1, 'individual', 'Eugene ndayishimiye', '', NULL, '+250785750117', 'nendayishimye@gmail.com', 'Unnamed Road', 27, NULL, NULL, 1, '', '2026-07-06 13:45:03', '2026-07-06 13:45:03', 2, NULL),
-(2, 'individual', 'Opening Stock', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12', 2, NULL),
-(3, 'individual', 'Furaha', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12', 2, NULL),
-(4, 'individual', 'Jules', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12', 2, NULL),
-(5, 'individual', 'Kabumba', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12', 2, NULL),
-(6, 'individual', 'Mama Kaziba 1&2', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12', 2, NULL),
-(7, 'individual', 'Gasana 1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12', 2, NULL),
-(8, 'individual', 'Gasana 2', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12', 2, NULL),
-(9, 'individual', 'Charles', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12', 2, NULL),
-(10, 'individual', 'Eric ZURU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:12', '2026-07-07 15:08:12', 2, NULL),
-(11, 'individual', 'Christine 1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL),
-(12, 'individual', 'Christine 2', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL),
-(13, 'individual', 'Christine 3', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL),
-(14, 'individual', 'Paulin Murego', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL),
-(15, 'individual', 'Darius BIMENYIMANA', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL),
-(16, 'individual', 'Richard AKAYEZU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL),
-(17, 'individual', 'Marc NSHIMYUMUREMYI', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL),
-(18, 'individual', 'MURINDWA ANDRE', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL),
-(19, 'individual', 'Eprocomi', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL),
-(20, 'individual', 'Bosco', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2, NULL);
+(1, 'individual', 'Eugene ndayishimiye', '', NULL, '+250785750117', 'nendayishimye@gmail.com', 'Unnamed Road', 2014, NULL, NULL, 1, '', '2026-07-10 09:15:31', '2026-07-10 17:25:07', 2, NULL),
+(2, 'individual', 'Mr Peter Umupapa mwiza', '', NULL, '+250789887655', 'mrpeter@gmail.com', 'musanze faraja', 2015, NULL, NULL, 1, '', '2026-07-10 09:16:12', '2026-07-10 17:25:02', 2, NULL),
+(3, 'individual', 'Jean Nepo Supplier', '12345678', NULL, '+250789028963', 'ndahayoptr@gmail.com', 'KN 1 Rd, Kigali', 2016, NULL, NULL, 1, '', '2026-07-10 16:27:48', '2026-07-10 16:29:03', 2, 2);
 
 -- --------------------------------------------------------
 
@@ -1348,17 +1117,6 @@ CREATE TABLE `supplier_advances` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `created_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `supplier_advances`
---
-
-INSERT INTO `supplier_advances` (`id`, `supplier_id`, `currency_id`, `amount`, `exchange_rate`, `advance_date`, `purpose`, `status`, `notes`, `created_at`, `updated_at`, `created_by`) VALUES
-(1, 14, 2, 131000.00, 1.000000, '2026-12-31', 'Payables Advance for Tin - Lot 01 & 02', 'PAID', NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2),
-(2, 19, 2, 20000.00, 1.000000, '2026-12-31', 'Payables Advance for Tin - Lot 03', 'PAID', NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2),
-(3, 19, 2, 44000.00, 1.000000, '2026-12-31', 'Payables Advance for Ta - Lot 04', 'PAID', NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2),
-(4, 20, 2, 25000.00, 1.000000, '2026-01-05', 'Payables Advance for Tin - Lot 05', 'PAID', NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2),
-(5, 20, 2, 12500.00, 1.000000, '2026-12-31', 'Payables Advance for Tin - Lot 03', 'PAID', NULL, '2026-07-07 15:08:13', '2026-07-07 15:08:13', 2);
 
 -- --------------------------------------------------------
 
@@ -1698,8 +1456,7 @@ ALTER TABLE `purchase_items`
 --
 ALTER TABLE `purchasing`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uq_purchase_no` (`purchase_no`),
-  ADD KEY `fk_purchasing_account` (`account_id`);
+  ADD UNIQUE KEY `uq_purchase_no` (`purchase_no`);
 
 --
 -- Indexes for table `purchasing_element_grade`
@@ -1822,7 +1579,7 @@ ALTER TABLE `warehouse_transfer`
 -- AUTO_INCREMENT for table `accounts`
 --
 ALTER TABLE `accounts`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT for table `account_types`
@@ -1840,7 +1597,7 @@ ALTER TABLE `attachments`
 -- AUTO_INCREMENT for table `audit_log`
 --
 ALTER TABLE `audit_log`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=99;
 
 --
 -- AUTO_INCREMENT for table `bank_recon_items`
@@ -1852,13 +1609,13 @@ ALTER TABLE `bank_recon_items`
 -- AUTO_INCREMENT for table `bank_statement_balances`
 --
 ALTER TABLE `bank_statement_balances`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `cash_counts`
 --
 ALTER TABLE `cash_counts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `currencies`
@@ -1870,7 +1627,7 @@ ALTER TABLE `currencies`
 -- AUTO_INCREMENT for table `customer`
 --
 ALTER TABLE `customer`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `customer_payments`
@@ -1912,25 +1669,25 @@ ALTER TABLE `inventory_count_items`
 -- AUTO_INCREMENT for table `journal_entries`
 --
 ALTER TABLE `journal_entries`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `journal_entry_lines`
 --
 ALTER TABLE `journal_entry_lines`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `login`
 --
 ALTER TABLE `login`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=167;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `lots`
 --
 ALTER TABLE `lots`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `permissions`
@@ -1954,25 +1711,25 @@ ALTER TABLE `product_element`
 -- AUTO_INCREMENT for table `product_element_composition`
 --
 ALTER TABLE `product_element_composition`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `purchase_items`
 --
 ALTER TABLE `purchase_items`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `purchasing`
 --
 ALTER TABLE `purchasing`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `purchasing_element_grade`
 --
 ALTER TABLE `purchasing_element_grade`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -1996,25 +1753,25 @@ ALTER TABLE `sells_item`
 -- AUTO_INCREMENT for table `stock`
 --
 ALTER TABLE `stock`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `stock_movement`
 --
 ALTER TABLE `stock_movement`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `suppliers`
 --
 ALTER TABLE `suppliers`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `supplier_advances`
 --
 ALTER TABLE `supplier_advances`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `supplier_payments`
@@ -2112,12 +1869,6 @@ ALTER TABLE `login`
 --
 ALTER TABLE `product`
   ADD CONSTRAINT `fk_product_uom` FOREIGN KEY (`uom_id`) REFERENCES `unit_of_measure` (`id`);
-
---
--- Constraints for table `purchasing`
---
-ALTER TABLE `purchasing`
-  ADD CONSTRAINT `fk_purchasing_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

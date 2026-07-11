@@ -85,6 +85,10 @@ $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger')
         <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="9" y1="20" x2="9" y2="10"/></svg>
         Purchases
       </a>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'pay_supplier') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>purchas/pay_supplier" id="nav-pay-supplier">
+        <svg viewBox="0 0 24 24"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        Pay Supplier
+      </a>
     <?php endif; ?>
     <?php if ($showSales): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'sales') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>sales/index" id="nav-sales">

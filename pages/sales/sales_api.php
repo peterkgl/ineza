@@ -230,6 +230,31 @@ switch ($action) {
                     }
                 }
                 
+                $paymentsQuery = "SELECT cpa.id, cp.payment_number, cp.payment_date, cp.payment_method, cp.reference_no, cp.description, cp.amount_currency, cp.amount_base, cp.currency_id, cur.code as currency_code, cpa.amount_allocated
+                                  FROM customer_payment_allocations cpa
+                                  JOIN customer_payments cp ON cpa.customer_payment_id = cp.id
+                                  LEFT JOIN currencies cur ON cp.currency_id = cur.id
+                                  WHERE cpa.sale_id = $saleId
+                                  ORDER BY cp.payment_date ASC, cp.id ASC";
+                $paymentsResult = mysqli_query($conn, $paymentsQuery);
+                $paymentHistory = [];
+                if ($paymentsResult) {
+                    while ($payRow = mysqli_fetch_assoc($paymentsResult)) {
+                        $paymentHistory[] = [
+                            'id' => (int)$payRow['id'],
+                            'payment_number' => $payRow['payment_number'],
+                            'payment_date' => $payRow['payment_date'],
+                            'payment_method' => $payRow['payment_method'],
+                            'reference_no' => $payRow['reference_no'],
+                            'description' => $payRow['description'],
+                            'currency_code' => $payRow['currency_code'] ?? 'USD',
+                            'amount_currency' => (float)$payRow['amount_currency'],
+                            'amount_base' => (float)$payRow['amount_base'],
+                            'amount_allocated' => (float)$payRow['amount_allocated']
+                        ];
+                    }
+                }
+
                 $row['id'] = $saleId;
                 $row['customer_id'] = (int)$row['customer_id'];
                 $row['warehouse_id'] = (int)$row['warehouse_id'];
@@ -239,6 +264,7 @@ switch ($action) {
                 $row['exchange_rate'] = (float)$row['exchange_rate'];
                 $row['total_paid'] = (float)$row['total_paid'];
                 $row['items'] = $items;
+                $row['payment_history'] = $paymentHistory;
                 $sales[] = $row;
             }
         }

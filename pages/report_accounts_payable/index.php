@@ -17,36 +17,66 @@ $filter_date = $_GET['filter_date'] ?? '';
 $filter_start = $_GET['filter_start'] ?? '';
 $filter_end = $_GET['filter_end'] ?? '';
 
-// Date condition
-$date_col = "purchase_date";
-$date_cond = "";
-if (!empty($filter_date)) {
-    $date_cond = " AND DATE({$date_col}) = '" . mysqli_real_escape_string($conn, $filter_date) . "' ";
-} elseif (!empty($filter_start) && !empty($filter_end)) {
-    $date_cond = " AND {$date_col} BETWEEN '" . mysqli_real_escape_string($conn, $filter_start) . "' AND '" . mysqli_real_escape_string($conn, $filter_end) . "' ";
-} elseif (!empty($filter_year) && !empty($filter_month)) {
-    $date_cond = " AND YEAR({$date_col}) = '" . mysqli_real_escape_string($conn, $filter_year) . "' AND MONTH({$date_col}) = '" . mysqli_real_escape_string($conn, $filter_month) . "' ";
-} elseif (!empty($filter_year)) {
-    $date_cond = " AND YEAR({$date_col}) = '" . mysqli_real_escape_string($conn, $filter_year) . "' ";
-} elseif (!empty($filter_month)) {
-    $date_cond = " AND MONTH({$date_col}) = '" . mysqli_real_escape_string($conn, $filter_month) . "' ";
+function buildDateCondition($conn, $column, $filter_year, $filter_month, $filter_date, $filter_start, $filter_end) {
+    if (!empty($filter_date)) {
+        return " AND DATE({$column}) = '" . mysqli_real_escape_string($conn, $filter_date) . "' ";
+    }
+
+    if (!empty($filter_start) && !empty($filter_end)) {
+        return " AND {$column} BETWEEN '" . mysqli_real_escape_string($conn, $filter_start) . "' AND '" . mysqli_real_escape_string($conn, $filter_end) . "' ";
+    }
+
+    if (!empty($filter_year) && !empty($filter_month)) {
+        return " AND YEAR({$column}) = '" . mysqli_real_escape_string($conn, $filter_year) . "' AND MONTH({$column}) = '" . mysqli_real_escape_string($conn, $filter_month) . "' ";
+    }
+
+    if (!empty($filter_year)) {
+        return " AND YEAR({$column}) = '" . mysqli_real_escape_string($conn, $filter_year) . "' ";
+    }
+
+    if (!empty($filter_month)) {
+        return " AND MONTH({$column}) = '" . mysqli_real_escape_string($conn, $filter_month) . "' ";
+    }
+
+    return '';
 }
 
+$purchaseDateCond = buildDateCondition($conn, 'purchase_date', $filter_year, $filter_month, $filter_date, $filter_start, $filter_end);
+$advanceDateCond = buildDateCondition($conn, 'advance_date', $filter_year, $filter_month, $filter_date, $filter_start, $filter_end);
+$paymentDateCond = buildDateCondition($conn, 'payment_date', $filter_year, $filter_month, $filter_date, $filter_start, $filter_end);
+
 // Fetch database records
-$query = "SELECT s.name as supplier_name, l.lots_code,
-            SUM(p.quantity_kg) as total_weight, SUM(p.purchase_value_usd) as total_amount,
-            p.purchase_date as tx_date,
-            (SELECT COALESCE(SUM(sa.amount), 0) FROM supplier_advances sa WHERE sa.supplier_id = s.id AND sa.advance_date = p.purchase_date) as total_advances
+$query = "SELECT s.name AS supplier_name, l.lots_code, p.id AS purchase_id,
+            COALESCE(SUM(p.quantity_kg), 0) AS total_weight,
+            COALESCE(SUM(p.net_paid_supplier_usd), 0) AS total_amount,
+            COALESCE(sa.total_advances, 0) AS total_advances,
+            COALESCE(sp.total_payments, 0) AS total_payments,
+            (COALESCE(SUM(p.net_paid_supplier_usd), 0) - COALESCE(sp.total_payments, 0)) AS balance_due,
+            p.purchase_date AS tx_date
           FROM purchasing p
           JOIN suppliers s ON p.supplier_id = s.id
           JOIN lots l ON p.lot_id = l.id
-          WHERE 1=1 {$date_cond}
-          GROUP BY s.id, l.id, p.purchase_date
+          LEFT JOIN (
+              SELECT supplier_id, SUM(amount) AS total_advances
+              FROM supplier_advances
+              WHERE 1=1 {$advanceDateCond}
+              GROUP BY supplier_id
+          ) sa ON sa.supplier_id = s.id
+          LEFT JOIN (
+              SELECT spa.purchase_id, SUM(spa.amount_allocated) AS total_payments
+              FROM supplier_payment_allocations spa
+              JOIN supplier_payments sp ON sp.id = spa.supplier_payment_id
+              WHERE 1=1 {$paymentDateCond}
+              GROUP BY spa.purchase_id
+          ) sp ON sp.purchase_id = p.id
+          WHERE 1=1 {$purchaseDateCond}
+          GROUP BY s.id, l.id, p.purchase_date, sa.total_advances, sp.total_payments
           ORDER BY p.purchase_date ASC, s.name ASC";
 $db_res = mysqli_query($conn, $query);
 $total_w = 0.0;
 $total_a = 0.0;
 $total_ad = 0.0;
+$total_pay = 0.0;
 $total_bal = 0.0;
 ?>
 <!DOCTYPE html>
@@ -61,6 +91,52 @@ $total_bal = 0.0;
 <link rel="stylesheet" href="../../src/css/sidebar.css">
 <link rel="stylesheet" href="../../src/css/navbar.css">
 <link rel="stylesheet" href="../../src/css/reports.css">
+<style>
+  .payment-history-link {
+    border: none;
+    background: transparent;
+    color: #2563eb;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+  }
+  .payment-history-link:hover {
+    color: #1d4ed8;
+  }
+  .payment-history-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 16px;
+  }
+  .payment-history-modal-content {
+    width: min(720px, 100%);
+    max-height: 85vh;
+    overflow: auto;
+    background: var(--card-bg, #fff);
+    border-radius: 12px;
+    box-shadow: 0 16px 50px rgba(0,0,0,0.2);
+    padding: 18px;
+  }
+  .payment-history-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .modal-close-btn {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+  }
+</style>
 <script>
   (function() {
     var savedTheme = localStorage.getItem('theme');
@@ -165,7 +241,7 @@ $total_bal = 0.0;
         <table class="excel-table" id="reportTable">
           <thead>
             <tr style="background: var(--bg); font-weight: 700; text-align: center;">
-              <th colspan="8">ACCOUNTS PAYABLE - SUPPLIERS OF MINERALS</th>
+              <th colspan="9">ACCOUNTS PAYABLE - SUPPLIERS OF MINERALS</th>
             </tr>
             <tr style="background: var(--bg); font-weight: 600;">
               <th>Date</th>
@@ -174,7 +250,7 @@ $total_bal = 0.0;
               <th>Code</th>
               <th>Weight (kgs)</th>
               <th>Est. Total Amount</th>
-              <th>Advances</th>
+              <th>Payments</th>
               <th>Balance Due</th>
             </tr>
           </thead>
@@ -186,12 +262,43 @@ $total_bal = 0.0;
                 while ($row = mysqli_fetch_assoc($db_res)):
                     $weight = (float)$row['total_weight'];
                     $amount = (float)$row['total_amount'];
-                    $advances = (float)$row['total_advances'];
-                    $bal = $amount - $advances;
+                    $payments = (float)$row['total_payments'];
+                    $bal = (float)$row['balance_due'];
+
+                    $paymentHistory = [];
+                    if (!empty($row['purchase_id'])) {
+                        $historyQuery = "SELECT sp.id AS payment_id, sp.payment_date, spa.amount_allocated, sp.amount_currency, sp.amount_base, sp.exchange_rate, sp.status, cur.code AS currency_code, a.account_name, a.account_code
+                                         FROM supplier_payment_allocations spa
+                                         JOIN supplier_payments sp ON sp.id = spa.supplier_payment_id
+                                         LEFT JOIN currencies cur ON cur.id = sp.currency_id
+                                         LEFT JOIN accounts a ON a.id = sp.account_id
+                                         WHERE spa.purchase_id = " . (int)$row['purchase_id'] . "
+                                         ORDER BY sp.payment_date ASC, sp.id ASC";
+                        $historyRes = mysqli_query($conn, $historyQuery);
+                        if ($historyRes) {
+                            while ($historyRow = mysqli_fetch_assoc($historyRes)) {
+                                $paymentHistory[] = [
+                                    'payment_id' => (int)$historyRow['payment_id'],
+                                    'payment_date' => $historyRow['payment_date'],
+                                    'amount_allocated' => (float)$historyRow['amount_allocated'],
+                                    'amount_currency' => (float)$historyRow['amount_currency'],
+                                    'amount_base' => (float)$historyRow['amount_base'],
+                                    'exchange_rate' => (float)$historyRow['exchange_rate'],
+                                    'status' => $historyRow['status'],
+                                    'currency_code' => $historyRow['currency_code'] ?? 'USD',
+                                    'account_name' => $historyRow['account_name'] ?? '—',
+                                    'account_code' => $historyRow['account_code'] ?? '—'
+                                ];
+                            }
+                        }
+                    }
+
+                    $paymentHistoryJson = htmlspecialchars(json_encode($paymentHistory), ENT_QUOTES, 'UTF-8');
+                    $paymentCell = '<button type="button" class="payment-history-link" data-title="' . htmlspecialchars($row['supplier_name'] . ' — ' . $row['lots_code'], ENT_QUOTES, 'UTF-8') . '" data-history="' . $paymentHistoryJson . '" onclick="openPaymentHistoryModal(this)">$' . number_format($payments, 2) . '</button>';
 
                     $total_w += $weight;
                     $total_a += $amount;
-                    $total_ad += $advances;
+                    $total_pay += $payments;
                     $total_bal += $bal;
             ?>
               <tr class="data-row">
@@ -201,7 +308,7 @@ $total_bal = 0.0;
                 <td></td>
                 <td style="text-align: right;"><?php echo number_format($weight, 1); ?></td>
                 <td style="text-align: right;">$<?php echo number_format($amount, 2); ?></td>
-                <td style="text-align: right;">$<?php echo number_format($advances, 2); ?></td>
+                <td style="text-align: right;"><?php echo $paymentCell; ?></td>
                 <td style="text-align: right; font-weight: 600;">$<?php echo number_format($bal, 2); ?></td>
               </tr>
             <?php
@@ -209,7 +316,7 @@ $total_bal = 0.0;
             else:
             ?>
               <tr>
-                <td colspan="8" style="text-align: center; padding: 24px; color: var(--text2);">No accounts payable records found.</td>
+                <td colspan="9" style="text-align: center; padding: 24px; color: var(--text2);">No accounts payable records found.</td>
               </tr>
             <?php
             endif;
@@ -218,7 +325,7 @@ $total_bal = 0.0;
               <td colspan="4" style="text-align: right;">Total:</td>
               <td style="text-align: right;"><?php echo number_format($total_w, 1); ?></td>
               <td style="text-align: right;">$<?php echo number_format($total_a, 2); ?></td>
-              <td style="text-align: right;">$<?php echo number_format($total_ad, 2); ?></td>
+              <td style="text-align: right;">$<?php echo number_format($total_pay, 2); ?></td>
               <td style="text-align: right;">$<?php echo number_format($total_bal, 2); ?></td>
             </tr>
           </tbody>
@@ -227,6 +334,16 @@ $total_bal = 0.0;
     </div>
   </div>
 
+  </div>
+</div>
+
+<div id="paymentHistoryModal" class="payment-history-modal" style="display: none;">
+  <div class="payment-history-modal-content" role="dialog" aria-modal="true" aria-labelledby="paymentHistoryTitle">
+    <div class="payment-history-modal-header">
+      <h3 id="paymentHistoryTitle" style="margin: 0;">Payment History</h3>
+      <button type="button" class="modal-close-btn" onclick="closePaymentHistoryModal()" aria-label="Close">×</button>
+    </div>
+    <div id="paymentHistoryBody"></div>
   </div>
 </div>
 
@@ -282,6 +399,63 @@ $total_bal = 0.0;
     }
     searchTable();
   }
+
+  function openPaymentHistoryModal(button) {
+    var modal = document.getElementById('paymentHistoryModal');
+    var title = document.getElementById('paymentHistoryTitle');
+    var body = document.getElementById('paymentHistoryBody');
+    if (!modal || !title || !body) return;
+
+    var history = [];
+    try {
+      history = JSON.parse(button.getAttribute('data-history') || '[]');
+    } catch (e) {
+      history = [];
+    }
+
+    title.textContent = button.getAttribute('data-title') || 'Payment History';
+
+    if (!history.length) {
+      body.innerHTML = '<div style="padding: 8px 0; color: var(--text2);">No payment history recorded for this purchase.</div>';
+    } else {
+      var rows = '';
+      history.forEach(function(item) {
+        rows += '<tr>' +
+          '<td>' + (item.payment_date || '—') + '</td>' +
+          '<td>' + (item.status || '—') + '</td>' +
+          '<td>' + (item.account_name || '—') + ' (' + (item.account_code || '—') + ')</td>' +
+          '<td style="text-align: right;">' + (item.amount_currency ? '$' + Number(item.amount_currency).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—') + '</td>' +
+          '<td style="text-align: right;">' + (item.exchange_rate ? Number(item.exchange_rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : '—') + '</td>' +
+          '<td style="text-align: right;">' + (item.amount_base ? '$' + Number(item.amount_base).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—') + '</td>' +
+          '<td style="text-align: right;">' + (item.amount_allocated ? '$' + Number(item.amount_allocated).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—') + '</td>' +
+          '</tr>';
+      });
+
+      body.innerHTML = '<table class="excel-table" style="width: 100%; font-size: 13px;">' +
+        '<thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Status</th><th style="text-align:left;">Account</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Base</th><th style="text-align:right;">Applied</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>';
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  function closePaymentHistoryModal() {
+    var modal = document.getElementById('paymentHistoryModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('paymentHistoryModal');
+    if (modal) {
+      modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+          closePaymentHistoryModal();
+        }
+      });
+    }
+  });
 </script>
 <script src="../../src/js/navbar.js"></script>
 <script src="../../src/js/sidebar.js"></script>

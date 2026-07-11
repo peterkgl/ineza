@@ -182,6 +182,10 @@ if ($result) {
             <svg class="btn-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Record Purchase
           </a>
+          <a href="pay_supplier.php" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
+            Pay Supplier
+          </a>
         <?php endif; ?>
       </div>
     </div>

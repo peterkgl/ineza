@@ -290,7 +290,7 @@ if ($curQuery) {
               <label for="currency">Billing Currency *</label>
               <select id="currency" name="currency" class="form-control" required>
                 <?php foreach ($currencies as $cur): ?>
-                  <option value="<?php echo $cur['code']; ?>" data-symbol="<?php echo $cur['symbol']; ?>" <?php echo $cur['is_base_currency'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($cur['name'] . ' (' . $cur['code'] . ')'); ?></option>
+                  <option value="<?php echo $cur['code']; ?>" <?php if($cur['is_base_currency']) echo 'selected'; ?> data-symbol="<?php echo $cur['symbol']; ?>" <?php echo $cur['is_base_currency'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($cur['name'] . ' (' . $cur['code'] . ')'); ?></option>
                 <?php endforeach; ?>
               </select>
             </div>
@@ -304,7 +304,7 @@ if ($curQuery) {
             </div>
           </div>
 
-          <div style="border-top: 1px solid var(--border); margin-top: 20px; padding-top: 20px;">
+          <!-- <div style="border-top: 1px solid var(--border); margin-top: 20px; padding-top: 20px;">
             <div style="font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; margin-bottom: 12px;">Customer Payment Information</div>
             
             <div class="form-grid-3">
@@ -336,7 +336,7 @@ if ($curQuery) {
               <label for="referenceNo">Payment Reference / Txn ID</label>
               <input type="text" id="referenceNo" name="reference_no" class="form-control" placeholder="e.g. TXN-102930291, Bank Ref Number">
             </div>
-          </div>
+          </div> -->
         </div>
 
         <!-- STEP 4: Transaction Summary -->
