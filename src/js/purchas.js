@@ -237,7 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
       gradesHtml += '<table class="data-table" style="margin-top: 10px;"><thead><tr><th>Element</th><th>Grade %</th><th>Notes</th></tr></thead><tbody>';
       p.grades.forEach(function(g) {
         var primaryTxt = (g.product_element_id === p.primary_element_id) ? ' <span class="grade-badge badge-orange">Primary</span>' : '';
-        gradesHtml += '<tr><td><strong>' + escapeHtml(g.element_code) + '</strong> (' + escapeHtml(g.element_name) + ')' + primaryTxt + '</td><td>' + g.grade_pct + '%</td><td>' + escapeHtml(g.notes || '—') + '</td></tr>';
+        gradesHtml += '<tr><td><strong>' + escapeHtml(g.element_code) + '</strong>' + primaryTxt + '</td><td>' + g.grade_pct + '%</td><td>' + escapeHtml(g.notes || '—') + '</td></tr>';
       });
       gradesHtml += '</tbody></table>';
     } else {

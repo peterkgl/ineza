@@ -42,27 +42,64 @@ function formatGradeHtml($val) {
     return number_format($val, 2) . '%';
 }
 
-// Fetch database records (product_id = 1 is Tin, Sn = 5, Fe = 4, Bal = 6)
-$query = "SELECT p.purchase_date as tx_date, p.negociant, s.name as supplier_name, p.purchase_no,
-            SUM(p.quantity_kg) as total_weight,
-            AVG(peg.grade_sn) as avg_sn,
-            AVG(peg.grade_fe) as avg_fe,
-            AVG(peg.grade_bal) as avg_bal,
-            AVG(p.lme_price) as avg_lme
+// Query product elements dynamically based on graded elements in the filtered period
+$elements_query = "SELECT DISTINCT pe.id, pe.element_code, pe.element_name, pe.symbol, COALESCE(pec.display_order, 999) as display_order
+                   FROM product_element pe
+                   JOIN purchasing_element_grade peg ON pe.id = peg.product_element_id
+                   JOIN purchasing p ON peg.purchasing_id = p.id
+                   LEFT JOIN product_element_composition pec ON pe.id = pec.product_element_id AND pec.product_id = 1
+                   WHERE p.product_id = 1 {$date_cond}
+                   ORDER BY display_order ASC, pe.element_code ASC";
+$elements_res = mysqli_query($conn, $elements_query);
+if (!$elements_res || mysqli_num_rows($elements_res) === 0) {
+    // Fallback to active product element composition if no data exists
+    $elements_query = "SELECT DISTINCT pe.id, pe.element_code, pe.element_name, pe.symbol, COALESCE(pec.display_order, 999) as display_order
+                       FROM product_element pe
+                       LEFT JOIN product_element_composition pec ON pe.id = pec.product_element_id AND pec.product_id = 1
+                       WHERE pec.product_id = 1
+                       ORDER BY display_order ASC, pe.element_code ASC";
+    $elements_res = mysqli_query($conn, $elements_query);
+}
+$elements = [];
+while ($elem = mysqli_fetch_assoc($elements_res)) {
+    $elements[] = $elem;
+}
+
+
+// Fetch product UOM
+$uom_code = 'Kgs';
+$uom_query = "SELECT uom.code 
+              FROM product p
+              LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
+              WHERE p.id = 1";
+$uom_res = mysqli_query($conn, $uom_query);
+if ($uom_res && $uom_row = mysqli_fetch_assoc($uom_res)) {
+    $uom_code = $uom_row['code'] ?: 'Kgs';
+}
+
+// Fetch database records
+$query = "SELECT p.id, p.purchase_date as tx_date, p.negociant, s.name as supplier_name, p.purchase_no,
+            p.quantity_kg as total_weight,
+            p.lme_price as avg_lme
           FROM purchasing p
           JOIN suppliers s ON p.supplier_id = s.id
-          LEFT JOIN (
-              SELECT purchasing_id,
-                     MAX(CASE WHEN product_element_id = 5 THEN grade_pct END) as grade_sn,
-                     MAX(CASE WHEN product_element_id = 4 THEN grade_pct END) as grade_fe,
-                     MAX(CASE WHEN product_element_id = 6 THEN grade_pct END) as grade_bal
-              FROM purchasing_element_grade
-              GROUP BY purchasing_id
-          ) peg ON peg.purchasing_id = p.id
           WHERE p.product_id = 1 {$date_cond}
-          GROUP BY p.id, p.purchase_date, p.purchase_no, p.negociant, s.name
           ORDER BY p.purchase_date ASC, s.name ASC";
 $db_res = mysqli_query($conn, $query);
+
+// Fetch all grade records for mapping
+$grades_map = [];
+$all_grades_query = "SELECT peg.purchasing_id, peg.product_element_id, peg.grade_pct, pe.element_name, pe.element_code, pe.symbol
+                     FROM purchasing_element_grade peg
+                     JOIN product_element pe ON peg.product_element_id = pe.id
+                     JOIN purchasing p ON peg.purchasing_id = p.id
+                     WHERE p.product_id = 1 {$date_cond}";
+$all_grades_res = mysqli_query($conn, $all_grades_query);
+if ($all_grades_res) {
+    while ($g_row = mysqli_fetch_assoc($all_grades_res)) {
+        $grades_map[$g_row['purchasing_id']][] = $g_row;
+    }
+}
 $total_w = 0.0;
 ?>
 <!DOCTYPE html>
@@ -184,10 +221,10 @@ $total_w = 0.0;
               <th>Date</th>
               <th>Negociant</th>
               <th>Code</th>
-              <th>Kgs</th>
-              <th>Sn</th>
-              <th>Fe</th>
-              <th>Bal</th>
+              <th><?php echo htmlspecialchars($uom_code); ?></th>
+              <?php foreach ($elements as $elem): ?>
+                <th><?php echo htmlspecialchars($elem['element_code']); ?></th>
+              <?php endforeach; ?>
               <th>LME</th>
             </tr>
           </thead>
@@ -200,15 +237,30 @@ $total_w = 0.0;
                 while ($row = mysqli_fetch_assoc($db_res)):
                     $weight = (float)$row['total_weight'];
                     $total_w += $weight;
+                    $purchase_id = (int)$row['id'];
+                    $row_grades = $grades_map[$purchase_id] ?? [];
             ?>
               <tr class="data-row">
                 <td><?php echo htmlspecialchars($row['tx_date']); ?></td>
                 <td><?php echo htmlspecialchars($row['negociant'] ?? ''); ?></td>
                 <td><?php echo htmlspecialchars($row['purchase_no']); ?></td>
-                <td style="text-align: right;"><?php echo number_format($weight, 1); ?></td>
-                <td style="text-align: right;"><?php echo formatGradeHtml($row['avg_sn']); ?></td>
-                <td style="text-align: right;"><?php echo formatGradeHtml($row['avg_fe']); ?></td>
-                <td style="text-align: right;"><?php echo formatGradeHtml($row['avg_bal']); ?></td>
+                <td style="text-align: right;">
+                    <?php echo number_format($weight, 1) . ' ' . htmlspecialchars($uom_code); ?>
+                </td>
+                <?php foreach ($elements as $elem): ?>
+                    <td style="text-align: right;">
+                        <?php
+                        $found_pct = '';
+                        foreach ($row_grades as $g) {
+                            if ((int)$g['product_element_id'] === (int)$elem['id']) {
+                                $found_pct = formatGradeHtml($g['grade_pct']);
+                                break;
+                            }
+                        }
+                        echo $found_pct;
+                        ?>
+                    </td>
+                <?php endforeach; ?>
                 <td style="text-align: right;"><?php echo (float)$row['avg_lme'] > 0 ? '$' . number_format((float)$row['avg_lme'], 2) : ''; ?></td>
               </tr>
             <?php
@@ -216,15 +268,42 @@ $total_w = 0.0;
             else:
             ?>
               <tr>
-                <td colspan="8" style="text-align: center; padding: 24px; color: var(--text2);">No data found for the selected period.</td>
+                <td colspan="<?php echo 5 + count($elements); ?>" style="text-align: center; padding: 24px; color: var(--text2);">No data found for the selected period.</td>
               </tr>
             <?php
             endif;
             ?>
             <tr style="font-weight: 700; background: var(--bg);">
               <td colspan="3" style="text-align: right;">Under processing:</td>
-              <td style="text-align: right;"><?php echo number_format($total_w, 1); ?></td>
-              <td colspan="4"></td>
+              <td style="text-align: right;">
+                  <?php echo number_format($total_w, 1) . ' ' . htmlspecialchars($uom_code); ?>
+                  <?php
+                  $avg_grades_query = "SELECT pe.id, pe.element_name, pe.element_code, AVG(peg.grade_pct) as avg_pct
+                                       FROM purchasing_element_grade peg
+                                       JOIN product_element pe ON peg.product_element_id = pe.id
+                                       JOIN purchasing p ON peg.purchasing_id = p.id
+                                       WHERE p.product_id = 1 {$date_cond}
+                                       GROUP BY pe.id, pe.element_name, pe.element_code";
+                  $avg_grades_res = mysqli_query($conn, $avg_grades_query);
+                  $avg_grades = [];
+                  if ($avg_grades_res) {
+                      while ($ag = mysqli_fetch_assoc($avg_grades_res)) {
+                          $avg_grades[(int)$ag['id']] = $ag;
+                      }
+                  }
+                  ?>
+              </td>
+              <?php foreach ($elements as $elem): ?>
+                  <td style="text-align: right;">
+                      <?php
+                      $elem_id = (int)$elem['id'];
+                      if (isset($avg_grades[$elem_id])) {
+                          echo formatGradeHtml($avg_grades[$elem_id]['avg_pct']);
+                      }
+                      ?>
+                  </td>
+              <?php endforeach; ?>
+              <td></td>
             </tr>
           </tbody>
         </table>
