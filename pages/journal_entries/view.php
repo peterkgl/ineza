@@ -34,7 +34,7 @@ $entry = mysqli_fetch_assoc($result);
 // Fetch Lines
 $linesQuery = "SELECT jel.*, a.account_code, a.account_name, c.code as currency_code
                FROM journal_entry_lines jel
-               JOIN accounts a ON jel.account_id = a.id
+               LEFT JOIN accounts a ON (jel.account_id = a.id OR a.account_code = CAST(jel.account_id AS CHAR))
                JOIN currencies c ON jel.currency_id = c.id
                WHERE jel.journal_entry_id = $id
                ORDER BY jel.debit DESC, jel.id ASC";

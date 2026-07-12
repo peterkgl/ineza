@@ -16,7 +16,7 @@ if (empty($_SESSION['journal_entries_token'])) {
 }
 
 // Fetch Active Accounts
-$accQuery = "SELECT id, account_code, account_name FROM accounts WHERE is_active = 1 ORDER BY account_code ASC";
+$accQuery = "SELECT id, account_type_id, account_code, account_name FROM accounts WHERE is_active = 1 ORDER BY account_code ASC";
 $accResult = mysqli_query($conn, $accQuery);
 $accounts = [];
 if ($accResult) {
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Select Account dropdown
         let optionsHtml = '<option value="">-- Choose Account --</option>';
         accounts.forEach(acc => {
-            optionsHtml += `<option value="${acc.id}">${acc.account_name} (${acc.account_code})</option>`;
+            optionsHtml += `<option value="${acc.account_code}" data-parent-account-id="${acc.account_type_id || ''}">${acc.account_name} (${acc.account_code})</option>`;
         });
 
         tr.innerHTML = `
@@ -352,20 +352,24 @@ document.addEventListener('DOMContentLoaded', function() {
         let isValid = true;
 
         rows.forEach((row, i) => {
-            const accountId = row.querySelector('.line-account').value;
+            const accountSelect = row.querySelector('.line-account');
+            const selectedOption = accountSelect.options[accountSelect.selectedIndex];
+            const accountId = accountSelect.value;
+            const parentAccountId = selectedOption ? selectedOption.getAttribute('data-parent-account-id') : '';
             const description = row.querySelector('.line-desc').value;
             const debit = parseFloat(row.querySelector('.line-debit').value) || 0;
             const credit = parseFloat(row.querySelector('.line-credit').value) || 0;
 
             if (!accountId) {
                 isValid = false;
-                row.querySelector('.line-account').style.borderColor = 'var(--red)';
+                accountSelect.style.borderColor = 'var(--red)';
             } else {
-                row.querySelector('.line-account').style.borderColor = '';
+                accountSelect.style.borderColor = '';
             }
 
             linesData.push({
                 account_id: accountId,
+                parent_account_id: parentAccountId,
                 description: description,
                 debit: debit,
                 credit: credit

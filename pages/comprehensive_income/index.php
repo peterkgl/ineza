@@ -10,6 +10,214 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
     header("Location: ../dashboard");
     exit();
 }
+
+function getAccountTypeBalance($conn, $accountTypeId, $asOfDate, $balanceType = 'debit') {
+    $accountTypeId = (int)$accountTypeId;
+    $asOfDateEsc = mysqli_real_escape_string($conn, $asOfDate);
+
+    $stmt = mysqli_prepare($conn, "
+        SELECT COALESCE(SUM(jel.debit), 0.00) AS debits,
+               COALESCE(SUM(jel.credit), 0.00) AS credits
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON a.account_code = CAST(jel.account_id AS CHAR)
+                      AND a.account_type_id = jel.parent_account_id
+        WHERE je.entry_date <= ?
+          AND a.account_type_id = ?
+    ");
+
+    if (!$stmt) {
+        return 0.0;
+    }
+
+    mysqli_stmt_bind_param($stmt, 'si', $asOfDateEsc, $accountTypeId);
+    mysqli_stmt_execute($stmt);
+    $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
+
+    if (!$row) {
+        return 0.0;
+    }
+
+    $debits = (float)$row['debits'];
+    $credits = (float)$row['credits'];
+
+    if (strtolower($balanceType) === 'credit') {
+        return $credits - $debits;
+    }
+
+    return $debits - $credits;
+}
+
+function getAccountTypeChildren($conn, $parentId) {
+    $parentId = (int)$parentId;
+    $stmt = mysqli_prepare($conn, "
+        SELECT id, code, name, parent_id
+        FROM account_types
+        WHERE parent_id = ?
+        ORDER BY code ASC, name ASC
+    ");
+
+    if (!$stmt) {
+        return [];
+    }
+
+    mysqli_stmt_bind_param($stmt, 'i', $parentId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $rows = [];
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $rows[] = [
+            'id' => (int)$row['id'],
+            'code' => $row['code'],
+            'name' => $row['name'],
+            'parent_id' => (int)$row['parent_id']
+        ];
+    }
+
+    mysqli_stmt_close($stmt);
+    return $rows;
+}
+
+function buildIncomeStatementRows($conn, $parentId, $asOfDate, $balanceType = 'debit') {
+    $rows = [];
+    foreach (getAccountTypeChildren($conn, $parentId) as $type) {
+        $rows[] = [
+            'id' => $type['id'],
+            'code' => $type['code'],
+            'name' => $type['name'],
+            'balance' => getAccountTypeBalance($conn, $type['id'], $asOfDate, $balanceType)
+        ];
+    }
+    return $rows;
+}
+
+function getBalanceForTypeSelection($rows, $typeIds = [], $typeCodes = []) {
+    $total = 0.0;
+
+    foreach ($rows as $row) {
+        $rowId = isset($row['id']) ? (int)$row['id'] : 0;
+        $rowCode = isset($row['code']) ? (string)$row['code'] : '';
+        $matchesTypeId = !empty($typeIds) && in_array($rowId, $typeIds, true);
+        $matchesTypeCode = !empty($typeCodes) && in_array($rowCode, $typeCodes, true);
+
+        if ($matchesTypeId || $matchesTypeCode) {
+            $total += (float)$row['balance'];
+        }
+    }
+
+    return $total;
+}
+
+function calculateIncomeStatementBalances($conn, $year) {
+    $asOfDate = "$year-12-31";
+
+    $revenueRows = buildIncomeStatementRows($conn, -4, $asOfDate, 'credit');
+    $cogsRows = buildIncomeStatementRows($conn, -5, $asOfDate, 'debit');
+    $expenseRows = buildIncomeStatementRows($conn, -6, $asOfDate, 'debit');
+
+    $revenue = 0.0;
+    foreach ($revenueRows as $row) {
+        $revenue += (float)$row['balance'];
+    }
+
+    $cogs = 0.0;
+    foreach ($cogsRows as $row) {
+        $cogs += (float)$row['balance'];
+    }
+
+    $totalExpenses = 0.0;
+    foreach ($expenseRows as $row) {
+        $totalExpenses += (float)$row['balance'];
+    }
+
+    $adminExpenses = getBalanceForTypeSelection($expenseRows, [48]);
+    $financeCosts = getBalanceForTypeSelection($expenseRows, [49]);
+    $taxExpenses = getBalanceForTypeSelection($expenseRows, [18]);
+    $otherOperatingExpenses = $totalExpenses - $adminExpenses - $financeCosts - $taxExpenses;
+
+    $grossProfit = $revenue - $cogs;
+    $operatingProfit = $grossProfit - $otherOperatingExpenses - $adminExpenses;
+    $profitBeforeTax = $operatingProfit - $financeCosts;
+    $profitAfterTax = $profitBeforeTax - $taxExpenses;
+
+    return [
+        'revenue' => $revenue,
+        'cogs' => $cogs,
+        'gross_profit' => $grossProfit,
+        'admin_expenses' => $adminExpenses,
+        'finance_costs' => $financeCosts,
+        'tax_expenses' => $taxExpenses,
+        'operating_profit' => $operatingProfit,
+        'profit_before_tax' => $profitBeforeTax,
+        'profit_after_tax' => $profitAfterTax,
+        'total_comprehensive_income' => $profitAfterTax,
+    ];
+}
+
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+
+$yearsQuery = "SELECT DISTINCT YEAR(entry_date) as yr FROM journal_entries WHERE statuss = 'POSTED' ORDER BY yr DESC";
+$yearsRes = mysqli_query($conn, $yearsQuery);
+$availableYears = [];
+if ($yearsRes) {
+    while ($row = mysqli_fetch_assoc($yearsRes)) {
+        $availableYears[] = (int)$row['yr'];
+    }
+}
+if (empty($availableYears)) {
+    for ($y = date('Y'); $y >= 2020; $y--) {
+        $availableYears[] = $y;
+    }
+}
+if (!in_array($selectedYear, $availableYears)) {
+    $availableYears[] = $selectedYear;
+    rsort($availableYears);
+}
+
+$year1 = $selectedYear;
+$year2 = $selectedYear - 1;
+$year3 = $selectedYear - 2;
+
+$balancesYear1 = calculateIncomeStatementBalances($conn, $year1);
+$balancesYear2 = calculateIncomeStatementBalances($conn, $year2);
+$balancesYear3 = calculateIncomeStatementBalances($conn, $year3);
+
+$revenue_22 = $balancesYear1['revenue'];
+$cogs_22 = $balancesYear1['cogs'];
+$gross_profit_22 = $balancesYear1['gross_profit'];
+$admin_expenses_22 = $balancesYear1['admin_expenses'];
+$finance_costs_22 = $balancesYear1['finance_costs'];
+$tax_expenses_22 = $balancesYear1['tax_expenses'];
+$operating_profit_22 = $balancesYear1['operating_profit'];
+$profit_before_tax_22 = $balancesYear1['profit_before_tax'];
+$profit_after_tax_22 = $balancesYear1['profit_after_tax'];
+$total_comprehensive_income_22 = $balancesYear1['total_comprehensive_income'];
+
+$revenue_21 = $balancesYear2['revenue'];
+$cogs_21 = $balancesYear2['cogs'];
+$gross_profit_21 = $balancesYear2['gross_profit'];
+$admin_expenses_21 = $balancesYear2['admin_expenses'];
+$finance_costs_21 = $balancesYear2['finance_costs'];
+$tax_expenses_21 = $balancesYear2['tax_expenses'];
+$operating_profit_21 = $balancesYear2['operating_profit'];
+$profit_before_tax_21 = $balancesYear2['profit_before_tax'];
+$profit_after_tax_21 = $balancesYear2['profit_after_tax'];
+$total_comprehensive_income_21 = $balancesYear2['total_comprehensive_income'];
+
+$revenue_20 = $balancesYear3['revenue'];
+$cogs_20 = $balancesYear3['cogs'];
+$gross_profit_20 = $balancesYear3['gross_profit'];
+$admin_expenses_20 = $balancesYear3['admin_expenses'];
+$finance_costs_20 = $balancesYear3['finance_costs'];
+$tax_expenses_20 = $balancesYear3['tax_expenses'];
+$operating_profit_20 = $balancesYear3['operating_profit'];
+$profit_before_tax_20 = $balancesYear3['profit_before_tax'];
+$profit_after_tax_20 = $balancesYear3['profit_after_tax'];
+$total_comprehensive_income_20 = $balancesYear3['total_comprehensive_income'];
+
+$gross_margin_22 = $revenue_22 > 0 ? ($gross_profit_22 / $revenue_22) * 100 : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,7 +257,7 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           Comprehensive Income Statement
         </h1>
-        <div class="page-sub">INEZA African Mining Ltd — Financial Years 2020 – 2022</div>
+        <div class="page-sub">INEZA African Mining Ltd — Financial Years <?php echo $year3; ?> – <?php echo $year1; ?></div>
       </div>
       <div class="page-actions">
         <button class="btn-sm" id="exportCsvBtn">
@@ -73,8 +281,8 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-orange">Revenue</span>
         </div>
-        <div class="stat-val">Frw 1,995.0M</div>
-        <div class="stat-label">Gross Revenue (2022)</div>
+        <div class="stat-val">$ <?php echo number_format($revenue_22 / 1000000, 1); ?>M</div>
+        <div class="stat-label">Gross Revenue (<?php echo $year1; ?>)</div>
       </div>
 
       <!-- Gross Profit -->
@@ -85,8 +293,8 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-up">53.0% GP</span>
         </div>
-        <div class="stat-val">Frw 1,057.3M</div>
-        <div class="stat-label">Gross Profit (2022)</div>
+        <div class="stat-val">$ <?php echo number_format($gross_profit_22 / 1000000, 1); ?>M</div>
+        <div class="stat-label">Gross Profit (<?php echo $year1; ?>)</div>
       </div>
 
       <!-- Operating Profit -->
@@ -97,8 +305,8 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-blue">EBIT</span>
         </div>
-        <div class="stat-val">Frw 800.6M</div>
-        <div class="stat-label">Operating Profit (2022)</div>
+        <div class="stat-val">$ <?php echo number_format($operating_profit_22 / 1000000, 1); ?>M</div>
+        <div class="stat-label">Operating Profit (<?php echo $year1; ?>)</div>
       </div>
 
       <!-- Net Profit -->
@@ -109,9 +317,20 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
           </div>
           <span class="stat-trend trend-up">Net Profit</span>
         </div>
-        <div class="stat-val">Frw 530.0M</div>
-        <div class="stat-label">Comprehensive Income (2022)</div>
+        <div class="stat-val">$ <?php echo number_format($profit_after_tax_22 / 1000000, 1); ?>M</div>
+        <div class="stat-label">Comprehensive Income (<?php echo $year1; ?>)</div>
       </div>
+    </div>
+
+    <div class="year-filter-container" style="margin: 20px 0 0; display: flex; align-items: center; gap: 10px;">
+      <label class="dropdown-label" for="yearSelect">Select Fiscal Year</label>
+      <form method="get" style="display: inline-flex; align-items: center; gap: 8px;">
+        <select id="yearSelect" name="year" onchange="this.form.submit()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text);">
+          <?php foreach ($availableYears as $yr): ?>
+            <option value="<?php echo $yr; ?>" <?php echo $yr === $selectedYear ? 'selected' : ''; ?>>Fiscal Year <?php echo $yr; ?></option>
+          <?php endforeach; ?>
+        </select>
+      </form>
     </div>
 
     <!-- ===== TABLE CONTAINER ===== -->
@@ -121,7 +340,7 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
         <div class="equity-banner">
           <div style="font-size: 11px; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500; margin-bottom: 2px;">INEZA African Mining Ltd</div>
           <h3>Statement of profit or loss and Other Comprehensive Income</h3>
-          <p>For the year ended 31 December 2022</p>
+          <p>For the year ended 31 December <?php echo $year1; ?></p>
         </div>
         <div class="equity-table-wrapper">
           <table class="equity-table" id="comprehensive-income-table">
@@ -129,98 +348,88 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
               <tr>
                 <th></th>
                 <th class="num-note">Notes</th>
-                <th>2022</th>
-                <th>2021</th>
-                <th>2020</th>
+                <th><?php echo $year1; ?></th>
+                <th><?php echo $year2; ?></th>
+                <th><?php echo $year3; ?></th>
               </tr>
               <tr class="currency-row">
                 <th></th>
                 <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
+                <th>$</th>
+                <th>$</th>
+                <th>$</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Revenue -->
               <tr class="accent-row">
                 <td class="row-label">Revenue</td>
                 <td class="num-note">1</td>
-                <td class="num-val">1,995,026,000</td>
-                <td class="num-val">1,780,026,000</td>
-                <td class="num-val">1,531,642,000</td>
+                <td class="num-val"><?php echo number_format($revenue_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($revenue_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($revenue_20, 2); ?></td>
               </tr>
-              <!-- Cost of sales -->
               <tr>
                 <td class="row-label">Cost of sales</td>
                 <td class="num-note">2</td>
-                <td class="num-val">(937,662,220)</td>
-                <td class="num-val">(872,212,740)</td>
-                <td class="num-val">(796,453,840)</td>
+                <td class="num-val"><?php echo number_format($cogs_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($cogs_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($cogs_20, 2); ?></td>
               </tr>
-              <!-- Gross Profit -->
               <tr style="border-top: 1px solid var(--border);">
                 <td class="row-label" style="font-weight: 600;">Gross Profit</td>
                 <td class="num-note"></td>
-                <td class="num-val" style="font-weight: 600;">1,057,363,780</td>
-                <td class="num-val" style="font-weight: 600;">907,813,260</td>
-                <td class="num-val" style="font-weight: 600;">735,188,160</td>
+                <td class="num-val" style="font-weight: 600;"><?php echo number_format($gross_profit_22, 2); ?></td>
+                <td class="num-val" style="font-weight: 600;"><?php echo number_format($gross_profit_21, 2); ?></td>
+                <td class="num-val" style="font-weight: 600;"><?php echo number_format($gross_profit_20, 2); ?></td>
               </tr>
-              <!-- Administrative expenses -->
               <tr>
                 <td class="row-label">Administrative expenses</td>
                 <td class="num-note">3</td>
-                <td class="num-val">(256,723,747)</td>
-                <td class="num-val">(151,562,434)</td>
-                <td class="num-val">(152,145,000)</td>
+                <td class="num-val"><?php echo number_format($admin_expenses_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($admin_expenses_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($admin_expenses_20, 2); ?></td>
               </tr>
-              <!-- Operating Profit -->
               <tr style="border-top: 1px solid var(--border);">
                 <td class="row-label" style="font-weight: 600;">Operating Profit(loss)</td>
                 <td class="num-note"></td>
-                <td class="num-val" style="font-weight: 600;">800,640,033</td>
-                <td class="num-val" style="font-weight: 600;">756,250,826</td>
-                <td class="num-val" style="font-weight: 600;">583,043,160</td>
+                <td class="num-val" style="font-weight: 600;"><?php echo number_format($operating_profit_22, 2); ?></td>
+                <td class="num-val" style="font-weight: 600;"><?php echo number_format($operating_profit_21, 2); ?></td>
+                <td class="num-val" style="font-weight: 600;"><?php echo number_format($operating_profit_20, 2); ?></td>
               </tr>
-              <!-- Finance costs -->
               <tr>
                 <td class="row-label">Finance costs</td>
                 <td class="num-note">4</td>
-                <td class="num-val">(43,423,000)</td>
-                <td class="num-val">(53,423,000)</td>
-                <td class="num-val">(38,332,000)</td>
+                <td class="num-val"><?php echo number_format($finance_costs_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($finance_costs_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($finance_costs_20, 2); ?></td>
               </tr>
-              <!-- Profit before tax -->
               <tr class="accent-row" style="border-top: 1px solid var(--border);">
                 <td class="row-label">Profit (Loss) before tax</td>
                 <td class="num-note"></td>
-                <td class="num-val">757,217,033</td>
-                <td class="num-val">702,827,826</td>
-                <td class="num-val">544,711,160</td>
+                <td class="num-val"><?php echo number_format($profit_before_tax_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($profit_before_tax_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($profit_before_tax_20, 2); ?></td>
               </tr>
-              <!-- Income tax expenses -->
               <tr>
                 <td class="row-label">Income tax expenses</td>
                 <td class="num-note">11</td>
-                <td class="num-val">(227,165,110)</td>
-                <td class="num-val">(210,848,348)</td>
-                <td class="num-val">(163,413,348)</td>
+                <td class="num-val"><?php echo number_format($tax_expenses_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($tax_expenses_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($tax_expenses_20, 2); ?></td>
               </tr>
-              <!-- Profit after tax -->
               <tr class="accent-row" style="border-top: 1px solid var(--border);">
                 <td class="row-label">Profit (Loss) after tax</td>
                 <td class="num-note"></td>
-                <td class="num-val">530,051,923</td>
-                <td class="num-val">491,979,478</td>
-                <td class="num-val">381,297,812</td>
+                <td class="num-val"><?php echo number_format($profit_after_tax_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($profit_after_tax_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($profit_after_tax_20, 2); ?></td>
               </tr>
-              <!-- Total comprehensive income -->
               <tr class="total-row">
                 <td class="row-label">Total comprehensive income</td>
                 <td class="num-note"></td>
-                <td class="num-val">530,051,923</td>
-                <td class="num-val">491,979,478</td>
-                <td class="num-val">381,297,812</td>
+                <td class="num-val"><?php echo number_format($total_comprehensive_income_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_comprehensive_income_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_comprehensive_income_20, 2); ?></td>
               </tr>
             </tbody>
           </table>
@@ -241,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
         csvContent += "INEZA African Mining Ltd - Comprehensive Income Statement\r\n\r\n";
         
         // Header Row
-        csvContent += ",Notes,2022 (Frw),2021 (Frw),2020 (Frw)\r\n";
+        csvContent += ",Notes,2022 ($),2021 ($),2020 ($)\r\n";
 
         const table = document.getElementById('comprehensive-income-table');
         const rows = table.querySelectorAll('tbody tr');

@@ -11,7 +11,7 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
     exit();
 }
 
-function getAccountTypeBalance($conn, $accountTypeId, $asOfDate) {
+function getAccountTypeBalance($conn, $accountTypeId, $asOfDate, $balanceType = 'debit') {
     $accountTypeId = (int)$accountTypeId;
     $asOfDateEsc = mysqli_real_escape_string($conn, $asOfDate);
 
@@ -41,6 +41,11 @@ function getAccountTypeBalance($conn, $accountTypeId, $asOfDate) {
 
     $debits = (float)$row['debits'];
     $credits = (float)$row['credits'];
+
+    if (strtolower($balanceType) === 'credit') {
+        return $credits - $debits;
+    }
+
     return $debits - $credits;
 }
 
@@ -75,21 +80,16 @@ function getAccountTypeChildren($conn, $parentId) {
     return $rows;
 }
 
-function getBalanceForTypeRows($rows, $keywords) {
-    $search = implode(' ', array_map('strtolower', $keywords));
+function getBalanceForTypeSelection($rows, $typeIds = [], $typeCodes = []) {
     $total = 0.0;
 
     foreach ($rows as $row) {
-        $name = strtolower($row['name']);
-        $matched = true;
-        foreach ($keywords as $keyword) {
-            if (strpos($name, strtolower($keyword)) === false) {
-                $matched = false;
-                break;
-            }
-        }
+        $rowId = isset($row['id']) ? (int)$row['id'] : 0;
+        $rowCode = isset($row['code']) ? (string)$row['code'] : '';
+        $matchesTypeId = !empty($typeIds) && in_array($rowId, $typeIds, true);
+        $matchesTypeCode = !empty($typeCodes) && in_array($rowCode, $typeCodes, true);
 
-        if ($matched) {
+        if ($matchesTypeId || $matchesTypeCode) {
             $total += (float)$row['balance'];
         }
     }
@@ -97,23 +97,28 @@ function getBalanceForTypeRows($rows, $keywords) {
     return $total;
 }
 
-function isNonCurrentAssetType($name) {
-    $name = strtolower($name);
-    return strpos($name, 'property') !== false || strpos($name, 'plant') !== false || strpos($name, 'equipment') !== false || strpos($name, 'intangible') !== false || strpos($name, 'deferred') !== false || strpos($name, 'advance') !== false || strpos($name, 'prepayment') !== false;
+function isNonCurrentAssetType($row) {
+    $rowId = isset($row['id']) ? (int)$row['id'] : 0;
+    $rowCode = isset($row['code']) ? (string)$row['code'] : '';
+
+    return in_array($rowId, [5, 12, 13], true) || in_array($rowCode, ['1005', '1012', '1013'], true);
 }
 
-function isNonCurrentLiabilityType($name) {
-    $name = strtolower($name);
-    return strpos($name, 'loan') !== false || strpos($name, 'lease') !== false || strpos($name, 'deferred') !== false || strpos($name, 'provision') !== false;
+function isNonCurrentLiabilityType($row) {
+    $rowId = isset($row['id']) ? (int)$row['id'] : 0;
+    $rowCode = isset($row['code']) ? (string)$row['code'] : '';
+
+    return in_array($rowId, [22, 23, 24, 26], true) || in_array($rowCode, ['2008', '2009', '2010', '2012'], true);
 }
 
-function buildBalanceSheetRows($conn, $parentId, $asOfDate) {
+function buildBalanceSheetRows($conn, $parentId, $asOfDate, $balanceType = 'debit') {
     $rows = [];
     foreach (getAccountTypeChildren($conn, $parentId) as $type) {
         $rows[] = [
             'id' => $type['id'],
+            'code' => $type['code'],
             'name' => $type['name'],
-            'balance' => getAccountTypeBalance($conn, $type['id'], $asOfDate)
+            'balance' => getAccountTypeBalance($conn, $type['id'], $asOfDate, $balanceType)
         ];
     }
     return $rows;
@@ -122,8 +127,11 @@ function buildBalanceSheetRows($conn, $parentId, $asOfDate) {
 function sumBalances($rows, $filterCallback = null) {
     $total = 0.0;
     foreach ($rows as $row) {
-        if ($filterCallback && !$filterCallback($row['name'])) {
-            continue;
+        if ($filterCallback) {
+            $matches = is_callable($filterCallback) ? $filterCallback($row) : $filterCallback($row['name']);
+            if (!$matches) {
+                continue;
+            }
         }
         $total += (float)$row['balance'];
     }
@@ -155,45 +163,125 @@ $year1 = $selectedYear;
 $year2 = $selectedYear - 1;
 $year3 = $selectedYear - 2;
 
+function calculateIncomeStatementResult($conn, $year) {
+    $asOfDate = "$year-12-31";
+    $revenueRows = buildBalanceSheetRows($conn, -4, $asOfDate, 'credit');
+    $cogsRows = buildBalanceSheetRows($conn, -5, $asOfDate, 'debit');
+    $expenseRows = buildBalanceSheetRows($conn, -6, $asOfDate, 'debit');
+
+    $revenue = 0.0;
+    foreach ($revenueRows as $row) {
+        $revenue += (float)$row['balance'];
+    }
+
+    $cogs = 0.0;
+    foreach ($cogsRows as $row) {
+        $cogs += (float)$row['balance'];
+    }
+
+    $expenses = 0.0;
+    foreach ($expenseRows as $row) {
+        $expenses += (float)$row['balance'];
+    }
+
+    return $revenue - $cogs - $expenses;
+}
+
 function calculateYearBalances($conn, $year) {
     $asOfDate = "$year-12-31";
-    $assetRows = buildBalanceSheetRows($conn, -1, $asOfDate);
-    $liabilityRows = buildBalanceSheetRows($conn, -2, $asOfDate);
-    $equityRows = buildBalanceSheetRows($conn, -3, $asOfDate);
+    $assetRows = buildBalanceSheetRows($conn, -1, $asOfDate, 'debit');
+    $liabilityRows = buildBalanceSheetRows($conn, -2, $asOfDate, 'credit');
+    $equityRows = buildBalanceSheetRows($conn, -3, $asOfDate, 'credit');
 
-    $ppe = getBalanceForTypeRows($assetRows, ['property', 'plant', 'equipment']);
-    $inv = getBalanceForTypeRows($assetRows, ['inventory']);
-    $rec = getBalanceForTypeRows($assetRows, ['receivable']);
-    $cash = getBalanceForTypeRows($assetRows, ['cash']);
-    $capital = getBalanceForTypeRows($equityRows, ['share', 'capital']);
-    $retained = getBalanceForTypeRows($equityRows, ['retained', 'earnings']) + getBalanceForTypeRows($equityRows, ['current', 'year', 'earnings']);
-    $loans = getBalanceForTypeRows($liabilityRows, ['loan']) + getBalanceForTypeRows($liabilityRows, ['lease']);
-    $pay = getBalanceForTypeRows($liabilityRows, ['payable']);
-    $tax = getBalanceForTypeRows($liabilityRows, ['tax']);
+    $ppe = getBalanceForTypeSelection($assetRows, [5]);
+    $inv = getBalanceForTypeSelection($assetRows, [4]);
+    $rec = getBalanceForTypeSelection($assetRows, [2]);
+    $otherReceivables = getBalanceForTypeSelection($assetRows, [3]);
+    $cash = getBalanceForTypeSelection($assetRows, [1]);
+    $prepayments = getBalanceForTypeSelection($assetRows, [6]);
+    $employeeAdvances = getBalanceForTypeSelection($assetRows, [7]);
+    $supplierAdvances = getBalanceForTypeSelection($assetRows, [8]);
+    $customerAdvances = getBalanceForTypeSelection($assetRows, [9]);
+    $cooperativeAdvances = getBalanceForTypeSelection($assetRows, [10]);
+    $otherAdvances = getBalanceForTypeSelection($assetRows, [11]);
+    $intangibleAssets = getBalanceForTypeSelection($assetRows, [12]);
+    $deferredTaxAssets = getBalanceForTypeSelection($assetRows, [13]);
+    $otherAssets = getBalanceForTypeSelection($assetRows, [14]);
+
+    $capital = getBalanceForTypeSelection($equityRows, [28]);
+    $partnerCapital = getBalanceForTypeSelection($equityRows, [29]);
+    $memberEquity = getBalanceForTypeSelection($equityRows, [30]);
+    $currentYearEarnings = getBalanceForTypeSelection($equityRows, [33]);
+    $incomeStatementResult = calculateIncomeStatementResult($conn, $year);
+    $retained = getBalanceForTypeSelection($equityRows, [32]) + ($currentYearEarnings != 0.0 ? $currentYearEarnings : $incomeStatementResult);
+    $reserves = getBalanceForTypeSelection($equityRows, [34]);
+    $otherComprehensiveIncome = getBalanceForTypeSelection($equityRows, [35]);
+    $priorPeriodAdjustments = getBalanceForTypeSelection($equityRows, [36]);
+    $ownerDrawings = getBalanceForTypeSelection($equityRows, [31]);
+
+    $loans = getBalanceForTypeSelection($liabilityRows, [22, 23]);
+    $pay = getBalanceForTypeSelection($liabilityRows, [15]);
+    $accruedLiabilities = getBalanceForTypeSelection($liabilityRows, [16]);
+    $payrollLiabilities = getBalanceForTypeSelection($liabilityRows, [17]);
+    $tax = getBalanceForTypeSelection($liabilityRows, [18]);
+    $customerDeposits = getBalanceForTypeSelection($liabilityRows, [19]);
+    $deferredRevenue = getBalanceForTypeSelection($liabilityRows, [20]);
+    $shortTermLoans = getBalanceForTypeSelection($liabilityRows, [21]);
+    $intercompanyPayables = getBalanceForTypeSelection($liabilityRows, [25]);
+    $otherLiab = getBalanceForTypeSelection($liabilityRows, [27]);
+    $deferredTaxLiabilities = getBalanceForTypeSelection($liabilityRows, [26]);
+    $provisions = getBalanceForTypeSelection($liabilityRows, [24]);
+    $leaseLiabilities = getBalanceForTypeSelection($liabilityRows, [23]);
+    $longTermLoans = getBalanceForTypeSelection($liabilityRows, [22]);
 
     $totalNca = sumBalances($assetRows, 'isNonCurrentAssetType');
-    $totalCa = sumBalances($assetRows, function($name) { return !isNonCurrentAssetType($name); });
+    $totalCa = sumBalances($assetRows, function($row) { return !isNonCurrentAssetType($row); });
     $totalAssets = $totalNca + $totalCa;
 
     $totalNcl = sumBalances($liabilityRows, 'isNonCurrentLiabilityType');
-    $totalCl = sumBalances($liabilityRows, function($name) { return !isNonCurrentLiabilityType($name); });
-    $otherLiab = $totalCl - $pay - $tax - $loans;
+    $totalCl = sumBalances($liabilityRows, function($row) { return !isNonCurrentLiabilityType($row); });
     $totalLiabilities = $totalNcl + $totalCl;
 
-    $totalEquity = $capital + $retained;
+    $totalEquity = $capital + $partnerCapital + $memberEquity + $retained + $reserves + $otherComprehensiveIncome + $priorPeriodAdjustments - $ownerDrawings;
     $totalEqLiab = $totalEquity + $totalLiabilities;
 
     return [
         'ppe' => $ppe,
         'inv' => $inv,
         'rec' => $rec,
+        'other_receivables' => $otherReceivables,
         'cash' => $cash,
+        'prepayments' => $prepayments,
+        'employee_advances' => $employeeAdvances,
+        'supplier_advances' => $supplierAdvances,
+        'customer_advances' => $customerAdvances,
+        'cooperative_advances' => $cooperativeAdvances,
+        'other_advances' => $otherAdvances,
+        'intangible_assets' => $intangibleAssets,
+        'deferred_tax_assets' => $deferredTaxAssets,
+        'other_assets' => $otherAssets,
         'capital' => $capital,
+        'partner_capital' => $partnerCapital,
+        'member_equity' => $memberEquity,
         'retained' => $retained,
+        'reserves' => $reserves,
+        'other_comprehensive_income' => $otherComprehensiveIncome,
+        'prior_period_adjustments' => $priorPeriodAdjustments,
+        'owner_drawings' => $ownerDrawings,
         'loans' => $loans,
         'pay' => $pay,
+        'accrued_liabilities' => $accruedLiabilities,
+        'payroll_liabilities' => $payrollLiabilities,
         'other_liab' => $otherLiab,
         'tax' => $tax,
+        'customer_deposits' => $customerDeposits,
+        'deferred_revenue' => $deferredRevenue,
+        'short_term_loans' => $shortTermLoans,
+        'intercompany_payables' => $intercompanyPayables,
+        'deferred_tax_liabilities' => $deferredTaxLiabilities,
+        'provisions' => $provisions,
+        'lease_liabilities' => $leaseLiabilities,
+        'long_term_loans' => $longTermLoans,
         'total_nca' => $totalNca,
         'total_ca' => $totalCa,
         'total_assets' => $totalAssets,
@@ -212,13 +300,39 @@ $balancesYear3 = calculateYearBalances($conn, $year3);
 $ppe_22 = $balancesYear1['ppe'];
 $inv_22 = $balancesYear1['inv'];
 $rec_22 = $balancesYear1['rec'];
+$other_receivables_22 = $balancesYear1['other_receivables'];
 $cash_22 = $balancesYear1['cash'];
+$prepayments_22 = $balancesYear1['prepayments'];
+$employee_advances_22 = $balancesYear1['employee_advances'];
+$supplier_advances_22 = $balancesYear1['supplier_advances'];
+$customer_advances_22 = $balancesYear1['customer_advances'];
+$cooperative_advances_22 = $balancesYear1['cooperative_advances'];
+$other_advances_22 = $balancesYear1['other_advances'];
+$intangible_assets_22 = $balancesYear1['intangible_assets'];
+$deferred_tax_assets_22 = $balancesYear1['deferred_tax_assets'];
+$other_assets_22 = $balancesYear1['other_assets'];
 $capital_22 = $balancesYear1['capital'];
+$partner_capital_22 = $balancesYear1['partner_capital'];
+$member_equity_22 = $balancesYear1['member_equity'];
 $retained_22 = $balancesYear1['retained'];
+$reserves_22 = $balancesYear1['reserves'];
+$other_comprehensive_income_22 = $balancesYear1['other_comprehensive_income'];
+$prior_period_adjustments_22 = $balancesYear1['prior_period_adjustments'];
+$owner_drawings_22 = $balancesYear1['owner_drawings'];
 $loans_22 = $balancesYear1['loans'];
 $pay_22 = $balancesYear1['pay'];
+$accrued_liabilities_22 = $balancesYear1['accrued_liabilities'];
+$payroll_liabilities_22 = $balancesYear1['payroll_liabilities'];
 $other_liab_22 = $balancesYear1['other_liab'];
 $tax_22 = $balancesYear1['tax'];
+$customer_deposits_22 = $balancesYear1['customer_deposits'];
+$deferred_revenue_22 = $balancesYear1['deferred_revenue'];
+$short_term_loans_22 = $balancesYear1['short_term_loans'];
+$intercompany_payables_22 = $balancesYear1['intercompany_payables'];
+$deferred_tax_liabilities_22 = $balancesYear1['deferred_tax_liabilities'];
+$provisions_22 = $balancesYear1['provisions'];
+$lease_liabilities_22 = $balancesYear1['lease_liabilities'];
+$long_term_loans_22 = $balancesYear1['long_term_loans'];
 $total_nca_22 = $balancesYear1['total_nca'];
 $total_ca_22 = $balancesYear1['total_ca'];
 $total_assets_22 = $balancesYear1['total_assets'];
@@ -231,13 +345,39 @@ $total_eq_liab_22 = $balancesYear1['total_eq_liab'];
 $ppe_21 = $balancesYear2['ppe'];
 $inv_21 = $balancesYear2['inv'];
 $rec_21 = $balancesYear2['rec'];
+$other_receivables_21 = $balancesYear2['other_receivables'];
 $cash_21 = $balancesYear2['cash'];
+$prepayments_21 = $balancesYear2['prepayments'];
+$employee_advances_21 = $balancesYear2['employee_advances'];
+$supplier_advances_21 = $balancesYear2['supplier_advances'];
+$customer_advances_21 = $balancesYear2['customer_advances'];
+$cooperative_advances_21 = $balancesYear2['cooperative_advances'];
+$other_advances_21 = $balancesYear2['other_advances'];
+$intangible_assets_21 = $balancesYear2['intangible_assets'];
+$deferred_tax_assets_21 = $balancesYear2['deferred_tax_assets'];
+$other_assets_21 = $balancesYear2['other_assets'];
 $capital_21 = $balancesYear2['capital'];
+$partner_capital_21 = $balancesYear2['partner_capital'];
+$member_equity_21 = $balancesYear2['member_equity'];
 $retained_21 = $balancesYear2['retained'];
+$reserves_21 = $balancesYear2['reserves'];
+$other_comprehensive_income_21 = $balancesYear2['other_comprehensive_income'];
+$prior_period_adjustments_21 = $balancesYear2['prior_period_adjustments'];
+$owner_drawings_21 = $balancesYear2['owner_drawings'];
 $loans_21 = $balancesYear2['loans'];
 $pay_21 = $balancesYear2['pay'];
+$accrued_liabilities_21 = $balancesYear2['accrued_liabilities'];
+$payroll_liabilities_21 = $balancesYear2['payroll_liabilities'];
 $other_liab_21 = $balancesYear2['other_liab'];
 $tax_21 = $balancesYear2['tax'];
+$customer_deposits_21 = $balancesYear2['customer_deposits'];
+$deferred_revenue_21 = $balancesYear2['deferred_revenue'];
+$short_term_loans_21 = $balancesYear2['short_term_loans'];
+$intercompany_payables_21 = $balancesYear2['intercompany_payables'];
+$deferred_tax_liabilities_21 = $balancesYear2['deferred_tax_liabilities'];
+$provisions_21 = $balancesYear2['provisions'];
+$lease_liabilities_21 = $balancesYear2['lease_liabilities'];
+$long_term_loans_21 = $balancesYear2['long_term_loans'];
 $total_nca_21 = $balancesYear2['total_nca'];
 $total_ca_21 = $balancesYear2['total_ca'];
 $total_assets_21 = $balancesYear2['total_assets'];
@@ -250,13 +390,39 @@ $total_eq_liab_21 = $balancesYear2['total_eq_liab'];
 $ppe_20 = $balancesYear3['ppe'];
 $inv_20 = $balancesYear3['inv'];
 $rec_20 = $balancesYear3['rec'];
+$other_receivables_20 = $balancesYear3['other_receivables'];
 $cash_20 = $balancesYear3['cash'];
+$prepayments_20 = $balancesYear3['prepayments'];
+$employee_advances_20 = $balancesYear3['employee_advances'];
+$supplier_advances_20 = $balancesYear3['supplier_advances'];
+$customer_advances_20 = $balancesYear3['customer_advances'];
+$cooperative_advances_20 = $balancesYear3['cooperative_advances'];
+$other_advances_20 = $balancesYear3['other_advances'];
+$intangible_assets_20 = $balancesYear3['intangible_assets'];
+$deferred_tax_assets_20 = $balancesYear3['deferred_tax_assets'];
+$other_assets_20 = $balancesYear3['other_assets'];
 $capital_20 = $balancesYear3['capital'];
+$partner_capital_20 = $balancesYear3['partner_capital'];
+$member_equity_20 = $balancesYear3['member_equity'];
 $retained_20 = $balancesYear3['retained'];
+$reserves_20 = $balancesYear3['reserves'];
+$other_comprehensive_income_20 = $balancesYear3['other_comprehensive_income'];
+$prior_period_adjustments_20 = $balancesYear3['prior_period_adjustments'];
+$owner_drawings_20 = $balancesYear3['owner_drawings'];
 $loans_20 = $balancesYear3['loans'];
 $pay_20 = $balancesYear3['pay'];
+$accrued_liabilities_20 = $balancesYear3['accrued_liabilities'];
+$payroll_liabilities_20 = $balancesYear3['payroll_liabilities'];
 $other_liab_20 = $balancesYear3['other_liab'];
 $tax_20 = $balancesYear3['tax'];
+$customer_deposits_20 = $balancesYear3['customer_deposits'];
+$deferred_revenue_20 = $balancesYear3['deferred_revenue'];
+$short_term_loans_20 = $balancesYear3['short_term_loans'];
+$intercompany_payables_20 = $balancesYear3['intercompany_payables'];
+$deferred_tax_liabilities_20 = $balancesYear3['deferred_tax_liabilities'];
+$provisions_20 = $balancesYear3['provisions'];
+$lease_liabilities_20 = $balancesYear3['lease_liabilities'];
+$long_term_loans_20 = $balancesYear3['long_term_loans'];
 $total_nca_20 = $balancesYear3['total_nca'];
 $total_ca_20 = $balancesYear3['total_ca'];
 $total_assets_20 = $balancesYear3['total_assets'];
@@ -267,30 +433,30 @@ $total_liabilities_20 = $balancesYear3['total_liabilities'];
 $total_eq_liab_20 = $balancesYear3['total_eq_liab'];
 
 // Subtotals and Totals Calculations
-$total_nca_22 = $ppe_22;
-$total_ca_22 = $inv_22 + $rec_22 + $cash_22;
+$total_nca_22 = $ppe_22 + $intangible_assets_22 + $deferred_tax_assets_22;
+$total_ca_22 = $inv_22 + $rec_22 + $other_receivables_22 + $cash_22 + $prepayments_22 + $employee_advances_22 + $supplier_advances_22 + $customer_advances_22 + $cooperative_advances_22 + $other_advances_22 + $other_assets_22;
 $total_assets_22 = $total_nca_22 + $total_ca_22;
-$total_equity_22 = $capital_22 + $retained_22;
-$total_ncl_22 = $loans_22;
-$total_cl_22 = $pay_22 + $other_liab_22 + $tax_22;
+$total_equity_22 = $capital_22 + $partner_capital_22 + $member_equity_22 + $retained_22 + $reserves_22 + $other_comprehensive_income_22 + $prior_period_adjustments_22 - $owner_drawings_22;
+$total_ncl_22 = $long_term_loans_22 + $lease_liabilities_22 + $provisions_22 + $deferred_tax_liabilities_22;
+$total_cl_22 = $pay_22 + $accrued_liabilities_22 + $payroll_liabilities_22 + $tax_22 + $customer_deposits_22 + $deferred_revenue_22 + $short_term_loans_22 + $intercompany_payables_22 + $other_liab_22;
 $total_liabilities_22 = $total_ncl_22 + $total_cl_22;
 $total_eq_liab_22 = $total_equity_22 + $total_liabilities_22;
 
-$total_nca_21 = $ppe_21;
-$total_ca_21 = $inv_21 + $rec_21 + $cash_21;
+$total_nca_21 = $ppe_21 + $intangible_assets_21 + $deferred_tax_assets_21;
+$total_ca_21 = $inv_21 + $rec_21 + $other_receivables_21 + $cash_21 + $prepayments_21 + $employee_advances_21 + $supplier_advances_21 + $customer_advances_21 + $cooperative_advances_21 + $other_advances_21 + $other_assets_21;
 $total_assets_21 = $total_nca_21 + $total_ca_21;
-$total_equity_21 = $capital_21 + $retained_21;
-$total_ncl_21 = $loans_21;
-$total_cl_21 = $pay_21 + $other_liab_21 + $tax_21;
+$total_equity_21 = $capital_21 + $partner_capital_21 + $member_equity_21 + $retained_21 + $reserves_21 + $other_comprehensive_income_21 + $prior_period_adjustments_21 - $owner_drawings_21;
+$total_ncl_21 = $long_term_loans_21 + $lease_liabilities_21 + $provisions_21 + $deferred_tax_liabilities_21;
+$total_cl_21 = $pay_21 + $accrued_liabilities_21 + $payroll_liabilities_21 + $tax_21 + $customer_deposits_21 + $deferred_revenue_21 + $short_term_loans_21 + $intercompany_payables_21 + $other_liab_21;
 $total_liabilities_21 = $total_ncl_21 + $total_cl_21;
 $total_eq_liab_21 = $total_equity_21 + $total_liabilities_21;
 
-$total_nca_20 = $ppe_20;
-$total_ca_20 = $inv_20 + $rec_20 + $cash_20;
+$total_nca_20 = $ppe_20 + $intangible_assets_20 + $deferred_tax_assets_20;
+$total_ca_20 = $inv_20 + $rec_20 + $other_receivables_20 + $cash_20 + $prepayments_20 + $employee_advances_20 + $supplier_advances_20 + $customer_advances_20 + $cooperative_advances_20 + $other_advances_20 + $other_assets_20;
 $total_assets_20 = $total_nca_20 + $total_ca_20;
-$total_equity_20 = $capital_20 + $retained_20;
-$total_ncl_20 = $loans_20;
-$total_cl_20 = $pay_20 + $other_liab_20 + $tax_20;
+$total_equity_20 = $capital_20 + $partner_capital_20 + $member_equity_20 + $retained_20 + $reserves_20 + $other_comprehensive_income_20 + $prior_period_adjustments_20 - $owner_drawings_20;
+$total_ncl_20 = $long_term_loans_20 + $lease_liabilities_20 + $provisions_20 + $deferred_tax_liabilities_20;
+$total_cl_20 = $pay_20 + $accrued_liabilities_20 + $payroll_liabilities_20 + $tax_20 + $customer_deposits_20 + $deferred_revenue_20 + $short_term_loans_20 + $intercompany_payables_20 + $other_liab_20;
 $total_liabilities_20 = $total_ncl_20 + $total_cl_20;
 $total_eq_liab_20 = $total_equity_20 + $total_liabilities_20;
 ?>
@@ -437,9 +603,9 @@ $total_eq_liab_20 = $total_equity_20 + $total_liabilities_20;
               <tr class="currency-row">
                 <th></th>
                 <th></th>
-                <th>Frw</th>
-                <th>Frw</th>
-                <th>Frw</th>
+                <th>$</th>
+                <th>$</th>
+                <th>$</th>
               </tr>
             </thead>
             <tbody>
@@ -447,27 +613,47 @@ $total_eq_liab_20 = $total_equity_20 + $total_liabilities_20;
               <tr class="section-header-row">
                 <td colspan="5">Assets</td>
               </tr>
-              
+
               <!-- Non Current Assets -->
               <tr class="subsection-header-row">
                 <td colspan="5">Non Current Assets</td>
               </tr>
-               <!-- Property, Plant and Equipment -->
-               <tr>
+              <tr>
                 <td class="row-label">Property, Plant and Equipment</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($ppe_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($ppe_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($ppe_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($ppe_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($ppe_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($ppe_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Intangible Assets</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($intangible_assets_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($intangible_assets_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($intangible_assets_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Deferred Tax Assets</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($deferred_tax_assets_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($deferred_tax_assets_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($deferred_tax_assets_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Other Non Current Assets</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($other_assets_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_assets_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_assets_20, 2); ?></td>
               </tr>
               <tr class="subtotal-row">
                 <td class="row-label">Total Non current assets</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($total_nca_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_nca_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_nca_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($total_nca_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_nca_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_nca_20, 2); ?></td>
               </tr>
-              
+
               <!-- Current Assets -->
               <tr class="subsection-header-row">
                 <td colspan="5">Current Assets</td>
@@ -475,46 +661,95 @@ $total_eq_liab_20 = $total_equity_20 + $total_liabilities_20;
               <tr>
                 <td class="row-label">Inventory</td>
                 <td class="num-note">7</td>
-                <td class="num-val"><?php echo number_format($inv_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($inv_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($inv_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($inv_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($inv_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($inv_20, 2); ?></td>
               </tr>
               <tr>
-                <td class="row-label">Accounts receivables</td>
+                <td class="row-label">Accounts Receivables</td>
                 <td class="num-note">6</td>
-                <td class="num-val"><?php echo number_format($rec_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($rec_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($rec_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($rec_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($rec_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($rec_20, 2); ?></td>
               </tr>
               <tr>
-                <td class="row-label">Cash and cash equivalents</td>
+                <td class="row-label">Other Receivables</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($other_receivables_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_receivables_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_receivables_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Cash and Cash Equivalents</td>
                 <td class="num-note">5</td>
-                <td class="num-val"><?php echo number_format($cash_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($cash_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($cash_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($cash_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($cash_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($cash_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Prepayments</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($prepayments_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($prepayments_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($prepayments_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Employee Advances</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($employee_advances_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($employee_advances_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($employee_advances_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Supplier Advances</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($supplier_advances_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($supplier_advances_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($supplier_advances_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Customer Advances</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($customer_advances_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($customer_advances_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($customer_advances_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Cooperative Advances</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($cooperative_advances_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($cooperative_advances_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($cooperative_advances_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Other Advances</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($other_advances_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_advances_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_advances_20, 2); ?></td>
               </tr>
               <tr class="subtotal-row">
                 <td class="row-label">Total Current Assets</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($total_ca_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_ca_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_ca_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($total_ca_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_ca_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_ca_20, 2); ?></td>
               </tr>
-              
+
               <!-- Total Assets -->
               <tr class="grand-total-row">
                 <td class="row-label">Total Assets</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($total_assets_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_assets_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_assets_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($total_assets_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_assets_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_assets_20, 2); ?></td>
               </tr>
-              
+
               <!-- Equity and Liabilities Section -->
               <tr class="section-header-row">
                 <td colspan="5">Equity and liabilities</td>
               </tr>
-              
+
               <!-- Capital and reserves -->
               <tr class="subsection-header-row">
                 <td colspan="5">Capital and reserves</td>
@@ -522,93 +757,198 @@ $total_eq_liab_20 = $total_equity_20 + $total_liabilities_20;
               <tr>
                 <td class="row-label">Share Capital</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($capital_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($capital_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($capital_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($capital_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($capital_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($capital_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Partner Capital</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($partner_capital_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($partner_capital_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($partner_capital_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Member Equity</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($member_equity_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($member_equity_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($member_equity_20, 2); ?></td>
               </tr>
               <tr>
                 <td class="row-label">Retained earnings</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($retained_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($retained_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($retained_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($retained_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($retained_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($retained_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Reserves</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($reserves_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($reserves_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($reserves_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Other Comprehensive Income</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($other_comprehensive_income_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_comprehensive_income_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_comprehensive_income_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Prior Period Adjustments</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($prior_period_adjustments_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($prior_period_adjustments_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($prior_period_adjustments_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Less: Owner Drawings</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format(-$owner_drawings_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format(-$owner_drawings_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format(-$owner_drawings_20, 2); ?></td>
               </tr>
               <tr class="subtotal-row">
                 <td class="row-label">Total Equity</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($total_equity_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_equity_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_equity_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($total_equity_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_equity_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_equity_20, 2); ?></td>
               </tr>
-              
+
               <!-- Non Current Liabilities -->
               <tr class="subsection-header-row">
                 <td colspan="5">Non Current Liabilities</td>
               </tr>
               <tr>
-                <td class="row-label">Long term loans and other LT liabilities</td>
+                <td class="row-label">Long Term Loans</td>
                 <td class="num-note">10</td>
-                <td class="num-val"><?php echo $loans_22 > 0 ? number_format($loans_22, 0) : '-'; ?></td>
-                <td class="num-val"><?php echo $loans_21 > 0 ? number_format($loans_21, 0) : '-'; ?></td>
-                <td class="num-val"><?php echo $loans_20 > 0 ? number_format($loans_20, 0) : '-'; ?></td>
+                <td class="num-val"><?php echo $long_term_loans_22 > 0 ? number_format($long_term_loans_22, 2) : '-'; ?></td>
+                <td class="num-val"><?php echo $long_term_loans_21 > 0 ? number_format($long_term_loans_21, 2) : '-'; ?></td>
+                <td class="num-val"><?php echo $long_term_loans_20 > 0 ? number_format($long_term_loans_20, 2) : '-'; ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Lease Liabilities</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($lease_liabilities_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($lease_liabilities_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($lease_liabilities_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Provisions</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($provisions_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($provisions_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($provisions_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Deferred Tax Liabilities</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($deferred_tax_liabilities_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($deferred_tax_liabilities_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($deferred_tax_liabilities_20, 2); ?></td>
               </tr>
               <tr class="subtotal-row">
                 <td class="row-label">Total Non current liabilities</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo $total_ncl_22 > 0 ? number_format($total_ncl_22, 0) : '-'; ?></td>
-                <td class="num-val"><?php echo $total_ncl_21 > 0 ? number_format($total_ncl_21, 0) : '-'; ?></td>
-                <td class="num-val"><?php echo $total_ncl_20 > 0 ? number_format($total_ncl_20, 0) : '-'; ?></td>
+                <td class="num-val"><?php echo $total_ncl_22 > 0 ? number_format($total_ncl_22, 2) : '-'; ?></td>
+                <td class="num-val"><?php echo $total_ncl_21 > 0 ? number_format($total_ncl_21, 2) : '-'; ?></td>
+                <td class="num-val"><?php echo $total_ncl_20 > 0 ? number_format($total_ncl_20, 2) : '-'; ?></td>
               </tr>
-              
+
               <!-- Current Liabilities -->
               <tr class="subsection-header-row">
                 <td colspan="5">Current Liabilities</td>
               </tr>
               <tr>
-                <td class="row-label">Accounts payables</td>
+                <td class="row-label">Accounts Payables</td>
                 <td class="num-note">9</td>
-                <td class="num-val"><?php echo number_format($pay_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($pay_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($pay_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($pay_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($pay_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($pay_20, 2); ?></td>
               </tr>
               <tr>
-                <td class="row-label">Other current liabilities</td>
-                <td class="num-note">9</td>
-                <td class="num-val"><?php echo number_format($other_liab_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($other_liab_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($other_liab_20, 0); ?></td>
+                <td class="row-label">Accrued Liabilities</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($accrued_liabilities_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($accrued_liabilities_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($accrued_liabilities_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Payroll Liabilities</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($payroll_liabilities_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($payroll_liabilities_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($payroll_liabilities_20, 2); ?></td>
               </tr>
               <tr>
                 <td class="row-label">Current Tax Payable</td>
                 <td class="num-note">11</td>
-                <td class="num-val"><?php echo number_format($tax_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($tax_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($tax_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($tax_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($tax_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($tax_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Customer Deposits</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($customer_deposits_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($customer_deposits_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($customer_deposits_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Deferred Revenue</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($deferred_revenue_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($deferred_revenue_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($deferred_revenue_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Short Term Loans</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($short_term_loans_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($short_term_loans_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($short_term_loans_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Intercompany Payables</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($intercompany_payables_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($intercompany_payables_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($intercompany_payables_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Other Current Liabilities</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($other_liab_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_liab_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($other_liab_20, 2); ?></td>
               </tr>
               <tr class="subtotal-row">
                 <td class="row-label">Total current liabilities</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($total_cl_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_cl_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_cl_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($total_cl_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_cl_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_cl_20, 2); ?></td>
               </tr>
-              
+
               <!-- Total Liabilities -->
               <tr class="subtotal-row">
                 <td class="row-label" style="padding-left: 18px;">Total liabilities</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($total_liabilities_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_liabilities_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_liabilities_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($total_liabilities_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_liabilities_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_liabilities_20, 2); ?></td>
               </tr>
-              
+
               <!-- Total equity and liabilities -->
               <tr class="grand-total-row">
                 <td class="row-label">Total equity and liabilities</td>
                 <td class="num-note"></td>
-                <td class="num-val"><?php echo number_format($total_eq_liab_22, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_eq_liab_21, 0); ?></td>
-                <td class="num-val"><?php echo number_format($total_eq_liab_20, 0); ?></td>
+                <td class="num-val"><?php echo number_format($total_eq_liab_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_eq_liab_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($total_eq_liab_20, 2); ?></td>
               </tr>
             </tbody>
           </table>

@@ -14,28 +14,106 @@ if (!hasPermission($conn, $userId, 'view_trial_balance')) {
 $endDate = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
 $endDateEsc = mysqli_real_escape_string($conn, $endDate);
 
-// Fetch ledger totals per account up to date
+function getTrialBalanceGroup($accountCode, $accountName, $parentType) {
+    $code = preg_replace('/[^0-9]/', '', (string)$accountCode);
+    $name = strtolower((string)$accountName);
+    $parentType = (int)$parentType;
+
+    if ($parentType === -4) {
+        return ['section' => 'Income Statement', 'subsection' => 'Revenue', 'label' => 'Revenue'];
+    }
+    if ($parentType === -5) {
+        return ['section' => 'Income Statement', 'subsection' => 'Cost of Sales', 'label' => 'Cost of Sales'];
+    }
+    if ($parentType === -6) {
+        return ['section' => 'Income Statement', 'subsection' => 'Expenses', 'label' => 'Expenses'];
+    }
+
+    if ($parentType === -1) {
+        if (preg_match('/cash|bank|petty/i', $name) || in_array($code, ['1001', '1021', '1031', '1041', '1051', '1061'], true)) {
+            return ['section' => 'Assets', 'subsection' => 'Current Assets', 'label' => 'Cash & Cash Equivalents'];
+        }
+        if (preg_match('/receivable|debtor/i', $name) || $code === '1002') {
+            return ['section' => 'Assets', 'subsection' => 'Current Assets', 'label' => 'Accounts Receivables'];
+        }
+        if (preg_match('/stock|inventory|goods/i', $name) || in_array($code, ['1004', '1024', '1034'], true)) {
+            return ['section' => 'Assets', 'subsection' => 'Current Assets', 'label' => 'Inventory / Stock'];
+        }
+        if (preg_match('/prepay|advance/i', $name)) {
+            return ['section' => 'Assets', 'subsection' => 'Current Assets', 'label' => 'Other Current Assets'];
+        }
+        if (preg_match('/property|plant|equipment|ppe|vehicle|building/i', $name) || $code === '1005') {
+            return ['section' => 'Assets', 'subsection' => 'Non Current Assets', 'label' => 'Property, Plant & Equipment'];
+        }
+        if (preg_match('/intangible|deferred tax/i', $name)) {
+            return ['section' => 'Assets', 'subsection' => 'Non Current Assets', 'label' => 'Other Non Current Assets'];
+        }
+        return ['section' => 'Assets', 'subsection' => 'Other Assets', 'label' => 'Other Assets'];
+    }
+
+    if ($parentType === -2) {
+        if (preg_match('/payable/i', $name) || $code === '2001') {
+            return ['section' => 'Liabilities', 'subsection' => 'Current Liabilities', 'label' => 'Accounts Payables'];
+        }
+        if (preg_match('/loan|borrow/i', $name) || in_array($code, ['2008', '2009', '2010', '2012'], true)) {
+            return ['section' => 'Liabilities', 'subsection' => 'Non Current Liabilities', 'label' => 'Long Term Loans'];
+        }
+        if (preg_match('/tax/i', $name) || $code === '2011') {
+            return ['section' => 'Liabilities', 'subsection' => 'Current Liabilities', 'label' => 'Current Tax Payable'];
+        }
+        if (preg_match('/accrued|payroll|provision|deferred revenue|deposit|intercompany/i', $name)) {
+            return ['section' => 'Liabilities', 'subsection' => 'Current Liabilities', 'label' => 'Other Current Liabilities'];
+        }
+        return ['section' => 'Liabilities', 'subsection' => 'Current Liabilities', 'label' => 'Other Liabilities'];
+    }
+
+    if ($parentType === -3) {
+        if (preg_match('/capital|share/i', $name) || $code === '3001') {
+            return ['section' => 'Equity', 'subsection' => 'Capital & Reserves', 'label' => 'Share Capital'];
+        }
+        if (preg_match('/retained|earnings/i', $name) || $code === '3005') {
+            return ['section' => 'Equity', 'subsection' => 'Capital & Reserves', 'label' => 'Retained Earnings'];
+        }
+        if (preg_match('/reserve/i', $name) || $code === '3007') {
+            return ['section' => 'Equity', 'subsection' => 'Capital & Reserves', 'label' => 'Reserves'];
+        }
+        if (preg_match('/drawing/i', $name)) {
+            return ['section' => 'Equity', 'subsection' => 'Capital & Reserves', 'label' => 'Owner Drawings'];
+        }
+        return ['section' => 'Equity', 'subsection' => 'Capital & Reserves', 'label' => 'Other Equity'];
+    }
+
+    return ['section' => 'Other', 'subsection' => 'Other', 'label' => 'Other Accounts'];
+}
+
+// Fetch ledger totals per account up to date using the same account-type logic as the balance sheet and income statement.
 $query = "
-    SELECT a.id, a.account_code, a.account_name, t.code as type_code, t.parent_id as parent_type_id,
-           COALESCE(SUM(jel.debit), 0.00) as total_debit,
-           COALESCE(SUM(jel.credit), 0.00) as total_credit
+    SELECT a.id, a.account_code, a.account_name, t.parent_id AS parent_type_id,
+           COALESCE(SUM(jel.debit), 0.00) AS total_debit,
+           COALESCE(SUM(jel.credit), 0.00) AS total_credit
     FROM accounts a
     JOIN account_types t ON a.account_type_id = t.id
-    LEFT JOIN journal_entry_lines jel ON a.id = jel.account_id
-    LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.statuss = 'POSTED' AND je.entry_date <= '$endDateEsc'
+    LEFT JOIN journal_entry_lines jel
+        ON (a.id = jel.account_id OR a.account_code = CAST(jel.account_id AS CHAR))
+       AND a.account_type_id = jel.parent_account_id
+    LEFT JOIN journal_entries je
+        ON jel.journal_entry_id = je.id
+       AND je.entry_date <= '$endDateEsc'
+    WHERE a.is_active = 1
     GROUP BY a.id
-    ORDER BY a.account_code ASC";
+    ORDER BY CAST(a.account_code AS UNSIGNED), a.account_code ASC";
 
 $result = mysqli_query($conn, $query);
 $trialData = [];
+$groupedData = [];
 $grandDebit = 0.0;
 $grandCredit = 0.0;
 
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         $parentType = (int)$row['parent_type_id'];
-        $isDebitNormal = in_array($parentType, [-1, -5, -6]) || (int)$row['type_code'] < 2000 || (int)$row['type_code'] >= 5000;
-        
+        $isDebitNormal = in_array($parentType, [-1, -5, -6], true);
+
         $debitVal = 0.0;
         $creditVal = 0.0;
 
@@ -55,18 +133,43 @@ if ($result) {
             }
         }
 
-        // Only list accounts that have had transactions or non-zero balances
         if ($row['total_debit'] > 0 || $row['total_credit'] > 0 || $debitVal > 0 || $creditVal > 0) {
             $trialData[] = [
                 'account_code' => $row['account_code'],
                 'account_name' => $row['account_name'],
                 'debit' => $debitVal,
-                'credit' => $creditVal
+                'credit' => $creditVal,
+                'parent_type_id' => $parentType
             ];
 
             $grandDebit += $debitVal;
             $grandCredit += $creditVal;
         }
+    }
+
+    foreach ($trialData as $row) {
+        $groupInfo = getTrialBalanceGroup($row['account_code'], $row['account_name'], $row['parent_type_id']);
+        $groupKey = $groupInfo['section'] . '|' . $groupInfo['subsection'] . '|' . $groupInfo['label'];
+
+        if (!isset($groupedData[$groupKey])) {
+            $groupedData[$groupKey] = [
+                'section' => $groupInfo['section'],
+                'subsection' => $groupInfo['subsection'],
+                'label' => $groupInfo['label'],
+                'rows' => [],
+                'debit' => 0.0,
+                'credit' => 0.0
+            ];
+        }
+
+        $groupedData[$groupKey]['rows'][] = [
+            'account_code' => $row['account_code'],
+            'account_name' => $row['account_name'],
+            'debit' => $row['debit'],
+            'credit' => $row['credit']
+        ];
+        $groupedData[$groupKey]['debit'] += (float)$row['debit'];
+        $groupedData[$groupKey]['credit'] += (float)$row['credit'];
     }
 }
 
@@ -171,17 +274,46 @@ $diff = abs($grandDebit - $grandCredit);
               </tr>
             </thead>
             <tbody>
-              <?php if (count($trialData) === 0): ?>
+              <?php if (count($groupedData) === 0): ?>
                 <tr>
                   <td colspan="4" style="text-align: center; color: var(--text2); padding: 24px;">No active balances recorded.</td>
                 </tr>
               <?php else: ?>
-                <?php foreach ($trialData as $row): ?>
-                  <tr class="trial-row">
-                    <td style="font-family: monospace; font-weight: 500;" class="acc-code"><?php echo htmlspecialchars($row['account_code']); ?></td>
-                    <td style="font-weight: 500;" class="acc-name"><?php echo htmlspecialchars($row['account_name']); ?></td>
-                    <td class="num-val"><?php echo $row['debit'] > 0 ? number_format($row['debit'], 2) : '-'; ?></td>
-                    <td class="num-val"><?php echo $row['credit'] > 0 ? number_format($row['credit'], 2) : '-'; ?></td>
+                <?php $currentSection = ''; $currentSubsection = ''; ?>
+                <?php foreach ($groupedData as $group): ?>
+                  <?php if ($currentSection !== $group['section']): ?>
+                    <tr class="section-header-row">
+                      <td colspan="4"><?php echo htmlspecialchars($group['section']); ?></td>
+                    </tr>
+                    <?php $currentSection = $group['section']; ?>
+                  <?php endif; ?>
+
+                  <?php if ($currentSubsection !== $group['subsection']): ?>
+                    <tr class="subsection-header-row">
+                      <td colspan="4"><?php echo htmlspecialchars($group['subsection']); ?></td>
+                    </tr>
+                    <?php $currentSubsection = $group['subsection']; ?>
+                  <?php endif; ?>
+
+                  <tr class="trial-group-row">
+                    <td colspan="4" style="padding-left: 20px; font-weight: 600; color: var(--text);">
+                      <?php echo htmlspecialchars($group['label']); ?>
+                    </td>
+                  </tr>
+
+                  <?php foreach ($group['rows'] as $row): ?>
+                    <tr class="trial-row">
+                      <td style="font-family: monospace; font-weight: 500; padding-left: 28px;" class="acc-code"><?php echo htmlspecialchars($row['account_code']); ?></td>
+                      <td style="font-weight: 500;" class="acc-name"><?php echo htmlspecialchars($row['account_name']); ?></td>
+                      <td class="num-val"><?php echo $row['debit'] > 0 ? number_format($row['debit'], 2) : '-'; ?></td>
+                      <td class="num-val"><?php echo $row['credit'] > 0 ? number_format($row['credit'], 2) : '-'; ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+
+                  <tr class="total-row">
+                    <td colspan="2" style="text-align: right; padding-right: 18px; color: var(--text);">Total <?php echo htmlspecialchars($group['label']); ?></td>
+                    <td class="num-val"><?php echo number_format($group['debit'], 2); ?></td>
+                    <td class="num-val"><?php echo number_format($group['credit'], 2); ?></td>
                   </tr>
                 <?php endforeach; ?>
                 
@@ -230,10 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const tableRows = document.querySelectorAll('#trialTable tbody tr');
         tableRows.forEach(row => {
-            if (row.classList.contains('total-row')) {
-                const cells = row.querySelectorAll('td');
-                csvContent += `"Reconciliation Totals",,${cells[1].textContent.replace(/,/g, '')},${cells[2].textContent.replace(/,/g, '')}\r\n`;
-            } else {
+            if (row.classList.contains('trial-row')) {
                 const code = row.querySelector('.acc-code').textContent.trim();
                 const name = row.querySelector('.acc-name').textContent.trim().replace(/,/g, '');
                 const cells = row.querySelectorAll('.num-val');
@@ -242,6 +371,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const credit = cells[1].textContent.replace(/,/g, '').replace(/-/g, '0');
 
                 csvContent += `"${code}","${name}",${debit},${credit}\r\n`;
+            } else if (row.classList.contains('total-row') && row.querySelector('td').textContent.includes('Reconciliation Totals')) {
+                const cells = row.querySelectorAll('td');
+                csvContent += `"Reconciliation Totals",,${cells[1].textContent.replace(/,/g, '')},${cells[2].textContent.replace(/,/g, '')}\r\n`;
             }
         });
 

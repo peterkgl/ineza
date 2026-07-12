@@ -88,12 +88,13 @@ switch ($action) {
         $validatedLines = [];
 
         foreach ($lines as $index => $line) {
-            $accountId = isset($line['account_id']) ? (int)$line['account_id'] : 0;
+            $accountId = isset($line['account_id']) ? trim((string)$line['account_id']) : '';
+            $parentAccountId = isset($line['parent_account_id']) ? (int)$line['parent_account_id'] : 0;
             $debit = isset($line['debit']) ? (float)$line['debit'] : 0.0;
             $credit = isset($line['credit']) ? (float)$line['credit'] : 0.0;
             $lineDesc = isset($line['description']) ? trim($line['description']) : '';
 
-            if ($accountId <= 0) {
+            if ($accountId === '') {
                 sendResponse(false, "Line " . ($index + 1) . ": A valid account must be selected.");
             }
 
@@ -109,18 +110,27 @@ switch ($action) {
                 sendResponse(false, "Line " . ($index + 1) . ": Specify either a Debit or Credit amount.");
             }
 
-            // Verify account exists
-            $accQuery = "SELECT id, account_name FROM accounts WHERE id = $accountId LIMIT 1";
+            // Verify account exists and resolve the account code + parent account
+            $accountCode = (int)$accountId;
+            $accQuery = "SELECT id, account_code, account_name, account_type_id FROM accounts WHERE account_code = $accountCode LIMIT 1";
             $accRes = mysqli_query($conn, $accQuery);
+            if (!$accRes || mysqli_num_rows($accRes) === 0) {
+                $accQueryFallback = "SELECT id, account_code, account_name, account_type_id FROM accounts WHERE id = $accountCode LIMIT 1";
+                $accRes = mysqli_query($conn, $accQueryFallback);
+            }
             if (!$accRes || mysqli_num_rows($accRes) === 0) {
                 sendResponse(false, "Line " . ($index + 1) . ": Account does not exist.");
             }
+            $accountRow = mysqli_fetch_assoc($accRes);
+            $resolvedAccountCode = isset($accountRow['account_code']) ? (int)$accountRow['account_code'] : $accountCode;
+            $resolvedParentAccountId = $parentAccountId > 0 ? $parentAccountId : (int)($accountRow['account_type_id'] ?? 0);
 
             $totalDebit += $debit;
             $totalCredit += $credit;
 
             $validatedLines[] = [
-                'account_id' => $accountId,
+                'account_id' => $resolvedAccountCode,
+                'parent_account_id' => $resolvedParentAccountId,
                 'debit' => $debit,
                 'credit' => $credit,
                 'description' => $lineDesc
@@ -164,9 +174,9 @@ switch ($action) {
                 $amountBase = $amountCurrency * $exchangeRate;
 
                 $insertLine = "INSERT INTO journal_entry_lines (
-                                    journal_entry_id, account_id, debit, credit, currency_id, exchange_rate, amount_currency, amount_base, description
+                                    journal_entry_id, parent_account_id, account_id, debit, credit, currency_id, exchange_rate, amount_currency, amount_base, description
                                ) VALUES (
-                                    $journalEntryId, {$line['account_id']}, {$line['debit']}, {$line['credit']}, $currencyId, $exchangeRate, $amountCurrency, $amountBase, '" . mysqli_real_escape_string($conn, $line['description']) . "'
+                                    $journalEntryId, {$line['parent_account_id']}, {$line['account_id']}, {$line['debit']}, {$line['credit']}, $currencyId, $exchangeRate, $amountCurrency, $amountBase, '" . mysqli_real_escape_string($conn, $line['description']) . "'
                                )";
                 
                 if (!mysqli_query($conn, $insertLine)) {
