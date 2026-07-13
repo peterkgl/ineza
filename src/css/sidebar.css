@@ -7,44 +7,32 @@
   flex-direction: column;
   flex-shrink: 0;
   height: 100vh;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .sidebar-logo {
-  padding: 14px 16px 10px;
+  height: var(--nav-h);
+  padding: 0 16px;
   display: flex;
   align-items: center;
-  gap: 8px;
   border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
 }
 
-.logo-badge {
-  width: 30px;
-  height: 30px;
-  background: var(--orange);
-  border-radius: 6px;
+.sidebar-logo-image {
+  height: 5rem;
+  width: 30rem;
+  object-fit: contain;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-badge svg {
-  width: 16px;
-  height: 16px;
-  fill: #fff;
-}
-
-.logo-text {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.2;
-}
-
-.logo-sub {
-  font-size: 11px;
-  color: var(--text3);
-  font-weight: 400;
+  flex-direction: column;
+  padding-top: 8px;
 }
 
 .sidebar-section {
