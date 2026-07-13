@@ -833,6 +833,90 @@ switch ($action) {
                 throw new Exception("Supplier payables account was not found.");
             }
 
+            // get RRA tax account
+            $stmt = mysqli_prepare($conn, "
+                SELECT account_code, accounts.account_type_id
+                FROM accounts
+                WHERE account_code = '2024'
+                LIMIT 1
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $rraTaxAccount = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$rraTaxAccount) {
+                throw new Exception("RRA tax account not found.");
+            }
+            $rraTaxAccountId = isset($rraTaxAccount['account_code']) ? (int)$rraTaxAccount['account_code'] : 0;
+            $rraTaxAccountType = isset($rraTaxAccount['account_type_id']) ? (int)$rraTaxAccount['account_type_id'] : 0;
+
+            // get RMA tax account and INKOMANE
+            $stmt = mysqli_prepare($conn, "
+                SELECT account_code, accounts.account_type_id
+                FROM accounts
+                WHERE account_code = '2034'
+                LIMIT 1
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $rmaTaxAccount = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$rmaTaxAccount) {
+                throw new Exception("RMA tax account not found.");
+            }
+            $rmaTaxAccountId = isset($rmaTaxAccount['account_code']) ? (int)$rmaTaxAccount['account_code'] : 0;
+            $rmaTaxAccountType = isset($rmaTaxAccount['account_type_id']) ? (int)$rmaTaxAccount['account_type_id'] : 0;
+
+            // get INKOMANE tax account
+            $stmt = mysqli_prepare($conn, "
+                SELECT account_code, accounts.account_type_id
+                FROM accounts
+                WHERE account_code = '2044'
+                LIMIT 1
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $inkomaneTaxAccount = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$inkomaneTaxAccount) {
+                throw new Exception("INKOMANE tax account not found.");
+            }
+            $inkomaneTaxAccountId = isset($inkomaneTaxAccount['account_code']) ? (int)$inkomaneTaxAccount['account_code'] : 0;
+            $inkomaneTaxAccountType = isset($inkomaneTaxAccount['account_type_id']) ? (int)$inkomaneTaxAccount['account_type_id'] : 0;
+
+            // get production charges account
+            $stmt = mysqli_prepare($conn, "
+                SELECT account_code, accounts.account_type_id
+                FROM accounts
+                WHERE account_code = '2054'
+                LIMIT 1
+            ");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . mysqli_error($conn));
+            }
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $productionChargesAccount = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$productionChargesAccount) {
+                throw new Exception("PRODUCTION_CHARGES_PAYABLE account not found.");
+            }
+            $productionChargesAccountId = isset($productionChargesAccount['account_code']) ? (int)$productionChargesAccount['account_code'] : 0;
+            $productionChargesAccountType = isset($productionChargesAccount['account_type_id']) ? (int)$productionChargesAccount['account_type_id'] : 0;
+
             // Insert Journal Header
             $status = "AUTO POSTED";
             $stmt = mysqli_prepare($conn, "
@@ -858,10 +942,14 @@ switch ($action) {
             $journalEntryId = mysqli_insert_id($conn);
             mysqli_stmt_close($stmt);
 
-            // Ensure we use numeric exchange rate and net paid values (not SQL 'NULL' strings)
+            // Ensure we use numeric exchange rate and purchase values (not SQL 'NULL' strings)
             $ex_rate_num = isset($exchange_rate) ? (float)$exchange_rate : 0.0;
-            $n_paid_num = isset($net_paid_supplier_usd) ? (float)$net_paid_supplier_usd : 0.0;
-            $amountBase = $n_paid_num * $ex_rate_num;
+            $purchaseValueUsd = isset($purchase_value_usd) ? (float)$purchase_value_usd : 0.0;
+            $taxRraAmount = isset($tax_rra) ? (float)$tax_rra : 0.0;
+            $taxRmaAmount = isset($tax_rma) ? (float)$tax_rma : 0.0;
+            $inkomaneTaxAmount = isset($tax_inkomane) ? (float)$tax_inkomane : 0.0;
+            $productionChargesAmount = isset($production_charges) ? (float)$production_charges : 0.0;
+            $supplierAmount = isset($net_paid_supplier_usd) ? (float)$net_paid_supplier_usd : 0.0;
             $currencyId = 2;
 
             // Prepare Journal Line Statement
@@ -885,9 +973,10 @@ switch ($action) {
                 throw new Exception('Prepare failed: ' . mysqli_error($conn));
             }
 
-            // Debit Inventory
-            $debit = $n_paid_num;
+            // Debit Inventory for total purchase value
+            $debit = $purchaseValueUsd;
             $credit = 0.0;
+            $amountBase = $purchaseValueUsd * $ex_rate_num;
 
             mysqli_stmt_bind_param(
                 $stmt,
@@ -899,7 +988,7 @@ switch ($action) {
                 $credit,
                 $currencyId,
                 $ex_rate_num,
-                $n_paid_num,
+                $purchaseValueUsd,
                 $amountBase,
                 $description
             );
@@ -907,26 +996,60 @@ switch ($action) {
                 throw new Exception(mysqli_error($conn));
             }
 
-            // Credit Supplier
-            $debit = 0.0;
-            $credit = $n_paid_num;
+            $creditLines = [
+                [
+                    'parent_account_id' => $rraTaxAccountType,
+                    'account_id' => $rraTaxAccountId,
+                    'amount' => $taxRraAmount,
+                ],
+                [
+                    'parent_account_id' => $rmaTaxAccountType,
+                    'account_id' => $rmaTaxAccountId,
+                    'amount' => $taxRmaAmount,
+                ],
+                [
+                    'parent_account_id' => $inkomaneTaxAccountType,
+                    'account_id' => $inkomaneTaxAccountId,
+                    'amount' => $inkomaneTaxAmount,
+                ],
+                [
+                    'parent_account_id' => $productionChargesAccountType,
+                    'account_id' => $productionChargesAccountId,
+                    'amount' => $productionChargesAmount,
+                ],
+                [
+                    'parent_account_id' => $supplierAccountType,
+                    'account_id' => $supplierAccount,
+                    'amount' => $supplierAmount,
+                ],
+            ];
 
-            mysqli_stmt_bind_param(
-                $stmt,
-                "iiiddiddds",
-                $journalEntryId,
-                $supplierAccountType,
-                $supplierAccount,
-                $debit,
-                $credit,
-                $currencyId,
-                $ex_rate_num,
-                $n_paid_num,
-                $amountBase,
-                $description
-            );
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception(mysqli_error($conn));
+            foreach ($creditLines as $creditLine) {
+                if ((float)$creditLine['amount'] <= 0.0) {
+                    continue;
+                }
+
+                $debit = 0.0;
+                $credit = (float)$creditLine['amount'];
+                $lineAmountBase = $credit * $ex_rate_num;
+
+                mysqli_stmt_bind_param(
+                    $stmt,
+                    "iiiddiddds",
+                    $journalEntryId,
+                    $creditLine['parent_account_id'],
+                    $creditLine['account_id'],
+                    $debit,
+                    $credit,
+                    $currencyId,
+                    $ex_rate_num,
+                    $credit,
+                    $lineAmountBase,
+                    $description
+                );
+                if (!mysqli_stmt_execute($stmt)) {
+                    throw new Exception(mysqli_error($conn));
+                }
             }
 
             mysqli_stmt_close($stmt);

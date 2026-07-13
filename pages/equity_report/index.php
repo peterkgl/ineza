@@ -15,121 +15,171 @@ if (!hasPermission($conn, $userId, 'view_accounts')) {
 // Database Equity Calculation Functions
 // ────────────────────────────────────────────────────────────────────────────
 
-function getBalanceForCategory($conn, $category, $asOfDate) {
+function getAccountTypeBalance($conn, $accountTypeId, $asOfDate, $balanceType = 'debit') {
+    $accountTypeId = (int)$accountTypeId;
     $asOfDateEsc = mysqli_real_escape_string($conn, $asOfDate);
-    $whereClause = "";
-    if ($category === 'share_capital') {
-        $whereClause = "(a.account_code LIKE '30%' OR LOWER(a.account_name) LIKE '%share%' OR LOWER(a.account_name) LIKE '%capital%') AND t.parent_id = -3";
-    } elseif ($category === 'retained_earnings') {
-        $whereClause = "(a.account_code LIKE '32%' OR LOWER(a.account_name) LIKE '%retained%' OR LOWER(a.account_name) LIKE '%earnings%') AND t.parent_id = -3";
-    } else {
+
+    $stmt = mysqli_prepare($conn, "
+        SELECT COALESCE(SUM(jel.debit), 0.00) AS debits,
+               COALESCE(SUM(jel.credit), 0.00) AS credits
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN accounts a ON a.account_code = CAST(jel.account_id AS CHAR)
+                      AND a.account_type_id = jel.parent_account_id
+        WHERE je.entry_date <= ?
+          AND a.account_type_id = ?
+    ");
+
+    if (!$stmt) {
         return 0.0;
     }
 
-    $sql = "
-        SELECT COALESCE(SUM(jel.credit - jel.debit), 0.00) as net_balance
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND $whereClause";
-        
-    $res = mysqli_query($conn, $sql);
-    if ($res && $row = mysqli_fetch_assoc($res)) {
-        return (float)$row['net_balance'];
+    mysqli_stmt_bind_param($stmt, 'si', $asOfDateEsc, $accountTypeId);
+    mysqli_stmt_execute($stmt);
+    $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
+
+    if (!$row) {
+        return 0.0;
     }
-    return 0.0;
+
+    $debits = (float)$row['debits'];
+    $credits = (float)$row['credits'];
+
+    if (strtolower($balanceType) === 'credit') {
+        return $credits - $debits;
+    }
+
+    return $debits - $credits;
 }
 
-function getNetIncomeUpToDate($conn, $asOfDate) {
-    $asOfDateEsc = mysqli_real_escape_string($conn, $asOfDate);
-    
-    // Revenue
-    $revenueSql = "
-        SELECT COALESCE(SUM(jel.credit - jel.debit), 0.00) as net_revenue
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND t.parent_id = -4";
-    $revRes = mysqli_query($conn, $revenueSql);
-    $revRow = mysqli_fetch_assoc($revRes);
-    $netRevenue = (float)($revRow['net_revenue'] ?? 0.0);
+function getAccountTypeChildren($conn, $parentId) {
+    $parentId = (int)$parentId;
+    $stmt = mysqli_prepare($conn, "
+        SELECT id, code, name, parent_id
+        FROM account_types
+        WHERE parent_id = ?
+        ORDER BY code ASC, name ASC
+    ");
 
-    // COGS
-    $cogsSql = "
-        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_cogs
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND t.parent_id = -5";
-    $cogsRes = mysqli_query($conn, $cogsSql);
-    $cogsRow = mysqli_fetch_assoc($cogsRes);
-    $netCogs = (float)($cogsRow['net_cogs'] ?? 0.0);
+    if (!$stmt) {
+        return [];
+    }
 
-    // Expenses
-    $expSql = "
-        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_exp
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date <= '$asOfDateEsc' AND t.parent_id = -6";
-    $expRes = mysqli_query($conn, $expSql);
-    $expRow = mysqli_fetch_assoc($expRes);
-    $netExp = (float)($expRow['net_exp'] ?? 0.0);
+    mysqli_stmt_bind_param($stmt, 'i', $parentId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $rows = [];
 
-    return $netRevenue - $netCogs - $netExp;
+    while ($row = mysqli_fetch_assoc($result)) {
+        $rows[] = [
+            'id' => (int)$row['id'],
+            'code' => $row['code'],
+            'name' => $row['name'],
+            'parent_id' => (int)$row['parent_id']
+        ];
+    }
+
+    mysqli_stmt_close($stmt);
+    return $rows;
 }
 
-function getRetainedEarningsWithNetIncome($conn, $asOfDate) {
-    $retainedRaw = getBalanceForCategory($conn, 'retained_earnings', $asOfDate);
-    $netIncome = getNetIncomeUpToDate($conn, $asOfDate);
-    return $retainedRaw + $netIncome;
+function buildEquityRows($conn, $parentId, $asOfDate, $balanceType = 'credit') {
+    $rows = [];
+    foreach (getAccountTypeChildren($conn, $parentId) as $type) {
+        $rows[] = [
+            'id' => $type['id'],
+            'code' => $type['code'],
+            'name' => $type['name'],
+            'balance' => getAccountTypeBalance($conn, $type['id'], $asOfDate, $balanceType)
+        ];
+    }
+    return $rows;
 }
 
-function getNetIncomeForDateRange($conn, $startDate, $endDate) {
-    $startDateEsc = mysqli_real_escape_string($conn, $startDate);
-    $endDateEsc = mysqli_real_escape_string($conn, $endDate);
-    
-    // Revenue
-    $revenueSql = "
-        SELECT COALESCE(SUM(jel.credit - jel.debit), 0.00) as net_revenue
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date BETWEEN '$startDateEsc' AND '$endDateEsc' AND t.parent_id = -4";
-    $revRes = mysqli_query($conn, $revenueSql);
-    $revRow = mysqli_fetch_assoc($revRes);
-    $netRevenue = (float)($revRow['net_revenue'] ?? 0.0);
+function getBalanceForTypeSelection($rows, $typeIds = [], $typeCodes = []) {
+    $total = 0.0;
 
-    // COGS
-    $cogsSql = "
-        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_cogs
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date BETWEEN '$startDateEsc' AND '$endDateEsc' AND t.parent_id = -5";
-    $cogsRes = mysqli_query($conn, $cogsSql);
-    $cogsRow = mysqli_fetch_assoc($cogsRes);
-    $netCogs = (float)($cogsRow['net_cogs'] ?? 0.0);
+    foreach ($rows as $row) {
+        $rowId = isset($row['id']) ? (int)$row['id'] : 0;
+        $rowCode = isset($row['code']) ? (string)$row['code'] : '';
+        $matchesTypeId = !empty($typeIds) && in_array($rowId, $typeIds, true);
+        $matchesTypeCode = !empty($typeCodes) && in_array($rowCode, $typeCodes, true);
 
-    // Expenses
-    $expSql = "
-        SELECT COALESCE(SUM(jel.debit - jel.credit), 0.00) as net_exp
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
-        JOIN accounts a ON jel.account_id = a.id
-        JOIN account_types t ON a.account_type_id = t.id
-        WHERE je.statuss = 'POSTED' AND je.entry_date BETWEEN '$startDateEsc' AND '$endDateEsc' AND t.parent_id = -6";
-    $expRes = mysqli_query($conn, $expSql);
-    $expRow = mysqli_fetch_assoc($expRes);
-    $netExp = (float)($expRow['net_exp'] ?? 0.0);
+        if ($matchesTypeId || $matchesTypeCode) {
+            $total += (float)$row['balance'];
+        }
+    }
 
-    return $netRevenue - $netCogs - $netExp;
+    return $total;
+}
+
+function calculateIncomeStatementBalances($conn, $year) {
+    $asOfDate = "$year-12-31";
+
+    $revenueRows = buildEquityRows($conn, -4, $asOfDate, 'credit');
+    $cogsRows = buildEquityRows($conn, -5, $asOfDate, 'debit');
+    $expenseRows = buildEquityRows($conn, -6, $asOfDate, 'debit');
+
+    $revenue = 0.0;
+    foreach ($revenueRows as $row) {
+        $revenue += (float)$row['balance'];
+    }
+
+    $cogs = 0.0;
+    foreach ($cogsRows as $row) {
+        $cogs += (float)$row['balance'];
+    }
+
+    $totalExpenses = 0.0;
+    foreach ($expenseRows as $row) {
+        $totalExpenses += (float)$row['balance'];
+    }
+
+    $adminExpenses = getBalanceForTypeSelection($expenseRows, [48]);
+    $financeCosts = getBalanceForTypeSelection($expenseRows, [49]);
+    $taxExpenses = getBalanceForTypeSelection($expenseRows, [18]);
+    $otherOperatingExpenses = $totalExpenses - $adminExpenses - $financeCosts - $taxExpenses;
+
+    $grossProfit = $revenue - $cogs;
+    $operatingProfit = $grossProfit - $otherOperatingExpenses - $adminExpenses;
+    $profitBeforeTax = $operatingProfit - $financeCosts;
+    $profitAfterTax = $profitBeforeTax - $taxExpenses;
+
+    return [
+        'revenue' => $revenue,
+        'cogs' => $cogs,
+        'gross_profit' => $grossProfit,
+        'admin_expenses' => $adminExpenses,
+        'finance_costs' => $financeCosts,
+        'tax_expenses' => $taxExpenses,
+        'operating_profit' => $operatingProfit,
+        'profit_before_tax' => $profitBeforeTax,
+        'profit_after_tax' => $profitAfterTax,
+        'total_comprehensive_income' => $profitAfterTax,
+    ];
+}
+
+function calculateEquityStatementBalances($conn, $asOfDate) {
+    $equityRows = buildEquityRows($conn, -3, $asOfDate, 'credit');
+
+    $shareCapital = getBalanceForTypeSelection($equityRows, [28, 29, 30]);
+    $retainedEarnings = getBalanceForTypeSelection($equityRows, [32]);
+    $currentYearEarnings = getBalanceForTypeSelection($equityRows, [33]);
+    $reserves = getBalanceForTypeSelection($equityRows, [34]);
+    $otherComprehensiveIncome = getBalanceForTypeSelection($equityRows, [35]);
+    $priorPeriodAdjustments = getBalanceForTypeSelection($equityRows, [36]);
+    $drawings = getBalanceForTypeSelection($equityRows, [31]);
+
+    return [
+        'share_capital' => $shareCapital,
+        'retained_earnings' => $retainedEarnings + ($currentYearEarnings != 0.0 ? $currentYearEarnings : 0.0),
+        'reserves' => $reserves,
+        'other_comprehensive_income' => $otherComprehensiveIncome,
+        'prior_period_adjustments' => $priorPeriodAdjustments,
+        'drawings' => $drawings,
+        'total_equity' => $shareCapital + $retainedEarnings + $reserves + $otherComprehensiveIncome + $priorPeriodAdjustments - $drawings,
+    ];
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -183,27 +233,27 @@ if (!empty($filter_start) && !empty($filter_end)) {
 
 // Calculate balances
 $dayBeforeOpening = date('Y-m-d', strtotime($startDate . ' -1 day'));
-$opening_capital = getBalanceForCategory($conn, 'share_capital', $dayBeforeOpening);
-$opening_retained = getRetainedEarningsWithNetIncome($conn, $dayBeforeOpening);
-$opening_total = $opening_capital + $opening_retained;
+$openingBalances = calculateEquityStatementBalances($conn, $dayBeforeOpening);
+$closingBalances = calculateEquityStatementBalances($conn, $endDate);
 
-$closing_capital = getBalanceForCategory($conn, 'share_capital', $endDate);
-$closing_retained = getRetainedEarningsWithNetIncome($conn, $endDate);
-$closing_total = $closing_capital + $closing_retained;
+$opening_capital = $openingBalances['share_capital'];
+$opening_retained = $openingBalances['retained_earnings'];
+$opening_total = $openingBalances['total_equity'];
 
-$p_l_profit = getNetIncomeForDateRange($conn, $startDate, $endDate);
-$retained_change = getBalanceForCategory($conn, 'retained_earnings', $endDate) - getBalanceForCategory($conn, 'retained_earnings', $dayBeforeOpening);
-$profit = $p_l_profit + $retained_change;
+$closing_capital = $closingBalances['share_capital'];
+$closing_retained = $closingBalances['retained_earnings'];
+$closing_total = $closingBalances['total_equity'];
+
+$incomeStatementBalances = calculateIncomeStatementBalances($conn, date('Y', strtotime($endDate)));
+$profit = $incomeStatementBalances['profit_after_tax'];
 
 $capital_movement = $closing_capital - $opening_capital;
-$other_movements = $closing_retained - $opening_retained - $profit;
+$other_movements = ($closing_retained - $opening_retained) - $profit;
 
 // Calculate YoY Equity Growth trend (comparison against same period previous year)
-$prevYearStart = date('Y-m-d', strtotime($startDate . ' -1 year'));
 $prevYearEnd = date('Y-m-d', strtotime($endDate . ' -1 year'));
-$prev_closing_capital = getBalanceForCategory($conn, 'share_capital', $prevYearEnd);
-$prev_closing_retained = getRetainedEarningsWithNetIncome($conn, $prevYearEnd);
-$prev_total = $prev_closing_capital + $prev_closing_retained;
+$prevBalances = calculateEquityStatementBalances($conn, $prevYearEnd);
+$prev_total = $prevBalances['total_equity'];
 
 $yoYGrowthVal = $closing_total - $prev_total;
 $yoYGrowthPct = ($prev_total > 0) ? round(($yoYGrowthVal / $prev_total) * 100, 1) : 0;

@@ -221,6 +221,7 @@ function calculateYearBalances($conn, $year) {
 
     $loans = getBalanceForTypeSelection($liabilityRows, [22, 23]);
     $pay = getBalanceForTypeSelection($liabilityRows, [15]);
+    $pay_others = getBalanceForTypeSelection($liabilityRows, [62]);
     $accruedLiabilities = getBalanceForTypeSelection($liabilityRows, [16]);
     $payrollLiabilities = getBalanceForTypeSelection($liabilityRows, [17]);
     $tax = getBalanceForTypeSelection($liabilityRows, [18]);
@@ -270,6 +271,7 @@ function calculateYearBalances($conn, $year) {
         'owner_drawings' => $ownerDrawings,
         'loans' => $loans,
         'pay' => $pay,
+        'pay_others' => $pay_others,
         'accrued_liabilities' => $accruedLiabilities,
         'payroll_liabilities' => $payrollLiabilities,
         'other_liab' => $otherLiab,
@@ -321,6 +323,7 @@ $prior_period_adjustments_22 = $balancesYear1['prior_period_adjustments'];
 $owner_drawings_22 = $balancesYear1['owner_drawings'];
 $loans_22 = $balancesYear1['loans'];
 $pay_22 = $balancesYear1['pay'];
+$pay_others_22 = $balancesYear1['pay_others'];
 $accrued_liabilities_22 = $balancesYear1['accrued_liabilities'];
 $payroll_liabilities_22 = $balancesYear1['payroll_liabilities'];
 $other_liab_22 = $balancesYear1['other_liab'];
@@ -366,6 +369,7 @@ $prior_period_adjustments_21 = $balancesYear2['prior_period_adjustments'];
 $owner_drawings_21 = $balancesYear2['owner_drawings'];
 $loans_21 = $balancesYear2['loans'];
 $pay_21 = $balancesYear2['pay'];
+$pay_others_21 = $balancesYear2['pay_others'];
 $accrued_liabilities_21 = $balancesYear2['accrued_liabilities'];
 $payroll_liabilities_21 = $balancesYear2['payroll_liabilities'];
 $other_liab_21 = $balancesYear2['other_liab'];
@@ -411,6 +415,7 @@ $prior_period_adjustments_20 = $balancesYear3['prior_period_adjustments'];
 $owner_drawings_20 = $balancesYear3['owner_drawings'];
 $loans_20 = $balancesYear3['loans'];
 $pay_20 = $balancesYear3['pay'];
+$pay_others_20 = $balancesYear3['pay_others'];
 $accrued_liabilities_20 = $balancesYear3['accrued_liabilities'];
 $payroll_liabilities_20 = $balancesYear3['payroll_liabilities'];
 $other_liab_20 = $balancesYear3['other_liab'];
@@ -438,7 +443,7 @@ $total_ca_22 = $inv_22 + $rec_22 + $other_receivables_22 + $cash_22 + $prepaymen
 $total_assets_22 = $total_nca_22 + $total_ca_22;
 $total_equity_22 = $capital_22 + $partner_capital_22 + $member_equity_22 + $retained_22 + $reserves_22 + $other_comprehensive_income_22 + $prior_period_adjustments_22 - $owner_drawings_22;
 $total_ncl_22 = $long_term_loans_22 + $lease_liabilities_22 + $provisions_22 + $deferred_tax_liabilities_22;
-$total_cl_22 = $pay_22 + $accrued_liabilities_22 + $payroll_liabilities_22 + $tax_22 + $customer_deposits_22 + $deferred_revenue_22 + $short_term_loans_22 + $intercompany_payables_22 + $other_liab_22;
+$total_cl_22 = $pay_22 + $pay_others_22 + $accrued_liabilities_22 + $payroll_liabilities_22 + $tax_22 + $customer_deposits_22 + $deferred_revenue_22 + $short_term_loans_22 + $intercompany_payables_22 + $other_liab_22;
 $total_liabilities_22 = $total_ncl_22 + $total_cl_22;
 $total_eq_liab_22 = $total_equity_22 + $total_liabilities_22;
 
@@ -447,7 +452,7 @@ $total_ca_21 = $inv_21 + $rec_21 + $other_receivables_21 + $cash_21 + $prepaymen
 $total_assets_21 = $total_nca_21 + $total_ca_21;
 $total_equity_21 = $capital_21 + $partner_capital_21 + $member_equity_21 + $retained_21 + $reserves_21 + $other_comprehensive_income_21 + $prior_period_adjustments_21 - $owner_drawings_21;
 $total_ncl_21 = $long_term_loans_21 + $lease_liabilities_21 + $provisions_21 + $deferred_tax_liabilities_21;
-$total_cl_21 = $pay_21 + $accrued_liabilities_21 + $payroll_liabilities_21 + $tax_21 + $customer_deposits_21 + $deferred_revenue_21 + $short_term_loans_21 + $intercompany_payables_21 + $other_liab_21;
+$total_cl_21 = $pay_21 + $pay_others_21 + $accrued_liabilities_21 + $payroll_liabilities_21 + $tax_21 + $customer_deposits_21 + $deferred_revenue_21 + $short_term_loans_21 + $intercompany_payables_21 + $other_liab_21;
 $total_liabilities_21 = $total_ncl_21 + $total_cl_21;
 $total_eq_liab_21 = $total_equity_21 + $total_liabilities_21;
 
@@ -456,7 +461,7 @@ $total_ca_20 = $inv_20 + $rec_20 + $other_receivables_20 + $cash_20 + $prepaymen
 $total_assets_20 = $total_nca_20 + $total_ca_20;
 $total_equity_20 = $capital_20 + $partner_capital_20 + $member_equity_20 + $retained_20 + $reserves_20 + $other_comprehensive_income_20 + $prior_period_adjustments_20 - $owner_drawings_20;
 $total_ncl_20 = $long_term_loans_20 + $lease_liabilities_20 + $provisions_20 + $deferred_tax_liabilities_20;
-$total_cl_20 = $pay_20 + $accrued_liabilities_20 + $payroll_liabilities_20 + $tax_20 + $customer_deposits_20 + $deferred_revenue_20 + $short_term_loans_20 + $intercompany_payables_20 + $other_liab_20;
+$total_cl_20 = $pay_20 + $pay_others_20 + $accrued_liabilities_20 + $payroll_liabilities_20 + $tax_20 + $customer_deposits_20 + $deferred_revenue_20 + $short_term_loans_20 + $intercompany_payables_20 + $other_liab_20;
 $total_liabilities_20 = $total_ncl_20 + $total_cl_20;
 $total_eq_liab_20 = $total_equity_20 + $total_liabilities_20;
 ?>
@@ -868,6 +873,13 @@ $total_eq_liab_20 = $total_equity_20 + $total_liabilities_20;
                 <td class="num-val"><?php echo number_format($pay_22, 2); ?></td>
                 <td class="num-val"><?php echo number_format($pay_21, 2); ?></td>
                 <td class="num-val"><?php echo number_format($pay_20, 2); ?></td>
+              </tr>
+              <tr>
+                <td class="row-label">Accounts Payable - Others</td>
+                <td class="num-note"></td>
+                <td class="num-val"><?php echo number_format($pay_others_22, 2); ?></td>
+                <td class="num-val"><?php echo number_format($pay_others_21, 2); ?></td>
+                <td class="num-val"><?php echo number_format($pay_others_20, 2); ?></td>
               </tr>
               <tr>
                 <td class="row-label">Accrued Liabilities</td>
