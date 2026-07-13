@@ -66,7 +66,7 @@ if (isset($_SESSION['user_id'])) {
         <input type="checkbox" id="rememberMe">
         <span>Remember me</span>
       </label>
-      <a href="#" class="forgot">Forgot password?</a>
+      <a href="pages/forgot_password" class="forgot">Forgot password?</a>
     </div>
 
     <button class="btn-login" onclick="handleLogin()" id="loginBtn">
