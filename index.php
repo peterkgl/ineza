@@ -25,13 +25,8 @@ if (isset($_SESSION['user_id'])) {
   <div class="form-card">
 
     <div class="brand">
-      <div class="logo-badge">
-        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      </div>
-      <div>
-        <div class="brand-text">INEZA Mining</div>
-        <div class="brand-sub">Financial Suite</div>
-      </div>
+      <img src="src/logo/ineza_logo.png" alt="INEZA African Mining Logo" class="brand-logo-image">
+      <div class="brand-sub">Financial Suite</div>
     </div>
 
     <div class="form-title">Welcome back</div>
@@ -71,7 +66,7 @@ if (isset($_SESSION['user_id'])) {
         <input type="checkbox" id="rememberMe">
         <span>Remember me</span>
       </label>
-      <a href="#" class="forgot">Forgot password?</a>
+      <a href="pages/forgot_password" class="forgot">Forgot password?</a>
     </div>
 
     <button class="btn-login" onclick="handleLogin()" id="loginBtn">

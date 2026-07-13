@@ -16,6 +16,7 @@ if ($pages_pos !== false) {
     $depth = count($segments);
 }
 $prefix_to_pages = ($depth === 2) ? '../' : './';
+$prefix_to_root = ($depth === 2) ? '../../' : '../';
 
 // Check permissions
 $showSuppliers = hasPermission($conn, $sidebarUserId, 'view_suppliers');
@@ -42,14 +43,9 @@ $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger')
 ?>
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-badge">
-      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-    </div>
-    <div>
-      <div class="logo-text">INEZA Mining</div>
-      <div class="logo-sub">Financial Suite</div>
-    </div>
+    <img src="<?php echo $prefix_to_root; ?>src/logo/ineza_logo.png" alt="INEZA African Mining Logo" class="sidebar-logo-image">
   </div>
+  <div class="sidebar-nav">
 
   <div class="sidebar-section">Main</div>
   <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'dashboard') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>dashboard" id="nav-dashboard">
@@ -281,4 +277,5 @@ $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger')
       Login History
     </a>
   <?php endif; ?>
+  </div>
 </aside>
