@@ -116,7 +116,18 @@ function formatCurrencyValue($value, $hasData = true) {
         return '—';
     }
 
-    return number_format((float)$value, 0);
+    return number_format((float)$value, 2);
+}
+
+function getWorkingCapitalAdjustment($priorValue, $currentValue, $isLiability = false) {
+    $prior = (float)$priorValue;
+    $current = (float)$currentValue;
+
+    if ($isLiability) {
+        return $current - $prior;
+    }
+
+    return $prior - $current;
 }
 
 function calculateCashFlowMetrics($conn, $year, $priorYearAccounts = []) {
@@ -126,7 +137,7 @@ function calculateCashFlowMetrics($conn, $year, $priorYearAccounts = []) {
     $cash = getBalanceForAccountCodes($accounts, ['1001', '1021', '1031', '1041', '1051', '1061'], ['cash', 'bank', 'petty']);
     $inventory = getBalanceForAccountCodes($accounts, ['1004', '1024', '1034'], ['stock', 'inventory']);
     $receivables = getBalanceForAccountCodes($accounts, ['1002', '1003'], ['receivable', 'debtor']);
-    $payables = getBalanceForAccountCodes($accounts, ['2001', '2002'], ['payable']);
+    $payables = getBalanceForAccountCodes($accounts, ['2001', '2002', '2014'], ['payable']);
     $otherCurrentLiabilities = getBalanceForAccountCodes($accounts, [], ['accrued', 'payroll', 'provision', 'deferred revenue', 'deposit', 'intercompany']);
     $nonCurrentAssets = getBalanceForAccountCodes($accounts, ['1005', '1006', '1007', '1008', '1009'], ['property', 'plant', 'equipment', 'intangible', 'deferred tax', 'building', 'vehicle']);
     $loans = getBalanceForAccountCodes($accounts, ['2008', '2009', '2010', '2012'], ['loan', 'borrow']);
@@ -137,21 +148,35 @@ function calculateCashFlowMetrics($conn, $year, $priorYearAccounts = []) {
     $netIncome = getBalanceForParentType($accounts, -4) - getBalanceForParentType($accounts, -5) - getBalanceForParentType($accounts, -6);
     $taxExpense = getBalanceForAccountCodes($accounts, [], ['tax']);
 
+    $priorInventory = isset($priorYearAccounts['inventory']) ? (float)$priorYearAccounts['inventory'] : 0.0;
+    $priorReceivables = isset($priorYearAccounts['receivables']) ? (float)$priorYearAccounts['receivables'] : 0.0;
+    $priorPayables = isset($priorYearAccounts['payables']) ? (float)$priorYearAccounts['payables'] : 0.0;
+    $priorOtherCurrentLiabilities = isset($priorYearAccounts['other_current_liabilities']) ? (float)$priorYearAccounts['other_current_liabilities'] : 0.0;
+    $priorNonCurrentAssets = isset($priorYearAccounts['non_current_assets']) ? (float)$priorYearAccounts['non_current_assets'] : 0.0;
+    $priorLoans = isset($priorYearAccounts['loans']) ? (float)$priorYearAccounts['loans'] : 0.0;
+    $priorCapital = isset($priorYearAccounts['capital']) ? (float)$priorYearAccounts['capital'] : 0.0;
+    $priorReserves = isset($priorYearAccounts['reserves']) ? (float)$priorYearAccounts['reserves'] : 0.0;
+
+    $inventoryAdjustment = getWorkingCapitalAdjustment($priorInventory, $inventory, false);
+    $receivablesAdjustment = getWorkingCapitalAdjustment($priorReceivables, $receivables, false);
+    $payablesAdjustment = getWorkingCapitalAdjustment($priorPayables, $payables, true);
+    $otherCurrentLiabilitiesAdjustment = getWorkingCapitalAdjustment($priorOtherCurrentLiabilities, $otherCurrentLiabilities, true);
+
     $operatingCashFlow = $netIncome
-        + ((isset($priorYearAccounts['inventory']) ? $priorYearAccounts['inventory'] : 0.0) - $inventory)
-        + ((isset($priorYearAccounts['receivables']) ? $priorYearAccounts['receivables'] : 0.0) - $receivables)
-        + ($payables - (isset($priorYearAccounts['payables']) ? $priorYearAccounts['payables'] : 0.0))
-        + ($otherCurrentLiabilities - (isset($priorYearAccounts['other_current_liabilities']) ? $priorYearAccounts['other_current_liabilities'] : 0.0))
+        + $inventoryAdjustment
+        + $receivablesAdjustment
+        + $payablesAdjustment
+        + $otherCurrentLiabilitiesAdjustment
         - $taxExpense;
 
-    $investingCashFlow = -($nonCurrentAssets - (isset($priorYearAccounts['non_current_assets']) ? $priorYearAccounts['non_current_assets'] : 0.0));
-    $financingCashFlow = ($loans - (isset($priorYearAccounts['loans']) ? $priorYearAccounts['loans'] : 0.0))
-        + ($capital - (isset($priorYearAccounts['capital']) ? $priorYearAccounts['capital'] : 0.0))
-        + ($reserves - (isset($priorYearAccounts['reserves']) ? $priorYearAccounts['reserves'] : 0.0))
+    $investingCashFlow = -($nonCurrentAssets - $priorNonCurrentAssets);
+    $financingCashFlow = ($loans - $priorLoans)
+        + ($capital - $priorCapital)
+        + ($reserves - $priorReserves)
         - $drawings;
 
     $netCashFlow = $operatingCashFlow + $investingCashFlow + $financingCashFlow;
-    $openingCash = isset($priorYearAccounts['cash']) ? (float)$priorYearAccounts['cash'] : 0.0;
+    $openingCash = isset($priorYearAccounts['closing_cash']) ? (float)$priorYearAccounts['closing_cash'] : (isset($priorYearAccounts['cash']) ? (float)$priorYearAccounts['cash'] : 0.0);
     $closingCash = $openingCash + $netCashFlow;
 
     return [
@@ -343,7 +368,7 @@ $cashEndPrevious = $year2HasData ? $previousYearMetrics['cash'] : 0.0;
           </div>
           <span class="stat-trend trend-up">Operating</span>
         </div>
-        <div class="stat-val">$ <?php echo number_format($operatingCurrent, 0); ?></div>
+        <div class="stat-val">$ <?php echo number_format($operatingCurrent, 2); ?></div>
         <div class="stat-label">Net Operating Cash Flow (<?php echo $selectedYear; ?>)</div>
       </div>
 
@@ -355,7 +380,7 @@ $cashEndPrevious = $year2HasData ? $previousYearMetrics['cash'] : 0.0;
           </div>
           <span class="stat-trend trend-orange">Investing</span>
         </div>
-        <div class="stat-val">$ <?php echo number_format($investingCurrent, 0); ?></div>
+        <div class="stat-val">$ <?php echo number_format($investingCurrent, 2); ?></div>
         <div class="stat-label">Net Investing Cash Flow (<?php echo $selectedYear; ?>)</div>
       </div>
 
@@ -367,7 +392,7 @@ $cashEndPrevious = $year2HasData ? $previousYearMetrics['cash'] : 0.0;
           </div>
           <span class="stat-trend trend-orange">Financing</span>
         </div>
-        <div class="stat-val">$ <?php echo number_format($financingCurrent, 0); ?></div>
+        <div class="stat-val">$ <?php echo number_format($financingCurrent, 2); ?></div>
         <div class="stat-label">Net Financing Cash Flow (<?php echo $selectedYear; ?>)</div>
       </div>
 
@@ -379,7 +404,7 @@ $cashEndPrevious = $year2HasData ? $previousYearMetrics['cash'] : 0.0;
           </div>
           <span class="stat-trend trend-up">Cash Position</span>
         </div>
-        <div class="stat-val">$ <?php echo number_format($cashEndCurrent, 0); ?></div>
+        <div class="stat-val">$ <?php echo number_format($cashEndCurrent, 2); ?></div>
         <div class="stat-label">Cash equivalents at Year End</div>
       </div>
     </div>
