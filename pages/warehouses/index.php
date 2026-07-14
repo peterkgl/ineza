@@ -5,7 +5,10 @@ require_once __DIR__ . '/../../config/permissions.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 
-if (!hasPermission($conn, $userId, 'view_warehouses')) {
+if (!hasPermission($conn, $userId, 'view_warehouses') && 
+    !hasPermission($conn, $userId, 'create_warehouse') && 
+    !hasPermission($conn, $userId, 'edit_warehouse') && 
+    !hasPermission($conn, $userId, 'delete_warehouse')) {
     header("Location: ../dashboard");
     exit();
 }

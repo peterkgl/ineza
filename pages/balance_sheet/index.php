@@ -5,8 +5,8 @@ require_once __DIR__ . '/../../config/permissions.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 
-// Security access check using standard view_accounts permission
-if (!hasPermission($conn, $userId, 'view_accounts')) {
+// Security access check using standard view_balance_sheet permission
+if (!hasPermission($conn, $userId, 'view_balance_sheet')) {
     header("Location: ../dashboard");
     exit();
 }

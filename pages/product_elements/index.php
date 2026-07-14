@@ -5,7 +5,10 @@ require_once __DIR__ . '/../../config/permissions.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 
-if (!hasPermission($conn, $userId, 'view_product_elements')) {
+if (!hasPermission($conn, $userId, 'view_product_elements') && 
+    !hasPermission($conn, $userId, 'create_product_element') && 
+    !hasPermission($conn, $userId, 'edit_product_element') && 
+    !hasPermission($conn, $userId, 'delete_product_element')) {
     header("Location: ../dashboard");
     exit();
 }

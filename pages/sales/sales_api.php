@@ -179,7 +179,10 @@ switch ($action) {
         break;
 
     case 'list':
-        if (!hasPermission($conn, $userId, 'view_sales')) {
+        if (!hasPermission($conn, $userId, 'view_sales') && 
+            !hasPermission($conn, $userId, 'create_sale') && 
+            !hasPermission($conn, $userId, 'edit_sale') && 
+            !hasPermission($conn, $userId, 'delete_sale')) {
             http_response_code(403);
             sendResponse(false, 'Forbidden: You do not have permission to view sales.');
         }

@@ -257,7 +257,7 @@ switch ($action) {
         break;
 
     case 'close':
-        if (!hasPermission($conn, $userId, 'edit_lot')) {
+        if (!hasPermission($conn, $userId, 'close_lot')) {
             http_response_code(403);
             sendResponse(false, 'Forbidden: You do not have permission to close lots.');
         }

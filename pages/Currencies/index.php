@@ -5,7 +5,10 @@ require_once __DIR__ . '/../../config/permissions.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 
-if (!hasPermission($conn, $userId, 'view_currencies')) {
+if (!hasPermission($conn, $userId, 'view_currencies') && 
+    !hasPermission($conn, $userId, 'create_currency') && 
+    !hasPermission($conn, $userId, 'edit_currency') && 
+    !hasPermission($conn, $userId, 'delete_currency')) {
     header("Location: ../dashboard");
     exit();
 }

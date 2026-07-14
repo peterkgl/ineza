@@ -19,27 +19,120 @@ $prefix_to_pages = ($depth === 2) ? '../' : './';
 $prefix_to_root = ($depth === 2) ? '../../' : '../';
 
 // Check permissions
-$showSuppliers = hasPermission($conn, $sidebarUserId, 'view_suppliers');
-$showProducts = hasPermission($conn, $sidebarUserId, 'view_products');
-$showProductCategories = hasPermission($conn, $sidebarUserId, 'view_product_categories');
-$showProductElements = hasPermission($conn, $sidebarUserId, 'view_product_elements');
-$showCurrencies = hasPermission($conn, $sidebarUserId, 'view_currencies');
-$showAccountTypes = hasPermission($conn, $sidebarUserId, 'view_account_types');
-$showAccounts = hasPermission($conn, $sidebarUserId, 'view_accounts');
-$showUsers = hasPermission($conn, $sidebarUserId, 'view_users');
-$showRoles = hasPermission($conn, $sidebarUserId, 'view_roles');
-$showPermissions = hasPermission($conn, $sidebarUserId, 'view_permissions');
+$showDashboard = hasPermission($conn, $sidebarUserId, 'view_dashboard');
+
+$showSuppliers = hasPermission($conn, $sidebarUserId, 'view_suppliers') || 
+                 hasPermission($conn, $sidebarUserId, 'create_supplier') || 
+                 hasPermission($conn, $sidebarUserId, 'edit_supplier') || 
+                 hasPermission($conn, $sidebarUserId, 'delete_supplier');
+
+$showSupplierAdvances = hasPermission($conn, $sidebarUserId, 'view_supplier_advances');
+
+$showProducts = hasPermission($conn, $sidebarUserId, 'view_products') || 
+                hasPermission($conn, $sidebarUserId, 'create_product') || 
+                hasPermission($conn, $sidebarUserId, 'edit_product') || 
+                hasPermission($conn, $sidebarUserId, 'delete_product');
+
+$showProductCategories = hasPermission($conn, $sidebarUserId, 'view_product_categories') || 
+                         hasPermission($conn, $sidebarUserId, 'create_product_category') || 
+                         hasPermission($conn, $sidebarUserId, 'edit_product_category') || 
+                         hasPermission($conn, $sidebarUserId, 'delete_product_category');
+
+$showProductElements = hasPermission($conn, $sidebarUserId, 'view_product_elements') || 
+                       hasPermission($conn, $sidebarUserId, 'create_product_element') || 
+                       hasPermission($conn, $sidebarUserId, 'edit_product_element') || 
+                       hasPermission($conn, $sidebarUserId, 'delete_product_element');
+
+$showCurrencies = hasPermission($conn, $sidebarUserId, 'view_currencies') || 
+                  hasPermission($conn, $sidebarUserId, 'create_currency') || 
+                  hasPermission($conn, $sidebarUserId, 'edit_currency') || 
+                  hasPermission($conn, $sidebarUserId, 'delete_currency');
+
+$showAccountTypes = hasPermission($conn, $sidebarUserId, 'view_account_types') || 
+                    hasPermission($conn, $sidebarUserId, 'create_account_type') || 
+                    hasPermission($conn, $sidebarUserId, 'edit_account_type') || 
+                    hasPermission($conn, $sidebarUserId, 'delete_account_type');
+
+$showAccounts = hasPermission($conn, $sidebarUserId, 'view_accounts') || 
+                hasPermission($conn, $sidebarUserId, 'create_account') || 
+                hasPermission($conn, $sidebarUserId, 'edit_account') || 
+                hasPermission($conn, $sidebarUserId, 'delete_account');
+
+$showUsers = hasPermission($conn, $sidebarUserId, 'view_users') || 
+             hasPermission($conn, $sidebarUserId, 'create_user') || 
+             hasPermission($conn, $sidebarUserId, 'edit_user') || 
+             hasPermission($conn, $sidebarUserId, 'delete_user');
+
+$showRoles = hasPermission($conn, $sidebarUserId, 'view_roles') || 
+             hasPermission($conn, $sidebarUserId, 'create_role') || 
+             hasPermission($conn, $sidebarUserId, 'edit_role') || 
+             hasPermission($conn, $sidebarUserId, 'delete_role');
+
+$showPermissions = hasPermission($conn, $sidebarUserId, 'view_permissions') || 
+                   hasPermission($conn, $sidebarUserId, 'create_permission') || 
+                   hasPermission($conn, $sidebarUserId, 'edit_permission') || 
+                   hasPermission($conn, $sidebarUserId, 'delete_permission');
+
 $showAuditLogs = hasPermission($conn, $sidebarUserId, 'view_audit_logs');
-$showWarehouses = hasPermission($conn, $sidebarUserId, 'view_warehouses');
-$showLots = hasPermission($conn, $sidebarUserId, 'view_lots');
-$showUnitOfMeasure = hasPermission($conn, $sidebarUserId, 'view_unit_of_measure');
-$showPurchases = hasPermission($conn, $sidebarUserId, 'view_purchas');
-$showStock = hasPermission($conn, $sidebarUserId, 'view_stock');
-$showSales = hasPermission($conn, $sidebarUserId, 'view_sales');
-$showJournalEntries = hasPermission($conn, $sidebarUserId, 'view_journal_entries');
+
+$showWarehouses = hasPermission($conn, $sidebarUserId, 'view_warehouses') || 
+                  hasPermission($conn, $sidebarUserId, 'create_warehouse') || 
+                  hasPermission($conn, $sidebarUserId, 'edit_warehouse') || 
+                  hasPermission($conn, $sidebarUserId, 'delete_warehouse');
+
+$showLots = hasPermission($conn, $sidebarUserId, 'view_lots') || 
+            hasPermission($conn, $sidebarUserId, 'create_lot') || 
+            hasPermission($conn, $sidebarUserId, 'edit_lot') || 
+            hasPermission($conn, $sidebarUserId, 'delete_lot') || 
+            hasPermission($conn, $sidebarUserId, 'close_lot');
+
+$showUnitOfMeasure = hasPermission($conn, $sidebarUserId, 'view_unit_of_measure') || 
+                     hasPermission($conn, $sidebarUserId, 'create_unit_of_measure') || 
+                     hasPermission($conn, $sidebarUserId, 'edit_unit_of_measure') || 
+                     hasPermission($conn, $sidebarUserId, 'delete_unit_of_measure');
+
+$showPurchases = hasPermission($conn, $sidebarUserId, 'view_purchas') || 
+                 hasPermission($conn, $sidebarUserId, 'create_purchas') || 
+                 hasPermission($conn, $sidebarUserId, 'edit_purchas') || 
+                 hasPermission($conn, $sidebarUserId, 'delete_purchas');
+
+$showStock = hasPermission($conn, $sidebarUserId, 'view_stock') || 
+             hasPermission($conn, $sidebarUserId, 'view_stock_movement');
+
+$showSales = hasPermission($conn, $sidebarUserId, 'view_sales') || 
+             hasPermission($conn, $sidebarUserId, 'create_sale') || 
+             hasPermission($conn, $sidebarUserId, 'edit_sale') || 
+             hasPermission($conn, $sidebarUserId, 'delete_sale');
+
+$showJournalEntries = hasPermission($conn, $sidebarUserId, 'view_journal_entries') || 
+                      hasPermission($conn, $sidebarUserId, 'create_journal_entry') || 
+                      hasPermission($conn, $sidebarUserId, 'cancel_journal_entry');
+
 $showGeneralLedger = hasPermission($conn, $sidebarUserId, 'view_general_ledger');
 $showTrialBalance = hasPermission($conn, $sidebarUserId, 'view_trial_balance');
 $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger');
+
+// Individual Finance Reports
+$showBalanceSheet = hasPermission($conn, $sidebarUserId, 'view_balance_sheet');
+$showEquityReport = hasPermission($conn, $sidebarUserId, 'view_equity_report');
+$showComprehensiveIncome = hasPermission($conn, $sidebarUserId, 'view_comprehensive_income');
+$showStatementOfCashFlow = hasPermission($conn, $sidebarUserId, 'view_statement_of_cash_flow');
+$showNote = hasPermission($conn, $sidebarUserId, 'view_note');
+
+// Individual Mining Reports
+$showRepBankReconUsd = hasPermission($conn, $sidebarUserId, 'view_report_bank_recon_usd');
+$showRepBankReconRwf = hasPermission($conn, $sidebarUserId, 'view_report_bank_recon_rwf');
+$showRepMonthlyTx = hasPermission($conn, $sidebarUserId, 'view_report_monthly_transactions');
+$showRepCashCountHq = hasPermission($conn, $sidebarUserId, 'view_report_cash_count_hq');
+$showRepPettyCashRub = hasPermission($conn, $sidebarUserId, 'view_report_petty_cash_rub');
+$showRepCashCountRub = hasPermission($conn, $sidebarUserId, 'view_report_cash_count_rub');
+$showRepPurchaseLogsTa = hasPermission($conn, $sidebarUserId, 'view_report_purchase_logs_ta');
+$showRepAccountsPayable = hasPermission($conn, $sidebarUserId, 'view_report_accounts_payable');
+$showRepTinSummary = hasPermission($conn, $sidebarUserId, 'view_report_tin_summary');
+$showRepTaSummary = hasPermission($conn, $sidebarUserId, 'view_report_ta_summary');
+
+// Login History
+$showLoginHistory = hasPermission($conn, $sidebarUserId, 'view_login_history');
 ?>
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -47,26 +140,32 @@ $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger')
   </div>
   <div class="sidebar-nav">
 
-  <div class="sidebar-section">Main</div>
-  <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'dashboard') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>dashboard" id="nav-dashboard">
-    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-    Dashboard
-  </a>
-
-  <?php if ($showSuppliers): ?>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-section">Suppliers</div>
-    <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'suppliers') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>suppliers/index" id="nav-suppliers">
-      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-      Suppliers
-    </a>
-    <a class="nav-item" href="#" id="nav-supplier-advances">
-      <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-      Supplier Advances
+  <?php if ($showDashboard): ?>
+    <div class="sidebar-section">Main</div>
+    <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'dashboard') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>dashboard" id="nav-dashboard">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
     </a>
   <?php endif; ?>
 
-  <?php if ($showProducts || $showProductElements || $showProductCategories || $showWarehouses || $showLots || $showUnitOfMeasure || $showPurchases || $showStock): ?>
+  <?php if ($showSuppliers || $showSupplierAdvances): ?>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Suppliers</div>
+    <?php if ($showSuppliers): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'suppliers') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>suppliers/index" id="nav-suppliers">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Suppliers
+      </a>
+    <?php endif; ?>
+    <?php if ($showSupplierAdvances): ?>
+      <a class="nav-item" href="#" id="nav-supplier-advances">
+        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Supplier Advances
+      </a>
+    <?php endif; ?>
+  <?php endif; ?>
+
+  <?php if ($showProducts || $showProductElements || $showProductCategories || $showWarehouses || $showLots || $showUnitOfMeasure || $showPurchases || $showStock || $showSales): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Products &amp; Stock</div>
     <?php if ($showProducts): ?>
@@ -124,7 +223,7 @@ $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger')
     <?php endif; ?>
   <?php endif; ?>
 
-  <?php if ($showCurrencies || $showAccounts): ?>
+  <?php if ($showCurrencies || $showBalanceSheet || $showEquityReport || $showComprehensiveIncome || $showStatementOfCashFlow || $showNote): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Finance</div>
     <?php if ($showCurrencies): ?>
@@ -134,23 +233,31 @@ $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger')
         <span class="nav-badge">Base</span>
       </a>
     <?php endif; ?>
-    <?php if ($showAccounts): ?>
+    <?php if ($showBalanceSheet): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'balance_sheet') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>balance_sheet/index" id="nav-balance-sheet">
         <svg viewBox="0 0 24 24"><path d="M12 22V2M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Balance Sheet
       </a>
+    <?php endif; ?>
+    <?php if ($showEquityReport): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'equity_report') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>equity_report/index" id="nav-equity-report">
         <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Changes in Equity
       </a>
+    <?php endif; ?>
+    <?php if ($showComprehensiveIncome): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'comprehensive_income') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>comprehensive_income/index" id="nav-comprehensive-income">
         <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Income Statement
       </a>
+    <?php endif; ?>
+    <?php if ($showStatementOfCashFlow): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'statement_of_cash_flow') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>statement_of_cash_flow/index" id="nav-statement-of-cash-flow">
         <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Cash Flow Statement
       </a>
+    <?php endif; ?>
+    <?php if ($showNote): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'note') !== false && strpos($_SERVER['SCRIPT_NAME'], 'finance_accounts') === false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>note/index" id="nav-note">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Note
@@ -199,29 +306,51 @@ $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger')
     <?php endif; ?>
   <?php endif; ?>
 
-  <div class="sidebar-divider"></div>
-  <div class="sidebar-section">Mining Reports</div>
-  <details class="nav-group" <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_') !== false) ? 'open' : ''; ?> style="outline: none;">
-    <summary class="nav-item" style="list-style: none; display: flex; justify-content: space-between; align-items: center; cursor: pointer; outline: none;">
-      <span style="display: flex; align-items: center; gap: 9px;">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        System All reports
-      </span>
-      <svg class="chevron" viewBox="0 0 24 24" style="width: 12px; height: 12px; transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
-    </summary>
-    <div class="nav-group-items" style="padding-left: 10px; margin-top: 2px; max-height: 300px; overflow-y: auto;">
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_bank_recon_usd') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_bank_recon_usd/index">Bank Recon USD</a>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_bank_recon_rwf') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_bank_recon_rwf/index">Bank Recon RWF</a>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_monthly_transactions') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_monthly_transactions/index">Monthly Transactions</a>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_cash_count_hq') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_cash_count_hq/index">Cash Count HQ</a>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_petty_cash_rub') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_petty_cash_rub/index">Petty Cash Rubaya</a>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_cash_count_rub') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_cash_count_rub/index">Cash Count Rubaya</a>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_purchase_logs_ta') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_purchase_logs_ta/index">Tantalum Purchases</a>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_accounts_payable') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_accounts_payable/index">Accounts Payable</a>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_tin_summary') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_tin_summary/index">Tin Summary</a>
-      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_ta_summary') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_ta_summary/index">Ta Summary</a>
-    </div>
-  </details>
+  <?php if ($showRepBankReconUsd || $showRepBankReconRwf || $showRepMonthlyTx || $showRepCashCountHq || $showRepPettyCashRub || $showRepCashCountRub || $showRepPurchaseLogsTa || $showRepAccountsPayable || $showRepTinSummary || $showRepTaSummary): ?>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Mining Reports</div>
+    <details class="nav-group" <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_') !== false) ? 'open' : ''; ?> style="outline: none;">
+      <summary class="nav-item" style="list-style: none; display: flex; justify-content: space-between; align-items: center; cursor: pointer; outline: none;">
+        <span style="display: flex; align-items: center; gap: 9px;">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          System All reports
+        </span>
+        <svg class="chevron" viewBox="0 0 24 24" style="width: 12px; height: 12px; transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+      </summary>
+      <div class="nav-group-items" style="padding-left: 10px; margin-top: 2px; max-height: 300px; overflow-y: auto;">
+        <?php if ($showRepBankReconUsd): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_bank_recon_usd') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_bank_recon_usd/index">Bank Recon USD</a>
+        <?php endif; ?>
+        <?php if ($showRepBankReconRwf): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_bank_recon_rwf') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_bank_recon_rwf/index">Bank Recon RWF</a>
+        <?php endif; ?>
+        <?php if ($showRepMonthlyTx): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_monthly_transactions') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_monthly_transactions/index">Monthly Transactions</a>
+        <?php endif; ?>
+        <?php if ($showRepCashCountHq): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_cash_count_hq') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_cash_count_hq/index">Cash Count HQ</a>
+        <?php endif; ?>
+        <?php if ($showRepPettyCashRub): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_petty_cash_rub') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_petty_cash_rub/index">Petty Cash Rubaya</a>
+        <?php endif; ?>
+        <?php if ($showRepCashCountRub): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_cash_count_rub') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_cash_count_rub/index">Cash Count Rubaya</a>
+        <?php endif; ?>
+        <?php if ($showRepPurchaseLogsTa): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_purchase_logs_ta') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_purchase_logs_ta/index">Tantalum Purchases</a>
+        <?php endif; ?>
+        <?php if ($showRepAccountsPayable): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_accounts_payable') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_accounts_payable/index">Accounts Payable</a>
+        <?php endif; ?>
+        <?php if ($showRepTinSummary): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_tin_summary') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_tin_summary/index">Tin Summary</a>
+        <?php endif; ?>
+        <?php if ($showRepTaSummary): ?>
+          <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'report_ta_summary') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>report_ta_summary/index">Ta Summary</a>
+        <?php endif; ?>
+      </div>
+    </details>
+  <?php endif; ?>
 
   <style>
     details.nav-group summary::-webkit-details-marker {
@@ -265,17 +394,21 @@ $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger')
     <?php endif; ?>
   <?php endif; ?>
 
-  <?php if ($showAuditLogs): ?>
+  <?php if ($showAuditLogs || $showLoginHistory): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">System Logs</div>
-    <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'audit_logs') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>audit_logs/index" id="nav-audit-logs">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      Audit Logs
-    </a>
-    <a class="nav-item" href="#" id="nav-login-history">
-      <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-      Login History
-    </a>
+    <?php if ($showAuditLogs): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'audit_logs') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>audit_logs/index" id="nav-audit-logs">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Audit Logs
+      </a>
+    <?php endif; ?>
+    <?php if ($showLoginHistory): ?>
+      <a class="nav-item" href="#" id="nav-login-history">
+        <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Login History
+      </a>
+    <?php endif; ?>
   <?php endif; ?>
   </div>
 </aside>

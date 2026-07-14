@@ -5,7 +5,10 @@ require_once __DIR__ . '/../../config/permissions.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 
-if (!hasPermission($conn, $userId, 'view_accounts')) {
+if (!hasPermission($conn, $userId, 'view_accounts') && 
+    !hasPermission($conn, $userId, 'create_account') && 
+    !hasPermission($conn, $userId, 'edit_account') && 
+    !hasPermission($conn, $userId, 'delete_account')) {
     header("Location: ../dashboard");
     exit();
 }

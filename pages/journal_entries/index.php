@@ -6,7 +6,9 @@ require_once __DIR__ . '/../../config/permissions.php';
 $userId = $_SESSION['user_id'] ?? 0;
 
 // Access permission check
-if (!hasPermission($conn, $userId, 'view_journal_entries')) {
+if (!hasPermission($conn, $userId, 'view_journal_entries') && 
+    !hasPermission($conn, $userId, 'create_journal_entry') && 
+    !hasPermission($conn, $userId, 'cancel_journal_entry')) {
     header("Location: ../dashboard");
     exit();
 }

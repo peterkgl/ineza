@@ -5,7 +5,11 @@ require_once __DIR__ . '/../../config/permissions.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 
-if (!hasPermission($conn, $userId, 'view_lots')) {
+if (!hasPermission($conn, $userId, 'view_lots') && 
+    !hasPermission($conn, $userId, 'create_lot') && 
+    !hasPermission($conn, $userId, 'edit_lot') && 
+    !hasPermission($conn, $userId, 'delete_lot') && 
+    !hasPermission($conn, $userId, 'close_lot')) {
     header("Location: ../dashboard");
     exit();
 }
@@ -17,6 +21,7 @@ if (empty($_SESSION['lots_token'])) {
 $canCreate = hasPermission($conn, $userId, 'create_lot');
 $canEdit = hasPermission($conn, $userId, 'edit_lot');
 $canDelete = hasPermission($conn, $userId, 'delete_lot');
+$canClose = hasPermission($conn, $userId, 'close_lot');
 
 // Fetch lots with product details
 $query = "SELECT l.*, p.product_name, p.product_code 
@@ -209,7 +214,7 @@ foreach ($lotsData as $l) {
                           </button>
                         <?php endif; ?>
                         <?php if ($isOpen): ?>
-                          <?php if ($canEdit): ?>
+                          <?php if ($canClose): ?>
                             <button class="btn-icon-only close-btn" title="Close Lot" data-id="<?php echo $l['id']; ?>">
                               <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                             </button>

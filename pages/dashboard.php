@@ -1,6 +1,13 @@
 <?php
 require_once 'login/auth.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/permissions.php';
+
+$userId = $_SESSION['user_id'] ?? 0;
+if (!hasPermission($conn, $userId, 'view_dashboard')) {
+    header("Location: profile/my_profile");
+    exit();
+}
 
 // Helper to format numbers with K/M suffix
 function formatNumberWithSuffix($num, $prefix = '') {

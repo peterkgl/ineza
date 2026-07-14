@@ -4,6 +4,10 @@ require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/permissions.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
+if (!hasPermission($conn, $userId, 'view_report_accounts_payable')) {
+    header("Location: ../dashboard");
+    exit();
+}
 $report_slug = 'accounts_payable';
 $report_title = 'Account Payable';
 $report_slug_esc = mysqli_real_escape_string($conn, $report_slug);
