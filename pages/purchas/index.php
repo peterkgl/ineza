@@ -13,6 +13,787 @@ if (!hasPermission($conn, $userId, 'view_purchas') &&
     exit();
 }
 
+if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
+    $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+    if ($id <= 0) {
+        die("Invalid ID");
+    }
+    
+    // Fetch purchase record
+    $pQuery = "SELECT p.*, pr.product_name, pr.product_code, l.lots_code, s.name as supplier_name, s.id as supplier_code, s.phone as supplier_phone, s.email as supplier_email, w.warehouse_name, uom.code as uom_code
+               FROM purchasing p
+               JOIN product pr ON p.product_id = pr.id
+               JOIN lots l ON p.lot_id = l.id
+               JOIN suppliers s ON p.supplier_id = s.id
+               JOIN warehouses w ON p.warehouse_id = w.id
+               LEFT JOIN unit_of_measure uom ON p.uom_id = uom.id
+               WHERE p.id = $id LIMIT 1";
+               
+    $pRes = mysqli_query($conn, $pQuery);
+    if (!$pRes || mysqli_num_rows($pRes) === 0) {
+        die("Purchase transaction not found");
+    }
+    $p = mysqli_fetch_assoc($pRes);
+    
+    // Fetch grades
+    $gradesQuery = "SELECT peg.*, pe.element_code, pe.element_name, pe.symbol 
+                    FROM purchasing_element_grade peg
+                    JOIN product_element pe ON peg.product_element_id = pe.id
+                    WHERE peg.purchasing_id = $id";
+    $gradesResult = mysqli_query($conn, $gradesQuery);
+    $grades = [];
+    if ($gradesResult) {
+        while ($gRow = mysqli_fetch_assoc($gradesResult)) {
+            $grades[] = $gRow;
+        }
+    }
+    
+    // Converted details
+    $qty = (float)$p['quantity_kg'];
+    $uom = $p['uom_code'] ?: 'kg';
+    $purchaseValUsd = $p['purchase_value_usd'] !== null ? (float)$p['purchase_value_usd'] : 0;
+    $purchaseValRwf = $p['purchase_value_rwf'] !== null ? (float)$p['purchase_value_rwf'] : 0;
+    $exchangeRate = $p['exchange_rate'] !== null ? (float)$p['exchange_rate'] : 0;
+    $netPaidUsd = $p['net_paid_supplier_usd'] !== null ? (float)$p['net_paid_supplier_usd'] : 0;
+
+    // Find primary element grade from database composition
+    $compQuery = "SELECT product_element_id FROM product_element_composition WHERE product_id = " . (int)$p['product_id'] . " AND is_primary_grade = 1 LIMIT 1";
+    $compRes = mysqli_query($conn, $compQuery);
+    $primary_elem_id = 0;
+    if ($compRes && mysqli_num_rows($compRes) > 0) {
+        $compRow = mysqli_fetch_assoc($compRes);
+        $primary_elem_id = (int)$compRow['product_element_id'];
+    }
+
+    $primaryGradePct = 0.0;
+    $primaryElementSymbol = '';
+    $primaryElementName = '';
+    foreach ($grades as $g) {
+        if ((int)$g['product_element_id'] === $primary_elem_id) {
+            $primaryGradePct = (float)$g['grade_pct'];
+            $primaryElementSymbol = $g['symbol'];
+            $primaryElementName = $g['element_name'];
+            break;
+        }
+    }
+    // Fallback if no primary grade is set in composition
+    if ($primaryGradePct === 0.0 && !empty($grades)) {
+        foreach ($grades as $g) {
+            $sym = strtoupper($g['symbol']);
+            if ($sym === 'SN' || $sym === 'TA' || $sym === 'WO3' || $sym === 'TA2O5') {
+                $primaryGradePct = (float)$g['grade_pct'];
+                $primaryElementSymbol = $g['symbol'];
+                $primaryElementName = $g['element_name'];
+                break;
+            }
+        }
+        if ($primaryGradePct === 0.0) {
+            $primaryGradePct = (float)$grades[0]['grade_pct'];
+            $primaryElementSymbol = $grades[0]['symbol'];
+            $primaryElementName = $grades[0]['element_name'];
+        }
+    }
+
+    $product_code = strtoupper($p['product_code']);
+    $product_name = strtolower($p['product_name']);
+
+    $is_tantalum = (strpos($product_name, 'coltan') !== false || strpos($product_name, 'tantalum') !== false || strpos($product_code, 'TA') !== false);
+    $is_wolframite = (strpos($product_name, 'wolframite') !== false || strpos($product_name, 'tungsten') !== false || strpos($product_code, 'W') !== false);
+    $is_tin = !$is_tantalum && !$is_wolframite;
+    
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Invoice - <?php echo htmlspecialchars($p['purchase_no']); ?></title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border-color: #cbd5e1;
+            --primary: #0f172a;
+            --accent: #ec4f25;
+            --grid-bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-main);
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .no-print-bar {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: #ffffff;
+            color: var(--text-main);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background-color: #f8fafc;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .btn-primary:hover {
+            background-color: #1e293b;
+            border-color: #1e293b;
+        }
+
+        .page-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 800px;
+            min-height: 1000px;
+            padding: 80px 60px;
+            box-sizing: border-box;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            position: relative;
+            border-radius: 8px;
+        }
+
+        .divHeader {
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: flex-start;
+        }
+        
+        .header-logo {
+            height: 50px;
+            width: auto;
+        }
+
+        .divFooter {
+            margin-top: 60px;
+            border-top: 0.75pt solid var(--accent);
+            padding-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .footer-left {
+            text-align: left;
+        }
+        .footer-left .company-name {
+            font-weight: 700;
+            font-size: 9.5px;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+        .footer-right {
+            text-align: right;
+        }
+        .footer-right .footer-web {
+            color: #0000ff;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        .voucher-title-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .voucher-title-section h1 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 5px 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-main);
+        }
+        .voucher-subtitle {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .voucher-meta-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .voucher-meta-left {
+            text-align: left;
+        }
+        .voucher-meta-right {
+            text-align: right;
+        }
+
+        .excel-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 35px;
+            font-size: 11px;
+        }
+        .excel-grid th, .excel-grid td {
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .excel-grid th {
+            background-color: var(--grid-bg);
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+        .excel-grid td.num-cell {
+            text-align: right;
+            font-family: 'Century Gothic', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .excel-grid td.label-cell {
+            font-weight: 600;
+            background-color: var(--grid-bg);
+            width: 30%;
+        }
+        .excel-grid tr.total-row td {
+            font-weight: 700;
+            background-color: #f1f5f9;
+            border-top: 2px solid var(--text-main);
+            border-bottom: 2px double var(--text-main);
+        }
+
+        .excel-signatures {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 11px;
+        }
+        .sig-box {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 4px;
+        }
+        .sig-title {
+            font-weight: 700;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+            color: var(--text-main);
+        }
+        .sig-field {
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+        .sig-line {
+            display: inline-block;
+            width: 100%;
+            border-bottom: 1px dotted var(--text-muted);
+            margin-top: 4px;
+            height: 15px;
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 90pt 40pt 90pt 40pt;
+            }
+            
+            body {
+                background-color: #ffffff;
+                color: #000000;
+                padding: 0;
+            }
+
+            .no-print-bar {
+                display: none !important;
+            }
+
+            .page-container {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                min-height: auto !important;
+            }
+
+            .divHeader {
+                position: fixed;
+                top: -70pt;
+                left: 0;
+                right: 0;
+                height: 50pt;
+                margin: 0;
+            }
+
+            .divFooter {
+                position: fixed;
+                bottom: -70pt;
+                left: 0;
+                right: 0;
+                height: 50pt;
+                margin: 0;
+                border-top: 0.75pt solid var(--accent);
+                padding-top: 10pt;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .excel-grid th {
+                background-color: #f8fafc !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .excel-grid td.label-cell {
+                background-color: #f8fafc !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .excel-grid tr.total-row td {
+                background-color: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .sig-box {
+                background-color: #f8fafc !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    </head>
+    <body>
+
+    <div class="no-print-bar">
+        <button onclick="window.close()" class="btn">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; vertical-align: middle; margin-right: 4px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Close Tab
+        </button>
+        <button onclick="downloadPDF()" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Download PDF
+        </button>
+    </div>
+
+    <div class="page-container">
+        <!-- HEADER -->
+        <div class="divHeader">
+            <img src="../../src/logo/ineza_logo.png" alt="INEZA Logo" class="header-logo">
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <?php if ($is_tin): ?>
+            <!-- TIN VOUCHER (Sn02) -->
+            <div class="voucher-title-section">
+                <h1>PAYMENT VOUCHER</h1>
+                <div class="voucher-subtitle">PAYMENT VOUCHER: <?php echo htmlspecialchars($p['purchase_no']); ?></div>
+            </div>
+            
+            <div class="voucher-meta-container">
+                <div class="voucher-meta-left">
+                    <strong>Date:</strong> <?php echo htmlspecialchars($p['purchase_date']); ?><br>
+                    <strong>Supplier:</strong> <?php echo htmlspecialchars($p['supplier_name']); ?>
+                </div>
+            </div>
+
+            <table class="excel-grid">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Parameter / Item</th>
+                        <th style="width: 30%;">Reference / Formulas</th>
+                        <th style="width: 30%; text-align: right;">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="label-cell">RATE</td>
+                        <td>Exchange Rate (RWF)</td>
+                        <td class="num-cell"><strong><?php echo number_format($exchangeRate, 2); ?> RWF</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">QUANTITY</td>
+                        <td>Quantity Delivered (kg)</td>
+                        <td class="num-cell"><?php echo number_format($qty, 2); ?> kg</td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">GRADE</td>
+                        <td>Primary Element Grade (%)</td>
+                        <td class="num-cell"><?php echo number_format($primaryGradePct, 2); ?>%</td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">LME Base</td>
+                        <td>LME Price per Ton (USD)</td>
+                        <td class="num-cell">$<?php echo number_format($p['lme_price'] !== null ? $p['lme_price'] : 0.0, 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">LME Discount</td>
+                        <td>LME Discount (USD)</td>
+                        <td class="num-cell">$0.00</td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">LME Net</td>
+                        <td>Base LME - Discount (USD)</td>
+                        <td class="num-cell"><strong>$<?php echo number_format($p['lme_price'] !== null ? $p['lme_price'] : 0.0, 2); ?></strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">TC</td>
+                        <td>Treatment Charges per Ton (USD)</td>
+                        <td class="num-cell">$<?php echo number_format($p['tc_charges'] !== null ? $p['tc_charges'] : 0.0, 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">P.U</td>
+                        <td>Price per kg (USD)</td>
+                        <td class="num-cell"><strong>$<?php echo number_format($p['price_per_kg_usd'] !== null ? $p['price_per_kg_usd'] : 0.0, 4); ?></strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">P.T</td>
+                        <td>Price Total (USD)</td>
+                        <td class="num-cell"><strong>$<?php echo number_format($purchaseValUsd, 2); ?></strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">3% RRA (TC=800)</td>
+                        <td>Withholding Tax (USD)</td>
+                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_rra'], 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">RMA (50 FRW/KG)</td>
+                        <td>RMA Tax: 50 RWF/kg (Total: <?php echo number_format($qty * 50, 0); ?> FRW)</td>
+                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_rma'], 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">INKOMANE (20FRW/KG)</td>
+                        <td>Inkomane Tax: 20 RWF/kg (Total: <?php echo number_format($qty * 20, 0); ?> FRW)</td>
+                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_inkomane'], 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Prod fees</td>
+                        <td>Production Fees: <?php echo number_format((float)$p['production_charges_per_kg'], 2); ?> USD/kg</td>
+                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['production_charges'], 2); ?></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>A PAYER</td>
+                        <td>Net Supplier USD</td>
+                        <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">ADVANCE PAID</td>
+                        <td>Advance Paid (USD)</td>
+                        <td class="num-cell">$0.00</td>
+                    </tr>
+                    <tr class="total-row" style="background-color: #e2e8f0;">
+                        <td>NET TO BE PAID</td>
+                        <td>Net Payable USD</td>
+                        <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>IN FRW</td>
+                        <td>Net Payable RWF</td>
+                        <td class="num-cell"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?> RWF</td>
+                    </tr>
+                </tbody>
+            </table>
+
+        <?php elseif ($is_tantalum): ?>
+            <!-- TANTALITE VOUCHER (Ta205) -->
+            <div class="voucher-title-section">
+                <h1>PAYMENT VOUCHER</h1>
+                <div class="voucher-subtitle">PAYMENT VOUCHER: <?php echo htmlspecialchars($p['purchase_no']); ?></div>
+            </div>
+            
+            <div class="voucher-meta-container">
+                <div class="voucher-meta-left">
+                    <strong>Date:</strong> <?php echo htmlspecialchars($p['purchase_date']); ?><br>
+                    <strong>Supplier:</strong> <?php echo htmlspecialchars($p['supplier_name']); ?>
+                </div>
+            </div>
+
+            <table class="excel-grid">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Parameter / Item</th>
+                        <th style="width: 30%;">Reference / Formulas</th>
+                        <th style="width: 30%; text-align: right;">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="label-cell">RATE</td>
+                        <td>Exchange Rate (RWF)</td>
+                        <td class="num-cell"><strong><?php echo number_format($exchangeRate, 2); ?> RWF</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">QUANTITY</td>
+                        <td>Quantity Delivered (kg)</td>
+                        <td class="num-cell"><?php echo number_format($qty, 2); ?> kg</td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">GRADE</td>
+                        <td>Primary Element Grade (%)</td>
+                        <td class="num-cell"><?php echo number_format($primaryGradePct, 2); ?>%</td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">PRICE</td>
+                        <td>Price per Ta Unit (USD)</td>
+                        <td class="num-cell">$<?php echo number_format($p['price_per_ta_unit'] !== null ? $p['price_per_ta_unit'] : 0.0, 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">P.T</td>
+                        <td>Price Total (USD)</td>
+                        <td class="num-cell"><strong>$<?php echo number_format($purchaseValUsd, 2); ?></strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">3% RRA</td>
+                        <td>Withholding Tax (USD)</td>
+                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_rra'], 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">RMA (125 FRW/KG)</td>
+                        <td>RMA Tax: 125 RWF/kg (Total: <?php echo number_format($qty * 125, 0); ?> FRW)</td>
+                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_rma'], 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">INKOMANE (40FRW/KG)</td>
+                        <td>Inkomane Tax: 40 RWF/kg (Total: <?php echo number_format($qty * 40, 0); ?> FRW)</td>
+                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_inkomane'], 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Prod fees</td>
+                        <td>Production Fees: <?php echo number_format((float)$p['production_charges_per_kg'], 2); ?> USD/kg</td>
+                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['production_charges'], 2); ?></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>A PAYER</td>
+                        <td>Net Supplier USD</td>
+                        <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">ADVANCE PAID</td>
+                        <td>Advance Paid (USD)</td>
+                        <td class="num-cell">$0.00</td>
+                    </tr>
+                    <tr class="total-row" style="background-color: #e2e8f0;">
+                        <td>NET TO BE PAID</td>
+                        <td>Net Payable USD</td>
+                        <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>IN FRW</td>
+                        <td>Net Payable RWF</td>
+                        <td class="num-cell"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?> RWF</td>
+                    </tr>
+                </tbody>
+            </table>
+
+        <?php else: ?>
+            <!-- WOLFRAMITE VOUCHER (W03) -->
+            <div class="voucher-title-section">
+                <h1>PAYMENT VOUCHER FOR INEZA AFRICAN MINING</h1>
+            </div>
+            
+            <div class="voucher-meta-container">
+                <div class="voucher-meta-left">
+                    <strong>To:</strong> <?php echo htmlspecialchars($p['supplier_name']); ?>
+                </div>
+                <div class="voucher-meta-right">
+                    <strong>Exchange rate:</strong> <?php echo number_format($exchangeRate, 2); ?> RWF<br>
+                    <strong>RMB Price/MTU:</strong> <?php echo number_format($p['lme_price'] !== null ? $p['lme_price'] : 0.0, 2); ?><br>
+                    <strong>Date:</strong> <?php echo htmlspecialchars($p['purchase_date']); ?>
+                </div>
+            </div>
+
+            <table class="excel-grid">
+                <thead>
+                    <tr>
+                        <th>DESCRIPTION OF GOODS</th>
+                        <th>LOT NO.</th>
+                        <th style="text-align: right;">Gross weight(MT)</th>
+                        <th style="text-align: right;">Moisture (%)</th>
+                        <th style="text-align: right;">NET DRY WEIGHT (MT)</th>
+                        <th style="text-align: right;">WO3 (%)</th>
+                        <th style="text-align: right;">UNIT PRICE (USD/DMTU)</th>
+                        <th style="text-align: right;">Price USD/Kg</th>
+                        <th style="text-align: right;">TOTAL PRICE (USD)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Tungsten Concentrate/wolframite</td>
+                        <td><?php echo htmlspecialchars($p['lots_code']); ?></td>
+                        <td class="num-cell"><?php echo number_format($qty / 1000.0, 3); ?></td>
+                        <td class="num-cell">0.00%</td>
+                        <td class="num-cell"><?php echo number_format($qty / 1000.0, 3); ?></td>
+                        <td class="num-cell"><?php echo number_format($primaryGradePct, 2); ?>%</td>
+                        <td class="num-cell">$<?php echo number_format($p['price_per_ta_unit'] !== null ? $p['price_per_ta_unit'] : 0.0, 2); ?></td>
+                        <td class="num-cell">$<?php echo number_format($p['price_per_kg_usd'] !== null ? $p['price_per_kg_usd'] : 0.0, 4); ?></td>
+                        <td class="num-cell"><strong>$<?php echo number_format($purchaseValUsd, 2); ?></strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 10px; margin-bottom: 30px;">
+                <table class="excel-grid" style="width: 45%; margin: 0;">
+                    <tbody>
+                        <tr>
+                            <td class="label-cell">Amount Rwf</td>
+                            <td class="num-cell"><strong><?php echo number_format($purchaseValRwf, 2); ?></strong></td>
+                        </tr>
+                        <tr>
+                            <td class="label-cell">RMA</td>
+                            <td class="num-cell" style="color: #dc2626;"><?php echo number_format($p['tax_rma'] !== null ? $p['tax_rma'] * $exchangeRate : 0.0, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td class="label-cell">Transport fees</td>
+                            <td class="num-cell" style="color: #dc2626;">2,000.00</td>
+                        </tr>
+                        <tr>
+                            <td class="label-cell">Inkomane</td>
+                            <td class="num-cell" style="color: #dc2626;"><?php echo number_format($p['tax_inkomane'] !== null ? $p['tax_inkomane'] * $exchangeRate : 0.0, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td class="label-cell">RRA Tax 3.3%</td>
+                            <td class="num-cell" style="color: #dc2626;"><?php echo number_format($p['tax_rra'] !== null ? $p['tax_rra'] * $exchangeRate : 0.0, 2); ?></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td>Balance Rwf</td>
+                            <td class="num-cell"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td class="label-cell">Exchange rate</td>
+                            <td class="num-cell"><?php echo number_format($exchangeRate, 2); ?></td>
+                        </tr>
+                        <tr class="total-row" style="background-color: #e2e8f0;">
+                            <td>Balance USD</td>
+                            <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td class="label-cell">Advance payment USD</td>
+                            <td class="num-cell">$0.00</td>
+                        </tr>
+                        <tr class="total-row" style="background-color: #e2e8f0;">
+                            <td>Amount to be paid USD</td>
+                            <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td>Amount to be paid Rwf</td>
+                            <td class="num-cell"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?> RWF</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        <?php endif; ?>
+
+        <!-- SIGNATURES -->
+        <div class="excel-signatures">
+            <div class="sig-box">
+                <div class="sig-title">PREPARED BY:</div>
+                <div class="sig-field">Name: <span class="sig-line"></span></div>
+                <div class="sig-field">Signature: <span class="sig-line"></span></div>
+            </div>
+            <div class="sig-box">
+                <div class="sig-title">APPROVED BY:</div>
+                <div class="sig-field">Name: <span class="sig-line"></span></div>
+                <div class="sig-field">Signature: <span class="sig-line"></span></div>
+            </div>
+            <div class="sig-box">
+                <div class="sig-title">RECEIVED BY:</div>
+                <div class="sig-field">Name: <span class="sig-line"></span></div>
+                <div class="sig-field">Signature: <span class="sig-line"></span></div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="divFooter">
+            <div class="footer-left">
+                <div class="company-name">INEZA AFRICAN MINING LTD</div>
+                <div class="company-sub">Company Number : 123054396</div>
+                <div class="company-address">Adress : Plot N. 8425, Kigarama, Gahanga</div>
+                <div class="company-address">Industrial area, Kicukiro</div>
+            </div>
+            <div class="footer-right">
+                <div class="contact-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+250 784 886 562</div>
+                <div class="contact-item">info@inezaafricanmincie.com</div>
+                <div class="contact-item"><a href="http://www.inezaafricanmincie.com" class="footer-web" target="_blank">www.inezaafricanmincie.com</a></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Set theme matching parent window
+        if (window.opener) {
+            var theme = window.opener.document.documentElement.getAttribute('data-theme');
+            if (theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        }
+
+        function downloadPDF() {
+            var element = document.querySelector('.page-container');
+            
+            // Temporarily adjust styles for clean PDF rendering
+            var originalBoxShadow = element.style.boxShadow;
+            var originalBorderRadius = element.style.borderRadius;
+            var originalPadding = element.style.padding;
+            
+            element.style.boxShadow = 'none';
+            element.style.borderRadius = '0';
+            element.style.padding = '40px'; 
+            
+            var opt = {
+                margin:       [0, 0, 0, 0],
+                filename:     'Purchase_Invoice_<?php echo htmlspecialchars($p['purchase_no']); ?>.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false,
+                    letterRendering: true
+                },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().from(element).set(opt).toPdf().get('pdf').then(function (pdf) {
+                element.style.boxShadow = originalBoxShadow;
+                element.style.borderRadius = originalBorderRadius;
+                element.style.padding = originalPadding;
+            }).save();
+        }
+    </script>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
 if (empty($_SESSION['purchas_token'])) {
     $_SESSION['purchas_token'] = bin2hex(random_bytes(32));
 }

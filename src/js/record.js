@@ -912,6 +912,10 @@ document.addEventListener("DOMContentLoaded", function () {
           '<svg class="alert-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' +
           '<span>' + escapeHtml(result.message) + '</span>' +
           '</div>';
+        var invoiceId = (result.data && result.data.id) ? result.data.id : id;
+        if (invoiceId) {
+          window.open("index.php?action=invoice&id=" + invoiceId, "_blank");
+        }
         setTimeout(function() {
           window.location.href = "index.php";
         }, 1200);

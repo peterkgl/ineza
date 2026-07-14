@@ -16,6 +16,6 @@ if (php_sapi_name() !== 'cli') {
         exit();
     }
 } else {
-    $_SESSION['user_id'] = 1;
+    $_SESSION['user_id'] = 2;
 }
 ?>
