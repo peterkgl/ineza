@@ -151,6 +151,8 @@ if ($id > 0) {
         $purchaseRecord['price_per_kg_usd'] = $purchaseRecord['price_per_kg_usd'] !== null ? (float)$purchaseRecord['price_per_kg_usd'] : null;
         $purchaseRecord['lme_price'] = $purchaseRecord['lme_price'] !== null ? (float)$purchaseRecord['lme_price'] : null;
         $purchaseRecord['tc_charges'] = $purchaseRecord['tc_charges'] !== null ? (float)$purchaseRecord['tc_charges'] : null;
+        $purchaseRecord['fluc'] = $purchaseRecord['fluc'] !== null ? (float)$purchaseRecord['fluc'] : null;
+        $purchaseRecord['lme_paid'] = $purchaseRecord['lme_paid'] !== null ? (float)$purchaseRecord['lme_paid'] : null;
         $purchaseRecord['tax_rra'] = $purchaseRecord['tax_rra'] !== null ? (float)$purchaseRecord['tax_rra'] : null;
         $purchaseRecord['tax_rma'] = $purchaseRecord['tax_rma'] !== null ? (float)$purchaseRecord['tax_rma'] : null;
         $purchaseRecord['tax_inkomane'] = $purchaseRecord['tax_inkomane'] !== null ? (float)$purchaseRecord['tax_inkomane'] : null;
@@ -411,6 +413,17 @@ if ($id > 0) {
             <div class="form-group">
               <label for="tcCharges">TC Charges (USD / Ton)</label>
               <input type="number" id="tcCharges" name="tc_charges" class="form-control" placeholder="e.g. 120.00" step="any">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="fluc">Fluc (USD / Ton or Unit)</label>
+              <input type="number" id="fluc" name="fluc" class="form-control" placeholder="e.g. 0.00" step="any">
+            </div>
+            <div class="form-group">
+              <label for="lmePaid">LME Paid (USD / Ton or Unit)</label>
+              <input type="number" id="lmePaid" name="lme_paid" class="form-control" placeholder="0.00" step="any" readonly>
             </div>
           </div>
 

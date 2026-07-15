@@ -36,15 +36,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 
-function formula_price_per_kg_usd($lme_price, $tc_charges, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin) {
-    if ($is_tin) {
-        if ($lme_price > 0) {
+
+function getSetting($conn, $key, $default = '') {
+    $key = mysqli_real_escape_string($conn, $key);
+    $q = mysqli_query($conn, "SELECT setting_value FROM settings WHERE setting_key = '$key' LIMIT 1");
+    if ($q && mysqli_num_rows($q) > 0) {
+        return mysqli_fetch_assoc($q)['setting_value'];
+    }
+    return $default;
+}
+
+function formula_price_per_kg_usd($conn, $lme_price, $tc_charges, $price_per_ta_unit, $grade_pct, $manual_price_usd, $product_type, $fluc = 0.0) {
+    if ($product_type === 'tin') {
+        $lme_paid = $lme_price - $fluc;
+        if ($lme_paid > 0) {
             $grade_fraction = $grade_pct / 100.0;
-            return (($lme_price * $grade_fraction) - $tc_charges) / 1000.0;
+            return (($lme_paid * $grade_fraction) - $tc_charges) / 1000.0;
         } else {
             return $manual_price_usd;
         }
-    } else {
+    } elseif ($product_type === 'wolframite') {
+        $lme_paid = $lme_price - $fluc;
+        if ($lme_paid > 0) {
+            $grade_fraction = $grade_pct / 100.0;
+            return (($lme_paid * $grade_fraction) - $tc_charges) / 10.0;
+        } else {
+            return $manual_price_usd;
+        }
+    } else { // tantalum / coltan
         if ($price_per_ta_unit > 0) {
             return $grade_pct * $price_per_ta_unit;
         } else {
@@ -65,36 +84,63 @@ function formula_purchase_value_rwf($quantity_kg, $price_per_kg_rwf) {
     return $quantity_kg * $price_per_kg_rwf;
 }
 
-function formula_tax_rra($lme_price, $grade_pct, $quantity_kg, $purchase_value_usd, $is_tin) {
-    if ($is_tin) {
-        if ($lme_price > 0) {
+function formula_tax_rra($conn, $lme_price, $grade_pct, $quantity_kg, $purchase_value_usd, $product_type, $fluc = 0.0) {
+    $rra_rate = (float)getSetting($conn, 'tax_rate_rra', '3.0') / 100.0;
+    
+    if ($product_type === 'tin') {
+        $lme_paid = $lme_price - $fluc;
+        if ($lme_paid > 0) {
             $grade_fraction = $grade_pct / 100.0;
-            $tax = (($lme_price * $grade_fraction) - 800.0) / 1000.0 * $quantity_kg * 0.03;
+            $tax = (($lme_paid * $grade_fraction) - 800.0) / 1000.0 * $quantity_kg * $rra_rate;
             return max(0.0, $tax);
         } else {
-            return $purchase_value_usd * 0.03;
+            return $purchase_value_usd * $rra_rate;
         }
-    } else {
-        return $purchase_value_usd * 0.03;
+    } elseif ($product_type === 'wolframite') {
+        if ($lme_price > 0) {
+            $grade_fraction = $grade_pct / 100.0;
+            // Wolframite RRA tax uses Full LME (lme_price), not LME Paid
+            return $quantity_kg * $grade_fraction * ($lme_price / 10.0) * $rra_rate;
+        } else {
+            return $purchase_value_usd * $rra_rate;
+        }
+    } else { // tantalum / coltan
+        return $purchase_value_usd * $rra_rate;
     }
 }
 
-
-function formula_tax_rma($quantity_kg, $exchange_rate, $is_tin) {
+function formula_tax_rma($conn, $quantity_kg, $exchange_rate, $product_type) {
     if ($exchange_rate <= 0) return 0.0;
-    $rate_rwf = $is_tin ? 50.0 : 125.0;
+    
+    if ($product_type === 'tin') {
+        $rate_rwf = (float)getSetting($conn, 'tax_rate_rma_tin', '50.0');
+    } elseif ($product_type === 'wolframite') {
+        $rate_rwf = (float)getSetting($conn, 'tax_rate_rma_wolframite', '50.0');
+    } else { // tantalum / coltan
+        $rate_rwf = (float)getSetting($conn, 'tax_rate_rma_coltan', '125.0');
+    }
+    
     return ($quantity_kg * $rate_rwf) / $exchange_rate;
 }
 
-function formula_tax_inkomane($quantity_kg, $exchange_rate, $is_tin) {
+function formula_tax_inkomane($conn, $quantity_kg, $exchange_rate, $product_type) {
     if ($exchange_rate <= 0) return 0.0;
-    $rate_rwf = $is_tin ? 20.0 : 40.0;
+    
+    if ($product_type === 'tin') {
+        $rate_rwf = (float)getSetting($conn, 'tax_rate_inkomane_tin', '20.0');
+    } elseif ($product_type === 'wolframite') {
+        $rate_rwf = (float)getSetting($conn, 'tax_rate_inkomane_wolframite', '20.0');
+    } else { // tantalum / coltan
+        $rate_rwf = (float)getSetting($conn, 'tax_rate_inkomane_coltan', '40.0');
+    }
+    
     return ($quantity_kg * $rate_rwf) / $exchange_rate;
 }
 
 function formula_production_charges($quantity_kg, $production_charges_per_kg) {
     return $quantity_kg * $production_charges_per_kg;
 }
+
 function formula_net_paid_supplier($purchase_value_usd, $tax_rra, $tax_rma, $tax_inkomane, $production_charges) {
     return $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
 }
@@ -102,7 +148,7 @@ function formula_net_paid_supplier($purchase_value_usd, $tax_rra, $tax_rma, $tax
 /**
  * Calculations for Purchase Metrics matching the Excel sheet
  */
-function calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd = 0.0, $is_tin = true) {
+function calculatePurchaseMetrics($conn, $quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd = 0.0, $product_type = 'tin', $fluc = 0.0) {
     $quantity_kg = (float)$quantity_kg;
     $exchange_rate = (float)$exchange_rate;
     $lme_price = (float)$lme_price;
@@ -111,8 +157,9 @@ function calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_
     $price_per_ta_unit = (float)$price_per_ta_unit;
     $grade_pct = (float)$grade_pct;
     $manual_price_usd = (float)$manual_price_usd;
+    $fluc = (float)$fluc;
 
-    $price_usd = formula_price_per_kg_usd($lme_price, $tc_charges, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+    $price_usd = formula_price_per_kg_usd($conn, $lme_price, $tc_charges, $price_per_ta_unit, $grade_pct, $manual_price_usd, $product_type, $fluc);
     if ($manual_price_usd > 0.0) {
         $price_usd = $manual_price_usd;
     }
@@ -120,9 +167,9 @@ function calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_
     $val_usd = formula_purchase_value_usd($price_usd, $quantity_kg);
     $val_rwf = formula_purchase_value_rwf($quantity_kg, $price_rwf);
     
-    $tax_rra = formula_tax_rra($lme_price, $grade_pct, $quantity_kg, $val_usd, $is_tin);
-    $tax_rma = formula_tax_rma($quantity_kg, $exchange_rate, $is_tin);
-    $tax_inkomane = formula_tax_inkomane($quantity_kg, $exchange_rate, $is_tin);
+    $tax_rra = formula_tax_rra($conn, $lme_price, $grade_pct, $quantity_kg, $val_usd, $product_type, $fluc);
+    $tax_rma = formula_tax_rma($conn, $quantity_kg, $exchange_rate, $product_type);
+    $tax_inkomane = formula_tax_inkomane($conn, $quantity_kg, $exchange_rate, $product_type);
     $prod_charges = formula_production_charges($quantity_kg, $production_charges_per_kg);
     
     $net_supplier = formula_net_paid_supplier($val_usd, $tax_rra, $tax_rma, $tax_inkomane, $prod_charges);
@@ -136,7 +183,8 @@ function calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_
         'tax_rma' => $tax_rma,
         'tax_inkomane' => $tax_inkomane,
         'production_charges' => $prod_charges,
-        'net_paid_supplier_usd' => $net_supplier
+        'net_paid_supplier_usd' => $net_supplier,
+        'lme_paid' => $lme_price - $fluc
     ];
 }
 
@@ -458,19 +506,24 @@ switch ($action) {
         $price_per_ta_unit = isset($_GET['price_per_ta_unit']) ? (float)$_GET['price_per_ta_unit'] : 0.0;
         $grade_pct = isset($_GET['grade_pct']) ? (float)$_GET['grade_pct'] : 0.0;
         $manual_price_usd = isset($_GET['price_per_kg_usd']) ? (float)$_GET['price_per_kg_usd'] : 0.0;
+        $fluc = isset($_GET['fluc']) ? (float)$_GET['fluc'] : 0.0;
 
-        $is_tin = true;
+        $product_type = 'tin';
         if ($product_id > 0) {
-            $prodQuery = mysqli_query($conn, "SELECT product_code FROM product WHERE id = $product_id LIMIT 1");
+            $prodQuery = mysqli_query($conn, "SELECT product_code, product_name FROM product WHERE id = $product_id LIMIT 1");
             if ($prodQuery && mysqli_num_rows($prodQuery) > 0) {
                 $prod = mysqli_fetch_assoc($prodQuery);
-                if (stripos($prod['product_code'], 'coltan') !== false || stripos($prod['product_code'], 'ta') !== false) {
-                    $is_tin = false;
+                $p_code = strtoupper($prod['product_code']);
+                $p_name = strtolower($prod['product_name']);
+                if (strpos($p_name, 'coltan') !== false || strpos($p_name, 'tantalum') !== false || strpos($p_code, 'TA') !== false) {
+                    $product_type = 'tantalum';
+                } elseif (strpos($p_name, 'wolframite') !== false || strpos($p_name, 'tungsten') !== false || strpos($p_code, 'W') !== false) {
+                    $product_type = 'wolframite';
                 }
             }
         }
 
-        $results = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+        $results = calculatePurchaseMetrics($conn, $quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $product_type, $fluc);
         sendResponse(true, 'Calculated values retrieved.', $results);
         break;
 
@@ -501,6 +554,8 @@ switch ($action) {
         $price_per_ta_unit = isset($_POST['price_per_ta_unit']) && $_POST['price_per_ta_unit'] !== '' ? (float)$_POST['price_per_ta_unit'] : null;
         $lme_price = isset($_POST['lme_price']) && $_POST['lme_price'] !== '' ? (float)$_POST['lme_price'] : null;
         $tc_charges = isset($_POST['tc_charges']) && $_POST['tc_charges'] !== '' ? (float)$_POST['tc_charges'] : null;
+        $fluc = isset($_POST['fluc']) && $_POST['fluc'] !== '' ? (float)$_POST['fluc'] : null;
+        $lme_paid = isset($_POST['lme_paid']) && $_POST['lme_paid'] !== '' ? (float)$_POST['lme_paid'] : null;
         
         $status = isset($_POST['status']) ? trim($_POST['status']) : 'pending';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : null;
@@ -530,14 +585,18 @@ switch ($action) {
             sendResponse(false, 'A purchase with this reference number already exists.');
         }
 
-        // Determine if product is Tin (SN)
-        $is_tin = true;
+        // Determine product type
+        $product_type = 'tin';
         if ($product_id > 0) {
-            $prodQuery = mysqli_query($conn, "SELECT product_code FROM product WHERE id = $product_id LIMIT 1");
+            $prodQuery = mysqli_query($conn, "SELECT product_code, product_name FROM product WHERE id = $product_id LIMIT 1");
             if ($prodQuery && mysqli_num_rows($prodQuery) > 0) {
                 $prod = mysqli_fetch_assoc($prodQuery);
-                if (stripos($prod['product_code'], 'coltan') !== false || stripos($prod['product_code'], 'ta') !== false) {
-                    $is_tin = false;
+                $p_code = strtoupper($prod['product_code']);
+                $p_name = strtolower($prod['product_name']);
+                if (strpos($p_name, 'coltan') !== false || strpos($p_name, 'tantalum') !== false || strpos($p_code, 'TA') !== false) {
+                    $product_type = 'tantalum';
+                } elseif (strpos($p_name, 'wolframite') !== false || strpos($p_name, 'tungsten') !== false || strpos($p_code, 'W') !== false) {
+                    $product_type = 'wolframite';
                 }
             }
         }
@@ -563,7 +622,10 @@ switch ($action) {
             $production_charges = $quantity_kg * $production_charges_per_kg;
             $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
         } else {
-            $metrics = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+            if ($lme_price !== null && $fluc !== null) {
+                $lme_paid = $lme_price - $fluc;
+            }
+            $metrics = calculatePurchaseMetrics($conn, $quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $product_type, $fluc);
             $price_per_kg_usd = $metrics['price_per_kg_usd'];
             $price_per_kg_rwf = $metrics['price_per_kg_rwf'];
             $purchase_value_usd = $metrics['purchase_value_usd'];
@@ -573,6 +635,7 @@ switch ($action) {
             $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : $metrics['tax_inkomane'];
             $production_charges = $metrics['production_charges'];
             $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
+            $lme_paid = $metrics['lme_paid'];
         }
 
         mysqli_begin_transaction($conn);
@@ -616,6 +679,8 @@ switch ($action) {
             $p_kg_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 'NULL';
             $lme = $lme_price !== null ? $lme_price : 'NULL';
             $tc = $tc_charges !== null ? $tc_charges : 'NULL';
+            $flucVal = $fluc !== null ? $fluc : 'NULL';
+            $lmePaidVal = $lme_paid !== null ? $lme_paid : 'NULL';
             $t_rra = $tax_rra !== null ? $tax_rra : 'NULL';
             $t_rma = $tax_rma !== null ? $tax_rma : 'NULL';
             $t_inko = $tax_inkomane !== null ? $tax_inkomane : 'NULL';
@@ -633,14 +698,14 @@ switch ($action) {
                 lot_id, product_id, supplier_id, negociant, warehouse_id, quantity_kg, uom_id,
                 price_per_kg_rwf, purchase_value_rwf, exchange_rate, purchase_value_usd,
                 net_paid_supplier_usd, charges_per_kg, production_charges_per_kg, price_per_ta_unit, price_per_kg_usd, pricing_method,
-                lme_price, tc_charges, tax_rra, tax_rma, tax_inkomane, production_charges,
+                lme_price, tc_charges, fluc, lme_paid, tax_rra, tax_rma, tax_inkomane, production_charges,
                 status, notes, created_by, purchase_currency_id, purchase_amount_in_currency, converted_amount
             ) VALUES (
                 '$pNoEsc', $delNoEsc, $invEsc, $accEsc, $delDateEsc, '$purchase_date',
                 $lot_id, $product_id, $supplier_id, $negEsc, $warehouse_id, $quantity_kg, $uom_id,
                 $p_kg_rwf, $p_val_rwf, $ex_rate, $p_val_usd,
                 $n_paid, $chg_kg, $prod_chg_kg, $p_ta, $p_kg_usd, '$methodEsc',
-                $lme, $tc, $t_rra, $t_rma, $t_inko, $prod_chg,
+                $lme, $tc, $flucVal, $lmePaidVal, $t_rra, $t_rma, $t_inko, $prod_chg,
                 '$statusEsc', $notesEsc, $userId, $p_curr_id, $p_amt_curr, $p_conv_amt
             )";
 
@@ -1111,6 +1176,8 @@ switch ($action) {
         $price_per_ta_unit = isset($_POST['price_per_ta_unit']) && $_POST['price_per_ta_unit'] !== '' ? (float)$_POST['price_per_ta_unit'] : null;
         $lme_price = isset($_POST['lme_price']) && $_POST['lme_price'] !== '' ? (float)$_POST['lme_price'] : null;
         $tc_charges = isset($_POST['tc_charges']) && $_POST['tc_charges'] !== '' ? (float)$_POST['tc_charges'] : null;
+        $fluc = isset($_POST['fluc']) && $_POST['fluc'] !== '' ? (float)$_POST['fluc'] : null;
+        $lme_paid = isset($_POST['lme_paid']) && $_POST['lme_paid'] !== '' ? (float)$_POST['lme_paid'] : null;
         
         $status = isset($_POST['status']) ? trim($_POST['status']) : 'pending';
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : null;
@@ -1133,14 +1200,18 @@ switch ($action) {
             sendResponse(false, 'A purchase with this reference number already exists.');
         }
 
-        // Determine if product is Tin (SN)
-        $is_tin = true;
+        // Determine product type
+        $product_type = 'tin';
         if ($product_id > 0) {
-            $prodQuery = mysqli_query($conn, "SELECT product_code FROM product WHERE id = $product_id LIMIT 1");
+            $prodQuery = mysqli_query($conn, "SELECT product_code, product_name FROM product WHERE id = $product_id LIMIT 1");
             if ($prodQuery && mysqli_num_rows($prodQuery) > 0) {
                 $prod = mysqli_fetch_assoc($prodQuery);
-                if (stripos($prod['product_code'], 'coltan') !== false || stripos($prod['product_code'], 'ta') !== false) {
-                    $is_tin = false;
+                $p_code = strtoupper($prod['product_code']);
+                $p_name = strtolower($prod['product_name']);
+                if (strpos($p_name, 'coltan') !== false || strpos($p_name, 'tantalum') !== false || strpos($p_code, 'TA') !== false) {
+                    $product_type = 'tantalum';
+                } elseif (strpos($p_name, 'wolframite') !== false || strpos($p_name, 'tungsten') !== false || strpos($p_code, 'W') !== false) {
+                    $product_type = 'wolframite';
                 }
             }
         }
@@ -1166,7 +1237,10 @@ switch ($action) {
             $production_charges = $quantity_kg * $production_charges_per_kg;
             $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
         } else {
-            $metrics = calculatePurchaseMetrics($quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $is_tin);
+            if ($lme_price !== null && $fluc !== null) {
+                $lme_paid = $lme_price - $fluc;
+            }
+            $metrics = calculatePurchaseMetrics($conn, $quantity_kg, $exchange_rate, $lme_price, $tc_charges, $production_charges_per_kg, $price_per_ta_unit, $grade_pct, $manual_price_usd, $product_type, $fluc);
             $price_per_kg_usd = $metrics['price_per_kg_usd'];
             $price_per_kg_rwf = $metrics['price_per_kg_rwf'];
             $purchase_value_usd = $metrics['purchase_value_usd'];
@@ -1176,6 +1250,7 @@ switch ($action) {
             $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : $metrics['tax_inkomane'];
             $production_charges = $metrics['production_charges'];
             $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
+            $lme_paid = $metrics['lme_paid'];
         }
 
         mysqli_begin_transaction($conn);
@@ -1219,6 +1294,8 @@ switch ($action) {
             $p_kg_usd = $price_per_kg_usd !== null ? $price_per_kg_usd : 'NULL';
             $lme = $lme_price !== null ? $lme_price : 'NULL';
             $tc = $tc_charges !== null ? $tc_charges : 'NULL';
+            $flucVal = $fluc !== null ? $fluc : 'NULL';
+            $lmePaidVal = $lme_paid !== null ? $lme_paid : 'NULL';
             $t_rra = $tax_rra !== null ? $tax_rra : 'NULL';
             $t_rma = $tax_rma !== null ? $tax_rma : 'NULL';
             $t_inko = $tax_inkomane !== null ? $tax_inkomane : 'NULL';
@@ -1274,6 +1351,8 @@ switch ($action) {
                 pricing_method = '$methodEsc',
                 lme_price = $lme,
                 tc_charges = $tc,
+                fluc = $flucVal,
+                lme_paid = $lmePaidVal,
                 tax_rra = $t_rra,
                 tax_rma = $t_rma,
                 tax_inkomane = $t_inko,
