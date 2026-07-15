@@ -455,13 +455,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
                     </tr>
                     <tr>
                         <td class="label-cell">LME Discount</td>
-                        <td>LME Discount (USD)</td>
-                        <td class="num-cell">$0.00</td>
+                        <td>LME Discount (USD) (Fluc)</td>
+                        <td class="num-cell">$<?php echo number_format($p['fluc'] !== null ? $p['fluc'] : 0.0, 2); ?></td>
                     </tr>
                     <tr>
                         <td class="label-cell">LME Net</td>
-                        <td>Base LME - Discount (USD)</td>
-                        <td class="num-cell"><strong>$<?php echo number_format($p['lme_price'] !== null ? $p['lme_price'] : 0.0, 2); ?></strong></td>
+                        <td>Base LME - Discount (USD) (LME Paid)</td>
+                        <td class="num-cell"><strong>$<?php echo number_format($p['lme_paid'] !== null ? $p['lme_paid'] : 0.0, 2); ?></strong></td>
                     </tr>
                     <tr>
                         <td class="label-cell">TC</td>
@@ -625,6 +625,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
                 <div class="voucher-meta-right">
                     <strong>Exchange rate:</strong> <?php echo number_format($exchangeRate, 2); ?> RWF<br>
                     <strong>RMB Price/MTU:</strong> <?php echo number_format($p['lme_price'] !== null ? $p['lme_price'] : 0.0, 2); ?><br>
+                    <strong>Fluc:</strong> <?php echo number_format($p['fluc'] !== null ? $p['fluc'] : 0.0, 2); ?><br>
+                    <strong>LME Paid:</strong> <?php echo number_format($p['lme_paid'] !== null ? $p['lme_paid'] : 0.0, 2); ?><br>
                     <strong>Date:</strong> <?php echo htmlspecialchars($p['purchase_date']); ?>
                 </div>
             </div>
@@ -904,6 +906,8 @@ if ($result) {
         $row['price_per_kg_usd'] = $row['price_per_kg_usd'] !== null ? (float)$row['price_per_kg_usd'] : null;
         $row['lme_price'] = $row['lme_price'] !== null ? (float)$row['lme_price'] : null;
         $row['tc_charges'] = $row['tc_charges'] !== null ? (float)$row['tc_charges'] : null;
+        $row['fluc'] = $row['fluc'] !== null ? (float)$row['fluc'] : null;
+        $row['lme_paid'] = $row['lme_paid'] !== null ? (float)$row['lme_paid'] : null;
         $row['tax_rra'] = $row['tax_rra'] !== null ? (float)$row['tax_rra'] : null;
         $row['tax_rma'] = $row['tax_rma'] !== null ? (float)$row['tax_rma'] : null;
         $row['tax_inkomane'] = $row['tax_inkomane'] !== null ? (float)$row['tax_inkomane'] : null;

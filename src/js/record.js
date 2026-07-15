@@ -37,6 +37,8 @@ document.addEventListener("DOMContentLoaded", function () {
   var prodCharges = document.getElementById("productionCharges");
   var lmePriceInput = document.getElementById("lmePrice");
   var tcChargesInput = document.getElementById("tcCharges");
+  var flucInput = document.getElementById("fluc");
+  var lmePaidInput = document.getElementById("lmePaid");
   var pricingMethodRadios = document.getElementsByName("pricing_method");
 
   // New Custom Currency & Exchange Rate Reference DOM elements
@@ -68,6 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (purchaseAmountInCurrencyInput) purchaseAmountInCurrencyInput.removeAttribute("readonly");
       lmePriceInput.setAttribute("disabled", "true");
       tcChargesInput.setAttribute("disabled", "true");
+      if (flucInput) flucInput.setAttribute("disabled", "true");
     } else {
       priceKgUsd.setAttribute("readonly", "true");
       priceKgRwf.setAttribute("readonly", "true");
@@ -75,6 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (purchaseAmountInCurrencyInput) purchaseAmountInCurrencyInput.removeAttribute("readonly");
       lmePriceInput.removeAttribute("disabled");
       tcChargesInput.removeAttribute("disabled");
+      if (flucInput) flucInput.removeAttribute("disabled");
     }
   }
 
@@ -570,6 +574,11 @@ document.addEventListener("DOMContentLoaded", function () {
     var productId = productSelect ? productSelect.value : "";
     var lme = parseFloat(lmePriceInput.value) || 0.0;
     var tc = parseFloat(tcChargesInput.value) || 0.0;
+    var fluc = flucInput ? parseFloat(flucInput.value) || 0.0 : 0.0;
+    var lmePaid = lme - fluc;
+    if (lmePaidInput) {
+      lmePaidInput.value = lme > 0 ? parseFloat(lmePaid.toFixed(4)) : "";
+    }
     
     var prodChargesPerKgInput = document.getElementById("productionChargesPerKg");
     var prodChargesRate = prodChargesPerKgInput ? parseFloat(prodChargesPerKgInput.value) || 0.0 : 0.0;
@@ -659,7 +668,8 @@ document.addEventListener("DOMContentLoaded", function () {
         "&production_charges_per_kg=" + encodeURIComponent(prodChargesRate) +
         "&price_per_ta_unit=" + encodeURIComponent(taUnit) +
         "&grade_pct=" + encodeURIComponent(gradePct) +
-        "&price_per_kg_usd=" + encodeURIComponent(manualPriceUsd);
+        "&price_per_kg_usd=" + encodeURIComponent(manualPriceUsd) +
+        "&fluc=" + encodeURIComponent(fluc);
 
       fetch(url)
         .then(function(res) { return res.json(); })
@@ -736,7 +746,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var prodChargesPerKgInput = document.getElementById("productionChargesPerKg");
   var pricePerTaUnitInput = document.getElementById("pricePerTaUnit");
 
-  [qtyInput, purchaseCurrencyValueInput, exchangeRateValueInput, lmePriceInput, tcChargesInput, prodChargesPerKgInput, pricePerTaUnitInput].forEach(function(input) {
+  [qtyInput, purchaseCurrencyValueInput, exchangeRateValueInput, lmePriceInput, tcChargesInput, flucInput, prodChargesPerKgInput, pricePerTaUnitInput].forEach(function(input) {
     if (input) {
       input.addEventListener("input", calculateTotals);
     }
@@ -1049,6 +1059,8 @@ document.addEventListener("DOMContentLoaded", function () {
       prodCharges.value = p.production_charges || "";
       lmePriceInput.value = p.lme_price || "";
       tcChargesInput.value = p.tc_charges || "";
+      if (flucInput) flucInput.value = p.fluc || "";
+      if (lmePaidInput) lmePaidInput.value = p.lme_paid || "";
       document.getElementById("pricePerTaUnit").value = p.price_per_ta_unit || "";
       
       if (purchaseCurrencySelect) {
