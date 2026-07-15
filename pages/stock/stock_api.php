@@ -172,9 +172,9 @@ switch ($action) {
                 SELECT
                     p.inventory_account_id AS inventory_account_code,
                     p.cogs_account_id AS cogs_account_code,
-                    inv.id AS inventory_account_id,
+                    inv.account_code AS inventory_account_id,
                     inv.account_type_id AS inventory_parent_account_id,
-                    cog.id AS cogs_account_id,
+                    cog.account_code AS cogs_account_id,
                     cog.account_type_id AS cogs_parent_account_id
                 FROM product p
                 LEFT JOIN accounts inv ON inv.account_code = p.inventory_account_id
@@ -229,7 +229,7 @@ switch ($action) {
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . mysqli_error($conn));
             }
-            $status = 'AUTO POSTED';
+            $status = 'POSTED';
             mysqli_stmt_bind_param($stmt, "ssssi", $journalNo, $today, $journalDescription, $status, $userId);
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception(mysqli_error($conn));

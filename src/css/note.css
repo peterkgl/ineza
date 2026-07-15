@@ -103,6 +103,15 @@
   font-weight: 400;
 }
 
+.note-account-link {
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.note-account-link:hover {
+  text-decoration: underline;
+}
+
 /* Note Total/Summary Row */
 .note-table tr.total-row td {
   font-weight: 600;

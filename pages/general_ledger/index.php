@@ -11,7 +11,7 @@ if (!hasPermission($conn, $userId, 'view_general_ledger')) {
     exit();
 }
 
-$startDate = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-01-01');
+$startDate = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
 $endDate = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
 
 $startDateEsc = mysqli_real_escape_string($conn, $startDate);
@@ -22,7 +22,7 @@ $accountsQuery = "
     SELECT a.id, a.account_code, a.account_name, t.name as type_name, t.code as type_code, t.parent_id as parent_type_id
     FROM accounts a
     JOIN account_types t ON a.account_type_id = t.id
-    ORDER BY a.account_code ASC";
+    ORDER BY a.account_type_id ASC";
 $accountsRes = mysqli_query($conn, $accountsQuery);
 $ledgerData = [];
 
@@ -38,14 +38,16 @@ if ($accountsRes) {
         
         // Debit normal accounts: Assets (-1), Cost of Sales (-5), Expenses (-6)
         // Credit normal accounts: Liabilities (-2), Equity (-3), Revenue (-4)
-        $isDebitNormal = in_array($parentType, [-1, -5, -6]) || (int)$row['type_code'] < 2000 || (int)$row['type_code'] >= 5000;
+        $isDebitNormal = in_array($parentType, [-1, -5, -6], true);
 
         // Query Opening Balance (before $startDate)
         $openQuery = "
             SELECT SUM(jel.debit) as debits, SUM(jel.credit) as credits 
             FROM journal_entry_lines jel
             JOIN journal_entries je ON jel.journal_entry_id = je.id
-            WHERE jel.account_id = $accId AND je.statuss = 'POSTED' AND je.entry_date < '$startDateEsc'";
+            JOIN accounts a2 ON (a2.id = jel.account_id OR a2.account_code = CAST(jel.account_id AS CHAR))
+                          AND a2.account_type_id = jel.parent_account_id
+            WHERE a2.id = $accId AND je.entry_date < '$startDateEsc'";
         $openRes = mysqli_query($conn, $openQuery);
         $openRow = mysqli_fetch_assoc($openRes);
         $openDebits = (float)($openRow['debits'] ?? 0.0);
@@ -62,7 +64,9 @@ if ($accountsRes) {
             SELECT SUM(jel.debit) as debits, SUM(jel.credit) as credits 
             FROM journal_entry_lines jel
             JOIN journal_entries je ON jel.journal_entry_id = je.id
-            WHERE jel.account_id = $accId AND je.statuss = 'POSTED' AND je.entry_date BETWEEN '$startDateEsc' AND '$endDateEsc'";
+            JOIN accounts a2 ON (a2.id = jel.account_id OR a2.account_code = CAST(jel.account_id AS CHAR))
+                          AND a2.account_type_id = jel.parent_account_id
+            WHERE a2.id = $accId AND je.entry_date BETWEEN '$startDateEsc' AND '$endDateEsc'";
         $changeRes = mysqli_query($conn, $changeQuery);
         $changeRow = mysqli_fetch_assoc($changeRes);
         $debitChange = (float)($changeRow['debits'] ?? 0.0);

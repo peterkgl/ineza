@@ -198,16 +198,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$insertJournalLine) {
                     throw new Exception('Prepare failed: ' . mysqli_error($conn));
                 }
-
-                mysqli_stmt_bind_param($insertJournalLine, 'iiiddiddds', $journalEntryId, $cashParentAccountId, $cashAccountCode, $amountCurrency, $zeroAmount, $currencyId, $exchangeRate, $amountCurrency, $amountBase, $journalDescription);
+                mysqli_stmt_bind_param($insertJournalLine, 'iiiddiddds', $journalEntryId, $supplierParentAccountId, $supplierAccountCode,$amountCurrency, $zeroAmount,  $currencyId, $exchangeRate, $amountCurrency, $amountBase, $journalDescription);
                 if (!mysqli_stmt_execute($insertJournalLine)) {
                     throw new Exception(mysqli_error($conn));
                 }
 
-                mysqli_stmt_bind_param($insertJournalLine, 'iiiddiddds', $journalEntryId, $supplierParentAccountId, $supplierAccountCode, $zeroAmount, $amountCurrency, $currencyId, $exchangeRate, $amountCurrency, $amountBase, $journalDescription);
+                mysqli_stmt_bind_param($insertJournalLine, 'iiiddiddds', $journalEntryId, $cashParentAccountId, $cashAccountCode,$zeroAmount, $amountCurrency,  $currencyId, $exchangeRate, $amountCurrency, $amountBase, $journalDescription);
                 if (!mysqli_stmt_execute($insertJournalLine)) {
                     throw new Exception(mysqli_error($conn));
                 }
+
                 mysqli_stmt_close($insertJournalLine);
 
                 $insertPayment = mysqli_prepare($conn, "

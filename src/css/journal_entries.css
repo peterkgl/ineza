@@ -65,11 +65,13 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
 }
 
 .journal-table th,
 .journal-table td {
-  padding: 10px 14px;
+  padding: 12px 14px;
   text-align: left;
   border-bottom: 1px solid var(--table-border);
 }
@@ -87,6 +89,40 @@
 
 .journal-table tr:hover td {
   background: var(--table-hover);
+}
+
+.journal-group-header {
+  background: rgba(249, 247, 235, 0.9);
+}
+
+.journal-group-header td {
+  border-top: 2px solid var(--border);
+  padding: 14px 14px;
+  font-size: 13px;
+}
+
+.journal-group-header td:first-child {
+  font-weight: 700;
+}
+
+.journal-line-row {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.journal-line-row td {
+  color: var(--text2);
+}
+
+.journal-line-row td:first-child {
+  width: 110px;
+}
+
+.journal-line-row td:nth-child(2) {
+  padding-left: 30px;
+}
+
+.journal-line-row:hover td {
+  background: rgba(241, 245, 249, 0.95);
 }
 
 .journal-table td.num-val {
