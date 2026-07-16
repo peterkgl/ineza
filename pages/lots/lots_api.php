@@ -151,7 +151,8 @@ switch ($action) {
                             }
 
                             // Insert CARRYOVER_IN movement record
-                            $notes = "Stock carried over from closed lot '" . mysqli_real_escape_string($conn, $oldLotCode) . "' to newly created lot '" . mysqli_real_escape_string($conn, $lots_code) . "'. Quantity: " . $carried_qty . " kg. Added to Closing quantity.";
+                            $notes = "Stock carried over from closed lot '" . $oldLotCode . "' to newly created lot '" . $lots_code . "'. Quantity: " . $carried_qty . " kg. Added to Closing quantity.";
+                            $notesEsc = mysqli_real_escape_string($conn, $notes);
                             $insertMvt = "INSERT INTO stock_movement (
                                               movement_type, warehouse_id, product_id, lot_id, uom_id, 
                                               qty_kg, unit_cost_usd, unit_cost_rwf, total_value_usd, total_value_rwf, 
@@ -160,7 +161,7 @@ switch ($action) {
                                           ) VALUES (
                                               'CARRYOVER_IN', $warehouse_id, $prod_id, $newId, $uom_id, 
                                               $carried_qty, $avg_cost_usd, $avg_cost_rwf, $tot_val_usd, $tot_val_rwf, 
-                                              'lots', $newId, '$opening_date', '$notes', $userId, 
+                                              'lots', $newId, '$opening_date', '$notesEsc', $userId, 
                                               0.0, $carried_qty
                                           )";
                             if (!mysqli_query($conn, $insertMvt)) {
@@ -360,7 +361,8 @@ switch ($action) {
                             }
 
                             // Insert CARRYOVER_IN movement record
-                            $notes = "Stock carried over from closed lot '" . mysqli_real_escape_string($conn, $oldValues['lots_code']) . "' to open lot '" . mysqli_real_escape_string($conn, $nextLotCode) . "'. Quantity: " . $carried_qty . " kg. Added to Closing quantity.";
+                            $notes = "Stock carried over from closed lot '" . $oldValues['lots_code'] . "' to open lot '" . $nextLotCode . "'. Quantity: " . $carried_qty . " kg. Added to Closing quantity.";
+                            $notesEsc = mysqli_real_escape_string($conn, $notes);
                             $insertMvt = "INSERT INTO stock_movement (
                                               movement_type, warehouse_id, product_id, lot_id, uom_id, 
                                               qty_kg, unit_cost_usd, unit_cost_rwf, total_value_usd, total_value_rwf, 
@@ -369,7 +371,7 @@ switch ($action) {
                                           ) VALUES (
                                               'CARRYOVER_IN', $warehouse_id, $prod_id, $nextLotId, $uom_id, 
                                               $carried_qty, $avg_cost_usd, $avg_cost_rwf, $tot_val_usd, $tot_val_rwf, 
-                                              'lots', $nextLotId, '$today', '$notes', $userId, 
+                                              'lots', $nextLotId, '$today', '$notesEsc', $userId, 
                                               $current_opening, $new_closing
                                           )";
                             if (!mysqli_query($conn, $insertMvt)) {
