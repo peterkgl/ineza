@@ -22,9 +22,41 @@ function getAvailableYears($conn) {
         }
     }
     if (empty($availableYears)) {
-        $availableYears = [2022, 2021, 2020];
+        $availableYears = [2026, 2025, 2024];
     }
     return $availableYears;
+}
+
+// Resolve a readable note title from account type options
+function getNoteTitleFromOptions($conn, $options, $fallbackTitle = '') {
+    $typeId = null;
+    $typeCode = null;
+
+    if (isset($options['parent_type_id'])) {
+        $typeId = (int)$options['parent_type_id'];
+    } elseif (isset($options['type_ids']) && count($options['type_ids']) === 1) {
+        $typeId = (int)$options['type_ids'][0];
+    } elseif (isset($options['type_codes']) && count($options['type_codes']) === 1) {
+        $typeCode = mysqli_real_escape_string($conn, $options['type_codes'][0]);
+    }
+
+    if ($typeId !== null) {
+        $titleQuery = "SELECT name FROM account_types WHERE id = $typeId LIMIT 1";
+        $titleRes = mysqli_query($conn, $titleQuery);
+        if ($titleRes && ($titleRow = mysqli_fetch_assoc($titleRes))) {
+            return $titleRow['name'];
+        }
+    }
+
+    if ($typeCode !== null) {
+        $titleQuery = "SELECT name FROM account_types WHERE code = '$typeCode' LIMIT 1";
+        $titleRes = mysqli_query($conn, $titleQuery);
+        if ($titleRes && ($titleRow = mysqli_fetch_assoc($titleRes))) {
+            return $titleRow['name'];
+        }
+    }
+
+    return $fallbackTitle;
 }
 
 // Dynamic helper to calculate balance of a list of accounts or account types
@@ -90,7 +122,8 @@ function getNoteAccountBalances($conn, $options, $year, $isBS = true, $isDebitNo
                COALESCE(SUM(CASE WHEN $dateCond THEN jel.credit ELSE 0.00 END), 0.00) as total_credit
         FROM accounts a
         JOIN account_types t ON a.account_type_id = t.id
-        LEFT JOIN journal_entry_lines jel ON a.id = jel.account_id
+        LEFT JOIN journal_entry_lines jel ON a.account_code = CAST(jel.account_id AS CHAR)
+                                       AND a.account_type_id = jel.parent_account_id
         LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.statuss = 'POSTED'
         WHERE a.is_active = 1 $whereSql
         GROUP BY a.id
@@ -152,6 +185,16 @@ function getMergedNoteData($conn, $options, $years, $isBS = true, $isDebitNormal
     return $filtered;
 }
 
+// Function to attach drill-down links for account-level notes
+function attachAccountLinks($accounts, $year) {
+    foreach ($accounts as &$acc) {
+        $code = urlencode($acc['code']);
+        $acc['account_link'] = "../general_journal/index.php?start_date={$year}-01-01&end_date={$year}-12-31&account_code={$code}";
+        $acc['name'] = $acc['code'] . ' - ' . $acc['name'];
+    }
+    return $accounts;
+}
+
 // Function to render a note card table with dynamic years
 function renderNoteCard($noteNum, $noteTitle, $accounts, $years) {
     $totals = [];
@@ -173,6 +216,26 @@ function renderNoteCard($noteNum, $noteTitle, $accounts, $years) {
             return '(' . number_format(abs($val), 0) . ')';
         }
         return number_format($val, 0);
+    };
+
+    $renderAccountRow = function($acc, $years) use ($formatVal) {
+        $accountLink = htmlspecialchars($acc['account_link'] ?? '');
+        $accountName = htmlspecialchars($acc['name']);
+        $isLink = !empty($accountLink);
+        ?>
+        <tr>
+          <td class="row-label">
+            <?php if ($isLink): ?>
+              <a class="note-account-link" href="<?php echo $accountLink; ?>"><?php echo $accountName; ?></a>
+            <?php else: ?>
+              <?php echo $accountName; ?>
+            <?php endif; ?>
+          </td>
+          <?php foreach ($years as $yr): ?>
+            <td class="num-val"><?php echo $formatVal($acc['balances'][$yr] ?? 0.0); ?></td>
+          <?php endforeach; ?>
+        </tr>
+        <?php
     };
     ?>
     <div class="note-card">
@@ -205,12 +268,7 @@ function renderNoteCard($noteNum, $noteTitle, $accounts, $years) {
               </tr>
             <?php else: ?>
               <?php foreach ($accounts as $acc): ?>
-                <tr>
-                  <td class="row-label"><?php echo htmlspecialchars($acc['name']); ?></td>
-                  <?php foreach ($years as $yr): ?>
-                    <td class="num-val"><?php echo $formatVal($acc['balances'][$yr] ?? 0.0); ?></td>
-                  <?php endforeach; ?>
-                </tr>
+                <?php $renderAccountRow($acc, $years); ?>
               <?php endforeach; ?>
             <?php endif; ?>
             <tr class="total-row">
@@ -240,25 +298,32 @@ $years = $availableYears;
 
 // Fetch and merge note data from database (no hardcoded fallbacks!)
 // Note 1: Revenue
-$note1_data = getMergedNoteData($conn, ['parent_type_id' => -4], $years, false, false);
+$note1_title = getNoteTitleFromOptions($conn, ['parent_type_id' => -4], 'Revenue');
+$note1_data = attachAccountLinks(getMergedNoteData($conn, ['parent_type_id' => -4], $years, false, false), $selectedYear);
 
 // Note 2: Cost of sales
-$note2_data = getMergedNoteData($conn, ['parent_type_id' => -5], $years, false, true);
+$note2_title = getNoteTitleFromOptions($conn, ['parent_type_id' => -5], 'Cost of sales');
+$note2_data = attachAccountLinks(getMergedNoteData($conn, ['parent_type_id' => -5], $years, false, true), $selectedYear);
 
 // Note 3: Administrative expenses
-$note3_data = getMergedNoteData($conn, ['parent_type_id' => -6, 'exclude_type_codes' => ['6013']], $years, false, true);
+$note3_title = getNoteTitleFromOptions($conn, ['parent_type_id' => -6], 'Administrative expenses');
+$note3_data = attachAccountLinks(getMergedNoteData($conn, ['parent_type_id' => -6, 'exclude_type_codes' => ['6013']], $years, false, true), $selectedYear);
 
 // Note 4: Finance costs
-$note4_data = getMergedNoteData($conn, ['type_codes' => ['6013']], $years, false, true);
+$note4_title = getNoteTitleFromOptions($conn, ['type_codes' => ['6013']], 'Finance costs');
+$note4_data = attachAccountLinks(getMergedNoteData($conn, ['type_codes' => ['6013']], $years, false, true), $selectedYear);
 
 // Note 5: Cash and cash equivalents
-$note5_data = getMergedNoteData($conn, ['type_ids' => [1], 'codes' => ['1010']], $years, true, true);
+$note5_title = getNoteTitleFromOptions($conn, ['type_ids' => [1]], 'Cash and cash equivalents');
+$note5_data = attachAccountLinks(getMergedNoteData($conn, ['type_ids' => [1], 'codes' => ['1010']], $years, true, true), $selectedYear);
 
 // Note 6: Accounts receivables
-$note6_data = getMergedNoteData($conn, ['codes' => ['1100'], 'type_ids' => [2, 6]], $years, true, true);
+$note6_title = getNoteTitleFromOptions($conn, ['type_ids' => [2]], 'Accounts receivables');
+$note6_data = attachAccountLinks(getMergedNoteData($conn, ['codes' => ['1100'], 'type_ids' => [2, 6]], $years, true, true), $selectedYear);
 
 // Note 7: Inventory
-$note7_data = getMergedNoteData($conn, ['codes' => ['1300', '1024', '1034', '1044'], 'type_ids' => [4]], $years, true, true);
+$note7_title = getNoteTitleFromOptions($conn, ['type_ids' => [4]], 'Inventory');
+$note7_data = attachAccountLinks(getMergedNoteData($conn, ['codes' => ['1300', '1024', '1034', '1044'], 'type_ids' => [4]], $years, true, true), $selectedYear);
 
 // Note 9: Accounts payables / Other current liabilities
 $note9_pay_balances = [];
@@ -282,22 +347,26 @@ if ($hasPay) {
     $note9_data[] = [
         'code' => '2001',
         'name' => 'Accounts payables',
-        'balances' => $note9_pay_balances
+        'balances' => $note9_pay_balances,
+        'account_link' => "../general_journal/index.php?start_date={$selectedYear}-01-01&end_date={$selectedYear}-12-31&account_code=2001"
     ];
 }
 if ($hasOth) {
     $note9_data[] = [
         'code' => '2100',
         'name' => 'Other current liabilities',
-        'balances' => $note9_oth_balances
+        'balances' => $note9_oth_balances,
+        'account_link' => "../general_journal/index.php?start_date={$selectedYear}-01-01&end_date={$selectedYear}-12-31&account_code=2100"
     ];
 }
 
 // Note 10: Long term loans
-$note10_data = getMergedNoteData($conn, ['codes' => ['2200'], 'type_ids' => [22]], $years, true, false);
+$note10_title = getNoteTitleFromOptions($conn, ['type_ids' => [22]], 'Long term loans and other LT liabilities');
+$note10_data = attachAccountLinks(getMergedNoteData($conn, ['codes' => ['2200'], 'type_ids' => [22]], $years, true, false), $selectedYear);
 
 // Note 11: Current Tax Payable
-$note11_data = getMergedNoteData($conn, ['codes' => ['2400'], 'type_ids' => [18]], $years, true, false);
+$note11_title = getNoteTitleFromOptions($conn, ['type_ids' => [18]], 'Current Tax Payable');
+$note11_data = attachAccountLinks(getMergedNoteData($conn, ['codes' => ['2400'], 'type_ids' => [18]], $years, true, false), $selectedYear);
 
 // Calculate Stat Cards totals for the selected year
 $totalRevenueY1 = 0.0;
@@ -447,16 +516,16 @@ foreach ($note4_data as $acc) {
     <!-- ===== NOTES STACK ===== -->
     <div class="note-container">
       <?php
-      renderNoteCard('1', 'Revenue', $note1_data, $years);
-      renderNoteCard('2', 'Cost of sales', $note2_data, $years);
-      renderNoteCard('3', 'Administrative expenses', $note3_data, $years);
-      renderNoteCard('4', 'Finance costs', $note4_data, $years);
-      renderNoteCard('5', 'Cash and cash equivalents', $note5_data, $years);
-      renderNoteCard('6', 'Accounts receivables', $note6_data, $years);
-      renderNoteCard('7', 'Inventory', $note7_data, $years);
+      renderNoteCard('1', $note1_title, $note1_data, $years);
+      renderNoteCard('2', $note2_title, $note2_data, $years);
+      renderNoteCard('3', $note3_title, $note3_data, $years);
+      renderNoteCard('4', $note4_title, $note4_data, $years);
+      renderNoteCard('5', $note5_title, $note5_data, $years);
+      renderNoteCard('6', $note6_title, $note6_data, $years);
+      renderNoteCard('7', $note7_title, $note7_data, $years);
       renderNoteCard('9', 'Accounts payables / Other current liabilities', $note9_data, $years);
-      renderNoteCard('10', 'Long term loans and other LT liabilities', $note10_data, $years);
-      renderNoteCard('11', 'Current Tax Payable', $note11_data, $years);
+      renderNoteCard('10', $note10_title, $note10_data, $years);
+      renderNoteCard('11', $note11_title, $note11_data, $years);
       ?>
     </div>
 

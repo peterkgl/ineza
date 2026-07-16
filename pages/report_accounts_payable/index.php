@@ -426,17 +426,16 @@ $total_bal = 0.0;
       history.forEach(function(item) {
         rows += '<tr>' +
           '<td>' + (item.payment_date || '—') + '</td>' +
-          '<td>' + (item.status || '—') + '</td>' +
           '<td>' + (item.account_name || '—') + ' (' + (item.account_code || '—') + ')</td>' +
           '<td style="text-align: right;">' + (item.amount_currency ? '$' + Number(item.amount_currency).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—') + '</td>' +
           '<td style="text-align: right;">' + (item.exchange_rate ? Number(item.exchange_rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : '—') + '</td>' +
-          '<td style="text-align: right;">' + (item.amount_base ? '$' + Number(item.amount_base).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—') + '</td>' +
+          '<td style="text-align: right;">' + (item.amount_base ? 'RWF ' + Number(item.amount_base).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—') + '</td>' +
           '<td style="text-align: right;">' + (item.amount_allocated ? '$' + Number(item.amount_allocated).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—') + '</td>' +
           '</tr>';
       });
 
       body.innerHTML = '<table class="excel-table" style="width: 100%; font-size: 13px;">' +
-        '<thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Status</th><th style="text-align:left;">Account</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Base</th><th style="text-align:right;">Applied</th></tr></thead>' +
+        '<thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Account</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Base</th><th style="text-align:right;">Applied</th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table>';
     }
 

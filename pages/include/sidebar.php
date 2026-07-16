@@ -109,10 +109,12 @@ $showJournalEntries = hasPermission($conn, $sidebarUserId, 'view_journal_entries
                       hasPermission($conn, $sidebarUserId, 'cancel_journal_entry');
 
 $showGeneralLedger = hasPermission($conn, $sidebarUserId, 'view_general_ledger');
+$showGeneralJournal = hasPermission($conn, $sidebarUserId, 'view_general_journal');
 $showTrialBalance = hasPermission($conn, $sidebarUserId, 'view_trial_balance');
 $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger');
 
 // Individual Finance Reports
+$showCash = hasPermission($conn, $sidebarUserId, 'view_cash');
 $showBalanceSheet = hasPermission($conn, $sidebarUserId, 'view_balance_sheet');
 $showEquityReport = hasPermission($conn, $sidebarUserId, 'view_equity_report');
 $showComprehensiveIncome = hasPermission($conn, $sidebarUserId, 'view_comprehensive_income');
@@ -226,9 +228,15 @@ $showSettings = hasPermission($conn, $sidebarUserId, 'manage_settings');
     <?php endif; ?>
   <?php endif; ?>
 
-  <?php if ($showCurrencies || $showBalanceSheet || $showEquityReport || $showComprehensiveIncome || $showStatementOfCashFlow || $showNote): ?>
+  <?php if ($showCash || $showCurrencies || $showBalanceSheet || $showEquityReport || $showComprehensiveIncome || $showStatementOfCashFlow || $showNote): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Finance</div>
+    <?php if ($showCash): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'cash') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>cash/index" id="nav-cash">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+        Cash
+      </a>
+    <?php endif; ?>
     <?php if ($showCurrencies): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'currencies') !== false || strpos($_SERVER['SCRIPT_NAME'], 'Currencies') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>Currencies/index" id="nav-currencies">
         <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -268,7 +276,7 @@ $showSettings = hasPermission($conn, $sidebarUserId, 'manage_settings');
     <?php endif; ?>
   <?php endif; ?>
 
-  <?php if ($showAccountTypes || $showAccounts || $showJournalEntries || $showGeneralLedger || $showTrialBalance || $showAccountLedger): ?>
+  <?php if ($showAccountTypes || $showAccounts || $showJournalEntries || $showGeneralLedger || $showTrialBalance || $showAccountLedger || $showGeneralJournal): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Accounts</div>
     <?php if ($showAccountTypes): ?>
@@ -307,6 +315,12 @@ $showSettings = hasPermission($conn, $sidebarUserId, 'manage_settings');
         Account Ledger
       </a>
     <?php endif; ?>
+    <?php if ($showGeneralJournal): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'general_journal') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>general_journal/index" id="nav-general-journal">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        General Journal
+      </a>
+      <?php endif; ?>
   <?php endif; ?>
 
   <?php if ($showRepBankReconUsd || $showRepBankReconRwf || $showRepMonthlyTx || $showRepCashCountHq || $showRepPettyCashRub || $showRepCashCountRub || $showRepPurchaseLogsTa || $showRepAccountsPayable || $showRepTinSummary || $showRepTaSummary): ?>

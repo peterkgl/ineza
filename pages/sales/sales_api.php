@@ -349,7 +349,7 @@ switch ($action) {
                 $accountNameEsc = mysqli_real_escape_string($conn, $custName . ' - Accounts Receivable');
                 $insertAccountQuery = "INSERT INTO accounts 
                                        (account_type_id, account_code, account_name, is_active, description)
-                                       VALUES (6, '$nextCode', '$accountNameEsc', 1, 'Auto-created account for customer: $custNameEsc')";
+                                       VALUES (2, '$nextCode', '$accountNameEsc', 1, 'Auto-created account for customer: $custNameEsc')";
                 
                 if (!mysqli_query($conn, $insertAccountQuery)) {
                     throw new Exception('Failed to create customer account: ' . mysqli_error($conn));
