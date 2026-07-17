@@ -91,6 +91,20 @@ if ($uomQuery) {
     }
 }
 
+// Load tax/levy settings for embedding in JS
+$taxSettings = [];
+$settingKeys = ['tax_rate_rra','tax_rate_rma_tin','tax_rate_rma_coltan','tax_rate_rma_wolframite','tax_rate_inkomane_tin','tax_rate_inkomane_coltan','tax_rate_inkomane_wolframite'];
+foreach ($settingKeys as $sk) {
+    $skEsc = mysqli_real_escape_string($conn, $sk);
+    $skQ = mysqli_query($conn, "SELECT setting_value FROM settings WHERE setting_key = '$skEsc' LIMIT 1");
+    if ($skQ && mysqli_num_rows($skQ) > 0) {
+        $taxSettings[$sk] = (float)mysqli_fetch_assoc($skQ)['setting_value'];
+    } else {
+        $defaults = ['tax_rate_rra'=>3.0,'tax_rate_rma_tin'=>50.0,'tax_rate_rma_coltan'=>125.0,'tax_rate_rma_wolframite'=>50.0,'tax_rate_inkomane_tin'=>20.0,'tax_rate_inkomane_coltan'=>40.0,'tax_rate_inkomane_wolframite'=>20.0];
+        $taxSettings[$sk] = $defaults[$sk] ?? 0.0;
+    }
+}
+
 // Fetch purchase record if editing
 $purchaseRecord = null;
 if ($id > 0) {
@@ -321,7 +335,7 @@ if ($id > 0) {
               <select id="productId" name="product_id" class="form-control" required>
                 <option value="">-- Select Product --</option>
                 <?php foreach ($products as $p): ?>
-                  <option value="<?php echo $p['id']; ?>" data-uom-id="<?php echo $p['uom_id']; ?>"><?php echo htmlspecialchars($p['product_name']); ?> (<?php echo htmlspecialchars($p['product_code']); ?>)</option>
+                  <option value="<?php echo $p['id']; ?>" data-uom-id="<?php echo $p['uom_id']; ?>" data-product-code="<?php echo htmlspecialchars(strtoupper($p['product_code'])); ?>"><?php echo htmlspecialchars($p['product_name']); ?> (<?php echo htmlspecialchars($p['product_code']); ?>)</option>
                 <?php endforeach; ?>
               </select>
             </div>
@@ -357,20 +371,11 @@ if ($id > 0) {
           </div>
         </div>
 
-        <!-- STEP 4: Pricing & Financials -->
+        <!-- STEP 4: Pricing & Financials (Product-Specific) -->
         <div class="wizard-step-content" id="step4">
-          <div class="form-group" style="margin-bottom: 20px;">
-            <label style="font-weight: 600; font-size: 13px; color: var(--text);">Pricing Method</label>
-            <div style="display: flex; gap: 24px; margin-top: 6px; align-items: center;">
-              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text2);">
-                <input type="radio" id="pricingMethodLme" name="pricing_method" value="lme" checked style="width: 16px; height: 16px; accent-color: var(--primary);"> LME Price Formula
-              </label>
-              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text2);">
-                <input type="radio" id="pricingMethodManual" name="pricing_method" value="manual" style="width: 16px; height: 16px; accent-color: var(--primary);"> Manual Pricing
-              </label>
-            </div>
-          </div>
 
+          <!-- Exchange Rate Section (shared by all product types) -->
+          <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:12px;">Exchange Rate</div>
           <div class="form-grid-4" style="background: var(--bg); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px;">
             <div class="form-group">
               <label for="purchaseCurrencyId">Purchase Currency *</label>
@@ -393,131 +398,347 @@ if ($id > 0) {
               </select>
             </div>
             <div class="form-group">
-              <label for="exchangeRateValue">Exchange Rate *</label>
+              <label for="exchangeRateValue">Exchange Rate (RWF/USD) *</label>
               <input type="number" id="exchangeRateValue" class="form-control" placeholder="0.00068" step="any" value="0.00068" required>
             </div>
           </div>
-
-          <!-- Hidden legacy input kept for API & DB compatibility -->
+          <!-- Pricing Method Selection -->
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label style="font-weight: 600; color: var(--text);">Pricing Method *</label>
+            <div style="display: flex; gap: 16px; margin-top: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text2);">
+                <input type="radio" name="pricing_method" value="lme" checked style="accent-color: var(--primary);">
+                Automatic (Formula-Based)
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text2);">
+                <input type="radio" name="pricing_method" value="manual" style="accent-color: var(--primary);">
+                Manual Price Entry
+              </label>
+            </div>
+          </div>
+          <!-- Hidden legacy input for API & DB compatibility -->
           <input type="hidden" id="exchangeRate" name="exchange_rate" value="1400.00">
-
-          <div class="form-grid-3">
-            <div class="form-group">
-              <label id="amountInCurrencyLabel" for="purchaseAmountInCurrency">Price per kg in Selected Currency *</label>
-              <input type="text" id="purchaseAmountInCurrency" name="purchase_amount_in_currency" class="form-control" placeholder="0.00" step="any" readonly>
-            </div>
-            <div class="form-group">
-              <label for="lmePrice">LME Price (USD / Ton or Unit)</label>
-              <input type="number" id="lmePrice" name="lme_price" class="form-control" placeholder="e.g. 180000.00" step="any">
-            </div>
-            <div class="form-group">
-              <label for="tcCharges">TC Charges (USD / Ton)</label>
-              <input type="number" id="tcCharges" name="tc_charges" class="form-control" placeholder="e.g. 120.00" step="any">
-            </div>
-          </div>
-
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label for="fluc">Fluc (USD / Ton or Unit)</label>
-              <input type="number" id="fluc" name="fluc" class="form-control" placeholder="e.g. 0.00" step="any">
-            </div>
-            <div class="form-group">
-              <label for="lmePaid">LME Paid (USD / Ton or Unit)</label>
-              <input type="number" id="lmePaid" name="lme_paid" class="form-control" placeholder="0.00" step="any" readonly>
-            </div>
-          </div>
-
-          <!-- Hidden inputs kept for logic integration -->
+          <!-- Hidden pricing computed values (populated by calcSN/calcTA/calcW03) -->
           <input type="hidden" id="pricePerKgUsd" name="price_per_kg_usd">
           <input type="hidden" id="pricePerKgRwf" name="price_per_kg_rwf">
+          <input type="hidden" id="sharedPurchaseValueUsd" name="purchase_value_usd">
+          <input type="hidden" id="sharedPurchaseValueRwf" name="purchase_value_rwf">
+          <input type="hidden" id="sharedTaxRra" name="tax_rra">
+          <input type="hidden" id="sharedTaxRma" name="tax_rma">
+          <input type="hidden" id="sharedTaxInkomane" name="tax_inkomane">
+          <input type="hidden" id="sharedNetPaid" name="net_paid_supplier_usd">
+          <input type="hidden" id="sharedProductionCharges" name="production_charges">
+          <input type="hidden" id="sharedLmePrice" name="lme_price">
+          <input type="hidden" id="sharedFluc" name="fluc">
+          <input type="hidden" id="sharedTcCharges" name="tc_charges">
+          <input type="hidden" id="sharedLmePaid" name="lme_paid">
+          <input type="hidden" id="sharedProductionChargesPerKg" name="production_charges_per_kg">
+          <!-- Hidden ta unit (used for TA form, also sent in form data) -->
+          <input type="hidden" id="pricePerTaUnit" name="price_per_ta_unit">
 
-          <div class="form-grid-2" style="background: var(--bg); padding: 16px; border-radius: var(--radius); border: 1px dashed var(--border); margin-bottom: 15px;">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text3);">Equivalent Price (USD/kg)</label>
-              <div id="equivalentPriceUsdDisplay" style="font-size: 16px; font-weight: 600; color: var(--green); padding: 6px 0;">$0.00</div>
+          <!-- Product-type message (shows when no product selected) -->
+          <div id="pricingNoProduct" style="padding: 24px; text-align: center; color: var(--text3); font-size: 13px; border: 1px dashed var(--border); border-radius: var(--radius); margin-bottom: 16px;">
+            <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; stroke: var(--text3); fill: none; stroke-width: 1.5; margin-bottom: 8px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>Select a product in Step 2 to see the pricing form.</div>
+          </div>
+
+          <!-- ========================================================== -->
+          <!-- SN (Tin / Cassiterite) PRICING FORM                        -->
+          <!-- Matches: Purchase Logs_SN Excel Sheet                      -->
+          <!-- ========================================================== -->
+          <div id="pricingFormSN" style="display:none;">
+            <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <span style="background:var(--blue-bg); color:var(--blue); padding:2px 8px; border-radius:4px; font-size:10px;">SN</span>
+              Tin (Cassiterite) Pricing — LME Formula
             </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text3);">Equivalent Price (RWF/kg)</label>
-              <div id="equivalentPriceRwfDisplay" style="font-size: 16px; font-weight: 600; color: var(--text2); padding: 6px 0;">0.00 Frw</div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="sn_lme_price">Full LME (USD / Ton) *</label>
+                <input type="number" id="sn_lme_price" class="form-control" placeholder="e.g. 32800" step="any" oninput="calcSN()">
+                <div class="form-help">LME reference price per metric ton</div>
+              </div>
+              <div class="form-group">
+                <label for="sn_fluc">Fluc (USD / Ton)</label>
+                <input type="number" id="sn_fluc" class="form-control" placeholder="0.00" step="any" oninput="calcSN()" value="0">
+                <div class="form-help">LME discount / fluctuation</div>
+              </div>
+              <div class="form-group">
+                <label for="sn_lme_paid">LME Paid (USD / Ton)</label>
+                <input type="number" id="sn_lme_paid" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= Full LME − Fluc</div>
+              </div>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="sn_tc_charges">TC (USD / Ton)</label>
+                <input type="number" id="sn_tc_charges" class="form-control" placeholder="e.g. 3000" step="any" oninput="calcSN()" value="0">
+                <div class="form-help">Treatment charges per ton</div>
+              </div>
+              <div class="form-group">
+                <label for="sn_prod_charges_rate">Production Charges (USD / kg)</label>
+                <input type="number" id="sn_prod_charges_rate" class="form-control" placeholder="e.g. 3.50" step="any" oninput="calcSN()" value="0">
+              </div>
+              <div class="form-group">
+                <label>Sn% Grade (from Step 3)</label>
+                <div id="sn_grade_display" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; font-weight: 600; color: var(--text); min-height: 38px;">—</div>
+              </div>
+            </div>
+
+            <!-- SN Calculated Results -->
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-top: 8px; margin-bottom: 16px;">
+              <div style="font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; margin-bottom:10px;">Calculated Values (Excel Formula)</div>
+              <div class="form-grid-3">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:11px; color:var(--text3);">$ Price / Kg (USD)</label>
+                  <div id="sn_price_per_kg" style="font-size:15px; font-weight:700; color:var(--green); padding:4px 0;">$0.0000</div>
+                  <div class="form-help">= (LME Paid × Sn% − TC) / 1000</div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:11px; color:var(--text3);">Purchase Value ($)</label>
+                  <div id="sn_purchase_value_usd" style="font-size:15px; font-weight:700; color:var(--text); padding:4px 0;">$0.00</div>
+                  <div class="form-help">= Price/kg × Qty</div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:11px; color:var(--text3);">Cost/Kg (RWF)</label>
+                  <div id="sn_price_per_kg_rwf" style="font-size:15px; font-weight:700; color:var(--text2); padding:4px 0;">0.00 RWF</div>
+                  <div class="form-help">= Price/kg × Rate</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:10px;">Government Taxes Retained</div>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="sn_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
+                <input type="number" id="sn_tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= max(0, (LME Paid×Sn%−800)/1000×Qty×<?php echo $taxSettings['tax_rate_rra']; ?>%)</div>
+              </div>
+              <div class="form-group">
+                <label for="sn_tax_rma">RMA <?php echo number_format($taxSettings['tax_rate_rma_tin'], 0); ?> RWF/kg (USD)</label>
+                <input type="number" id="sn_tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_rma_tin']; ?> RWF) / Rate</div>
+              </div>
+              <div class="form-group">
+                <label for="sn_tax_inkomane">INKOMANE <?php echo number_format($taxSettings['tax_rate_inkomane_tin'], 0); ?> RWF/kg (USD)</label>
+                <input type="number" id="sn_tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_inkomane_tin']; ?> RWF) / Rate</div>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="sn_prod_charges">Production Charges Total (USD)</label>
+                <input type="number" id="sn_prod_charges" class="form-control" placeholder="0.00" step="any" readonly>
+              </div>
+              <div class="form-group">
+                <label for="sn_net_paid">Net Paid to Supplier (USD)</label>
+                <input type="number" id="sn_net_paid" class="form-control" placeholder="0.00" step="any" readonly style="font-weight:700; color:var(--green);">
+                <div class="form-help">= PV − RRA − RMA − INKOMANE − Prod Fees</div>
+              </div>
+            </div>
+
+            <!-- Stored values populated by calcSN() into shared hidden inputs above -->
+          </div>
+
+          <!-- ========================================================== -->
+          <!-- TA (Tantalum / Coltan) PRICING FORM                        -->
+          <!-- Matches: Purchase Logs_Ta Excel Sheet                      -->
+          <!-- ========================================================== -->
+          <div id="pricingFormTA" style="display:none;">
+            <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <span style="background:var(--orange-bg); color:var(--orange); padding:2px 8px; border-radius:4px; font-size:10px;">TA</span>
+              Tantalum / Coltan Pricing — Ta Unit Formula
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="ta_price_per_ta">Price / Ta (USD/kg/%Ta) *</label>
+                <input type="number" id="ta_price_per_ta" class="form-control" placeholder="e.g. 1.58" step="any" oninput="calcTA()">
+                <div class="form-help">Price per unit of Ta205 percentage</div>
+              </div>
+              <div class="form-group">
+                <label>Ta205% Grade (from Step 3)</label>
+                <div id="ta_grade_display" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; font-weight: 600; color: var(--text); min-height: 38px;">—</div>
+              </div>
+              <div class="form-group">
+                <label>$ Price / Kg (USD)</label>
+                <div id="ta_price_per_kg" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--green); min-height: 38px;">$0.0000</div>
+                <div class="form-help">= Ta205% × Price/Ta</div>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="ta_prod_charges_rate">Production Charges (USD / kg)</label>
+                <input type="number" id="ta_prod_charges_rate" class="form-control" placeholder="e.g. 3.50" step="any" oninput="calcTA()" value="0">
+              </div>
+              <div class="form-group">
+                <label>Purchase Value ($)</label>
+                <div id="ta_purchase_value_usd" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--text); min-height: 38px;">$0.00</div>
+                <div class="form-help">= Price/kg × Qty</div>
+              </div>
+            </div>
+
+            <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:10px;">Government Taxes Retained</div>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="ta_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
+                <input type="number" id="ta_tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= Purchase Value × <?php echo $taxSettings['tax_rate_rra']; ?>%</div>
+              </div>
+              <div class="form-group">
+                <label for="ta_tax_rma">RMA <?php echo number_format($taxSettings['tax_rate_rma_coltan'], 0); ?> RWF/kg (USD)</label>
+                <input type="number" id="ta_tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_rma_coltan']; ?> RWF) / Rate</div>
+              </div>
+              <div class="form-group">
+                <label for="ta_tax_inkomane">INKOMANE <?php echo number_format($taxSettings['tax_rate_inkomane_coltan'], 0); ?> RWF/kg (USD)</label>
+                <input type="number" id="ta_tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_inkomane_coltan']; ?> RWF) / Rate</div>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="ta_prod_charges">Production Charges Total (USD)</label>
+                <input type="number" id="ta_prod_charges" class="form-control" placeholder="0.00" step="any" readonly>
+              </div>
+              <div class="form-group">
+                <label for="ta_net_paid">Supplier ($) — Net Paid (USD)</label>
+                <input type="number" id="ta_net_paid" class="form-control" placeholder="0.00" step="any" readonly style="font-weight:700; color:var(--green);">
+                <div class="form-help">= PV − RRA − RMA − INKOMANE − Prod Fees</div>
+              </div>
+            </div>
+
+            <!-- Stored values populated by calcTA() into shared hidden inputs above -->
+          </div>
+
+          <!-- ========================================================== -->
+          <!-- W03 (Wolframite / Tungsten) PRICING FORM                   -->
+          <!-- Matches: Purchase Logs_W03 Excel Sheet                     -->
+          <!-- ========================================================== -->
+          <div id="pricingFormW03" style="display:none;">
+            <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <span style="background:var(--green-bg); color:var(--green); padding:2px 8px; border-radius:4px; font-size:10px;">W03</span>
+              Wolframite / Tungsten Pricing — MTU Formula
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="w03_lme_price">MTU Paid (USD / MTU) *</label>
+                <input type="number" id="w03_lme_price" class="form-control" placeholder="e.g. 1000" step="any" oninput="calcW03()">
+                <div class="form-help">Price paid per Metric Ton Unit (Excel col Q)</div>
+              </div>
+              <div class="form-group">
+                <label for="w03_rmb_price">RMB Price / MTU (USD) *</label>
+                <input type="number" id="w03_rmb_price" class="form-control" placeholder="e.g. 1500" step="any" oninput="calcW03()">
+                <div class="form-help">Reference base price per MTU (Excel col AX)</div>
+              </div>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="w03_tc_charges">TC (USD / MTU)</label>
+                <input type="number" id="w03_tc_charges" class="form-control" placeholder="0.00" step="any" oninput="calcW03()" value="0">
+                <div class="form-help">Treatment charges per MTU</div>
+              </div>
+              <div class="form-group">
+                <label>WO3% Grade (from Step 3)</label>
+                <div id="w03_grade_display" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; font-weight: 600; color: var(--text); min-height: 38px;">—</div>
+              </div>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="w03_transport_rwf">Transport(RWF)</label>
+                <input type="number" id="w03_transport_rwf" class="form-control" placeholder="e.g. 2000" step="any" oninput="calcW03()" value="2000">
+                <div class="form-help">Fixed transport amount in RWF</div>
+              </div>
+              <div class="form-group">
+                <label>$ Price / Kg (USD)</label>
+                <div id="w03_price_per_kg" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--green); min-height: 38px;">$0.0000</div>
+                <div class="form-help">= (MTU × WO3% − TC) / 10</div>
+              </div>
+              <div class="form-group">
+                <label>Purchase Value ($)</label>
+                <div id="w03_purchase_value_usd" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--text); min-height: 38px;">$0.00</div>
+                <div class="form-help">= Price/kg × Qty</div>
+              </div>
+            </div>
+
+            <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:10px;">Government Taxes Retained</div>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="w03_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
+                <input type="number" id="w03_tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= Qty × WO3% × (MTU/10) × <?php echo $taxSettings['tax_rate_rra']; ?>%</div>
+              </div>
+              <div class="form-group">
+                <label for="w03_tax_rma">RMA <?php echo number_format($taxSettings['tax_rate_rma_wolframite'], 0); ?> RWF/kg (USD)</label>
+                <input type="number" id="w03_tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_rma_wolframite']; ?> RWF) / Rate</div>
+              </div>
+              <div class="form-group">
+                <label for="w03_tax_inkomane">INKOMANE <?php echo number_format($taxSettings['tax_rate_inkomane_wolframite'], 0); ?> RWF/kg (USD)</label>
+                <input type="number" id="w03_tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_inkomane_wolframite']; ?> RWF) / Rate</div>
+              </div>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="w03_transport_charges">Transport Fees Total (USD)</label>
+                <input type="number" id="w03_transport_charges" class="form-control" placeholder="0.00" step="any" readonly>
+                <div class="form-help">= Transport RWF / Rate</div>
+              </div>
+              <div class="form-group">
+                <label for="w03_net_paid">Net Paid to Supplier (USD)</label>
+                <input type="number" id="w03_net_paid" class="form-control" placeholder="0.00" step="any" readonly style="font-weight:700; color:var(--green);">
+                <div class="form-help">= PV − RRA − RMA − INKOMANE − Transport</div>
+              </div>
+              <div class="form-group">
+                <label>Purchase Value (RWF)</label>
+                <div id="w03_purchase_value_rwf" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--text2); min-height: 38px;">0.00 RWF</div>
+                <div class="form-help">= PV USD × Rate</div>
+              </div>
+            </div>
+
+            <!-- Stored values populated by calcW03() into shared hidden inputs above -->
+            <input type="hidden" id="w03_prod_charges_per_kg_hidden" name="production_charges_per_kg">
+          </div>
+
+          <!-- Status and Notes (common to all product types) -->
+          <div id="pricingCommonFields" style="display:none;">
+            <div style="height:1px; background: var(--border); margin: 20px 0;"></div>
+            <!-- Summary Preview -->
+            <div class="pricing-summary" id="pricingSummaryBlock">
+              <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; margin-bottom:8px;">Pricing Calculation Summary</div>
+              <div id="pricingSummaryPreview"></div>
+            </div>
+            <div style="height:1px; background: var(--border); margin: 20px 0;"></div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="status">Transaction Status</label>
+                <select id="status" name="status" class="form-control">
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="received">Received</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label id="amountInCurrencyLabel">Purchase Amount in Currency</label>
+                <input type="number" id="purchaseAmountInCurrency" name="purchase_amount_in_currency" class="form-control" placeholder="0.00" step="any" readonly>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="notes">Notes / Remarks</label>
+              <textarea id="notes" name="notes" class="form-control" placeholder="Enter transaction details or notes..." rows="3"></textarea>
             </div>
           </div>
 
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label for="purchaseValueUsd">Purchase Value (USD)</label>
-              <input type="number" id="purchaseValueUsd" name="purchase_value_usd" class="form-control" placeholder="0.00" step="any" readonly>
-            </div>
-            <div class="form-group">
-              <label for="purchaseValueRwf">Purchase Value (RWF)</label>
-              <input type="number" id="purchaseValueRwf" name="purchase_value_rwf" class="form-control" placeholder="0.00" step="any" readonly>
-            </div>
-          </div>
-
-          <div class="form-grid-3">
-            <div class="form-group">
-              <label for="taxRra">RRA Tax (USD)</label>
-              <input type="number" id="taxRra" name="tax_rra" class="form-control" placeholder="0.00" step="any">
-            </div>
-            <div class="form-group">
-              <label for="taxRma">RMA Tax (USD)</label>
-              <input type="number" id="taxRma" name="tax_rma" class="form-control" placeholder="0.00" step="any">
-            </div>
-            <div class="form-group">
-              <label for="taxInkomane">Inkomane Tax (USD)</label>
-              <input type="number" id="taxInkomane" name="tax_inkomane" class="form-control" placeholder="0.00" step="any">
-            </div>
-          </div>
-
-          <div class="form-grid-2">
-            <!-- <div class="form-group">
-              <label for="chargesPerKg">Other Charges per kg</label>
-              <input type="number" id="chargesPerKg" name="charges_per_kg" class="form-control" placeholder="0.00" step="any">
-            </div> -->
-            <!-- <div class="form-group">
-              <label for="pricePerTaUnit">Price per Ta Unit</label>
-              <input type="number" id="pricePerTaUnit" name="price_per_ta_unit" class="form-control" placeholder="0.00" step="any">
-            </div> -->
-          </div>
-
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label for="productionChargesPerKg">Production Charges per kg (USD)</label>
-              <input type="number" id="productionChargesPerKg" name="production_charges_per_kg" class="form-control" placeholder="e.g. 3.50" step="any">
-            </div>
-            <div class="form-group">
-              <label for="productionCharges">Production Charges (Total USD)</label>
-              <input type="number" id="productionCharges" name="production_charges" class="form-control" placeholder="0.00" step="any" readonly>
-            </div>
-          </div>
-
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label for="netPaidSupplierUsd">Net Paid to Supplier (USD)</label>
-              <input type="number" id="netPaidSupplierUsd" name="net_paid_supplier_usd" class="form-control" placeholder="0.00" step="any" readonly>
-            </div>
-            <div class="form-group">
-              <label for="status">Transaction Status</label>
-              <select id="status" name="status" class="form-control">
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="received">Received</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="notes">Notes / Remarks</label>
-            <textarea id="notes" name="notes" class="form-control" placeholder="Enter transaction details or notes..." rows="3"></textarea>
-          </div>
-
-          <!-- Real-time calculation preview card -->
-          <div class="pricing-summary">
-            <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; margin-bottom:8px;">Pricing Calculation Summary</div>
-            <div id="pricingSummaryPreview">
-              <!-- Rendered via JS -->
-            </div>
-          </div>
         </div>
       </form>
 
@@ -551,6 +772,7 @@ if (!empty($exchangeRatesList)) {
   window.currenciesList = <?php echo json_encode($currenciesList); ?>;
   window.exchangeRatesList = <?php echo json_encode($exchangeRatesList); ?>;
   window.latestExchangeRate = <?php echo $latestRate; ?>;
+  window.taxSettings = <?php echo json_encode($taxSettings); ?>;
 </script>
 <script src="../../src/js/navbar.js"></script>
 <script src="../../src/js/sidebar.js"></script>

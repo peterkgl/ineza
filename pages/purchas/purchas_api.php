@@ -496,6 +496,23 @@ switch ($action) {
         sendResponse(true, 'Product elements loaded.', $elements);
         break;
 
+    case 'get_settings':
+        $settingsKeys = [
+            'tax_rate_rra',
+            'tax_rate_rma_tin',
+            'tax_rate_rma_coltan',
+            'tax_rate_rma_wolframite',
+            'tax_rate_inkomane_tin',
+            'tax_rate_inkomane_coltan',
+            'tax_rate_inkomane_wolframite'
+        ];
+        $settingsData = [];
+        foreach ($settingsKeys as $key) {
+            $settingsData[$key] = (float)getSetting($conn, $key, '0');
+        }
+        sendResponse(true, 'Settings loaded.', $settingsData);
+        break;
+
     case 'calculate':
         $product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
         $quantity_kg = isset($_GET['quantity_kg']) ? (float)$_GET['quantity_kg'] : 0.0;
