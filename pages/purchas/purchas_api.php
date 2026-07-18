@@ -631,13 +631,18 @@ switch ($action) {
         if ($pricing_method === 'manual') {
             $price_per_kg_usd = $manual_price_usd;
             $price_per_kg_rwf = $price_per_kg_usd * $exchange_rate;
-            $purchase_value_usd = $price_per_kg_usd * $quantity_kg;
-            $purchase_value_rwf = $price_per_kg_rwf * $quantity_kg;
+            $purchase_value_usd = isset($_POST['purchase_value_usd']) && $_POST['purchase_value_usd'] !== '' ? (float)$_POST['purchase_value_usd'] : ($price_per_kg_usd * $quantity_kg);
+            $purchase_value_rwf = isset($_POST['purchase_value_rwf']) && $_POST['purchase_value_rwf'] !== '' ? (float)$_POST['purchase_value_rwf'] : ($price_per_kg_rwf * $quantity_kg);
             $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : 0.0;
             $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : 0.0;
             $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : 0.0;
-            $production_charges = $quantity_kg * $production_charges_per_kg;
-            $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
+            $production_charges = isset($_POST['production_charges']) && $_POST['production_charges'] !== '' ? (float)$_POST['production_charges'] : ($quantity_kg * (float)$production_charges_per_kg);
+            $net_paid_supplier_usd = isset($_POST['net_paid_supplier_usd']) && $_POST['net_paid_supplier_usd'] !== '' ? (float)$_POST['net_paid_supplier_usd'] : ($purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges);
+            if ($lme_price !== null && $fluc !== null) {
+                $lme_paid = $lme_price - $fluc;
+            } elseif (isset($_POST['lme_paid']) && $_POST['lme_paid'] !== '') {
+                $lme_paid = (float)$_POST['lme_paid'];
+            }
         } else {
             if ($lme_price !== null && $fluc !== null) {
                 $lme_paid = $lme_price - $fluc;
@@ -1246,13 +1251,18 @@ switch ($action) {
         if ($pricing_method === 'manual') {
             $price_per_kg_usd = $manual_price_usd;
             $price_per_kg_rwf = $price_per_kg_usd * $exchange_rate;
-            $purchase_value_usd = $price_per_kg_usd * $quantity_kg;
-            $purchase_value_rwf = $price_per_kg_rwf * $quantity_kg;
+            $purchase_value_usd = isset($_POST['purchase_value_usd']) && $_POST['purchase_value_usd'] !== '' ? (float)$_POST['purchase_value_usd'] : ($price_per_kg_usd * $quantity_kg);
+            $purchase_value_rwf = isset($_POST['purchase_value_rwf']) && $_POST['purchase_value_rwf'] !== '' ? (float)$_POST['purchase_value_rwf'] : ($price_per_kg_rwf * $quantity_kg);
             $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : 0.0;
             $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : 0.0;
             $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : 0.0;
-            $production_charges = $quantity_kg * $production_charges_per_kg;
-            $net_paid_supplier_usd = $purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges;
+            $production_charges = isset($_POST['production_charges']) && $_POST['production_charges'] !== '' ? (float)$_POST['production_charges'] : ($quantity_kg * (float)$production_charges_per_kg);
+            $net_paid_supplier_usd = isset($_POST['net_paid_supplier_usd']) && $_POST['net_paid_supplier_usd'] !== '' ? (float)$_POST['net_paid_supplier_usd'] : ($purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges);
+            if ($lme_price !== null && $fluc !== null) {
+                $lme_paid = $lme_price - $fluc;
+            } elseif (isset($_POST['lme_paid']) && $_POST['lme_paid'] !== '') {
+                $lme_paid = (float)$_POST['lme_paid'];
+            }
         } else {
             if ($lme_price !== null && $fluc !== null) {
                 $lme_paid = $lme_price - $fluc;

@@ -456,17 +456,14 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="sn_lme_price">Full LME (USD / Ton) *</label>
                 <input type="number" id="sn_lme_price" class="form-control" placeholder="e.g. 32800" step="any" oninput="calcSN()">
-                <div class="form-help">LME reference price per metric ton</div>
               </div>
               <div class="form-group">
                 <label for="sn_fluc">Fluc (USD / Ton)</label>
                 <input type="number" id="sn_fluc" class="form-control" placeholder="0.00" step="any" oninput="calcSN()" value="0">
-                <div class="form-help">LME discount / fluctuation</div>
               </div>
               <div class="form-group">
                 <label for="sn_lme_paid">LME Paid (USD / Ton)</label>
                 <input type="number" id="sn_lme_paid" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= Full LME − Fluc</div>
               </div>
             </div>
 
@@ -474,7 +471,6 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="sn_tc_charges">TC (USD / Ton)</label>
                 <input type="number" id="sn_tc_charges" class="form-control" placeholder="e.g. 3000" step="any" oninput="calcSN()" value="0">
-                <div class="form-help">Treatment charges per ton</div>
               </div>
               <div class="form-group">
                 <label for="sn_prod_charges_rate">Production Charges (USD / kg)</label>
@@ -493,17 +489,14 @@ if ($id > 0) {
                 <div class="form-group" style="margin-bottom:0;">
                   <label style="font-size:11px; color:var(--text3);">$ Price / Kg (USD)</label>
                   <div id="sn_price_per_kg" style="font-size:15px; font-weight:700; color:var(--green); padding:4px 0;">$0.0000</div>
-                  <div class="form-help">= (LME Paid × Sn% − TC) / 1000</div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
                   <label style="font-size:11px; color:var(--text3);">Purchase Value ($)</label>
                   <div id="sn_purchase_value_usd" style="font-size:15px; font-weight:700; color:var(--text); padding:4px 0;">$0.00</div>
-                  <div class="form-help">= Price/kg × Qty</div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
                   <label style="font-size:11px; color:var(--text3);">Cost/Kg (RWF)</label>
                   <div id="sn_price_per_kg_rwf" style="font-size:15px; font-weight:700; color:var(--text2); padding:4px 0;">0.00 RWF</div>
-                  <div class="form-help">= Price/kg × Rate</div>
                 </div>
               </div>
             </div>
@@ -513,17 +506,14 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="sn_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
                 <input type="number" id="sn_tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= max(0, (LME Paid×Sn%−800)/1000×Qty×<?php echo $taxSettings['tax_rate_rra']; ?>%)</div>
               </div>
               <div class="form-group">
                 <label for="sn_tax_rma">RMA <?php echo number_format($taxSettings['tax_rate_rma_tin'], 0); ?> RWF/kg (USD)</label>
                 <input type="number" id="sn_tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_rma_tin']; ?> RWF) / Rate</div>
               </div>
               <div class="form-group">
                 <label for="sn_tax_inkomane">INKOMANE <?php echo number_format($taxSettings['tax_rate_inkomane_tin'], 0); ?> RWF/kg (USD)</label>
                 <input type="number" id="sn_tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_inkomane_tin']; ?> RWF) / Rate</div>
               </div>
             </div>
 
@@ -535,7 +525,6 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="sn_net_paid">Net Paid to Supplier (USD)</label>
                 <input type="number" id="sn_net_paid" class="form-control" placeholder="0.00" step="any" readonly style="font-weight:700; color:var(--green);">
-                <div class="form-help">= PV − RRA − RMA − INKOMANE − Prod Fees</div>
               </div>
             </div>
 
@@ -556,7 +545,6 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="ta_price_per_ta">Price / Ta (USD/kg/%Ta) *</label>
                 <input type="number" id="ta_price_per_ta" class="form-control" placeholder="e.g. 1.58" step="any" oninput="calcTA()">
-                <div class="form-help">Price per unit of Ta205 percentage</div>
               </div>
               <div class="form-group">
                 <label>Ta205% Grade (from Step 3)</label>
@@ -565,7 +553,6 @@ if ($id > 0) {
               <div class="form-group">
                 <label>$ Price / Kg (USD)</label>
                 <div id="ta_price_per_kg" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--green); min-height: 38px;">$0.0000</div>
-                <div class="form-help">= Ta205% × Price/Ta</div>
               </div>
             </div>
 
@@ -577,7 +564,6 @@ if ($id > 0) {
               <div class="form-group">
                 <label>Purchase Value ($)</label>
                 <div id="ta_purchase_value_usd" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--text); min-height: 38px;">$0.00</div>
-                <div class="form-help">= Price/kg × Qty</div>
               </div>
             </div>
 
@@ -586,17 +572,14 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="ta_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
                 <input type="number" id="ta_tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= Purchase Value × <?php echo $taxSettings['tax_rate_rra']; ?>%</div>
               </div>
               <div class="form-group">
                 <label for="ta_tax_rma">RMA <?php echo number_format($taxSettings['tax_rate_rma_coltan'], 0); ?> RWF/kg (USD)</label>
                 <input type="number" id="ta_tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_rma_coltan']; ?> RWF) / Rate</div>
               </div>
               <div class="form-group">
                 <label for="ta_tax_inkomane">INKOMANE <?php echo number_format($taxSettings['tax_rate_inkomane_coltan'], 0); ?> RWF/kg (USD)</label>
                 <input type="number" id="ta_tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_inkomane_coltan']; ?> RWF) / Rate</div>
               </div>
             </div>
 
@@ -608,7 +591,6 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="ta_net_paid">Supplier ($) — Net Paid (USD)</label>
                 <input type="number" id="ta_net_paid" class="form-control" placeholder="0.00" step="any" readonly style="font-weight:700; color:var(--green);">
-                <div class="form-help">= PV − RRA − RMA − INKOMANE − Prod Fees</div>
               </div>
             </div>
 
@@ -629,12 +611,10 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="w03_lme_price">MTU Paid (USD / MTU) *</label>
                 <input type="number" id="w03_lme_price" class="form-control" placeholder="e.g. 1000" step="any" oninput="calcW03()">
-                <div class="form-help">Price paid per Metric Ton Unit (Excel col Q)</div>
               </div>
               <div class="form-group">
                 <label for="w03_rmb_price">RMB Price / MTU (USD) *</label>
                 <input type="number" id="w03_rmb_price" class="form-control" placeholder="e.g. 1500" step="any" oninput="calcW03()">
-                <div class="form-help">Reference base price per MTU (Excel col AX)</div>
               </div>
             </div>
 
@@ -642,7 +622,10 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="w03_tc_charges">TC (USD / MTU)</label>
                 <input type="number" id="w03_tc_charges" class="form-control" placeholder="0.00" step="any" oninput="calcW03()" value="0">
-                <div class="form-help">Treatment charges per MTU</div>
+              </div>
+              <div class="form-group">
+                <label for="w03_prod_charges_rate">Production Charges (USD / kg)</label>
+                <input type="number" id="w03_prod_charges_rate" class="form-control" placeholder="e.g. 3.50" step="any" oninput="calcW03()" value="0">
               </div>
               <div class="form-group">
                 <label>WO3% Grade (from Step 3)</label>
@@ -650,21 +633,14 @@ if ($id > 0) {
               </div>
             </div>
 
-            <div class="form-grid-3">
-              <div class="form-group">
-                <label for="w03_transport_rwf">Transport(RWF)</label>
-                <input type="number" id="w03_transport_rwf" class="form-control" placeholder="e.g. 2000" step="any" oninput="calcW03()" value="2000">
-                <div class="form-help">Fixed transport amount in RWF</div>
-              </div>
+            <div class="form-grid-2">
               <div class="form-group">
                 <label>$ Price / Kg (USD)</label>
                 <div id="w03_price_per_kg" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--green); min-height: 38px;">$0.0000</div>
-                <div class="form-help">= (MTU × WO3% − TC) / 10</div>
               </div>
               <div class="form-group">
                 <label>Purchase Value ($)</label>
                 <div id="w03_purchase_value_usd" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--text); min-height: 38px;">$0.00</div>
-                <div class="form-help">= Price/kg × Qty</div>
               </div>
             </div>
 
@@ -673,35 +649,29 @@ if ($id > 0) {
               <div class="form-group">
                 <label for="w03_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
                 <input type="number" id="w03_tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= Qty × WO3% × (MTU/10) × <?php echo $taxSettings['tax_rate_rra']; ?>%</div>
               </div>
               <div class="form-group">
                 <label for="w03_tax_rma">RMA <?php echo number_format($taxSettings['tax_rate_rma_wolframite'], 0); ?> RWF/kg (USD)</label>
                 <input type="number" id="w03_tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_rma_wolframite']; ?> RWF) / Rate</div>
               </div>
               <div class="form-group">
                 <label for="w03_tax_inkomane">INKOMANE <?php echo number_format($taxSettings['tax_rate_inkomane_wolframite'], 0); ?> RWF/kg (USD)</label>
                 <input type="number" id="w03_tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= (Qty × <?php echo $taxSettings['tax_rate_inkomane_wolframite']; ?> RWF) / Rate</div>
               </div>
             </div>
 
             <div class="form-grid-3">
               <div class="form-group">
-                <label for="w03_transport_charges">Transport Fees Total (USD)</label>
-                <input type="number" id="w03_transport_charges" class="form-control" placeholder="0.00" step="any" readonly>
-                <div class="form-help">= Transport RWF / Rate</div>
+                <label for="w03_prod_charges">Production Charges Total (USD)</label>
+                <input type="number" id="w03_prod_charges" class="form-control" placeholder="0.00" step="any" readonly>
               </div>
               <div class="form-group">
                 <label for="w03_net_paid">Net Paid to Supplier (USD)</label>
                 <input type="number" id="w03_net_paid" class="form-control" placeholder="0.00" step="any" readonly style="font-weight:700; color:var(--green);">
-                <div class="form-help">= PV − RRA − RMA − INKOMANE − Transport</div>
               </div>
               <div class="form-group">
                 <label>Purchase Value (RWF)</label>
                 <div id="w03_purchase_value_rwf" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--text2); min-height: 38px;">0.00 RWF</div>
-                <div class="form-help">= PV USD × Rate</div>
               </div>
             </div>
 

@@ -75,9 +75,34 @@ document.addEventListener("DOMContentLoaded", function () {
         purchaseAmountInCurrencyInput.style.background = 'var(--bg)';
       }
     }
+
+    var manualEditableIds = [
+      'sn_lme_paid', 'sn_tax_rra', 'sn_tax_rma', 'sn_tax_inkomane', 'sn_prod_charges', 'sn_net_paid',
+      'ta_tax_rra', 'ta_tax_rma', 'ta_tax_inkomane', 'ta_prod_charges', 'ta_net_paid',
+      'w03_tax_rra', 'w03_tax_rma', 'w03_tax_inkomane', 'w03_prod_charges', 'w03_net_paid'
+    ];
+
+    manualEditableIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        if (method === 'manual') {
+          el.removeAttribute('readonly');
+          el.style.background = '';
+        } else {
+          el.setAttribute('readonly', 'true');
+          el.style.background = 'var(--bg)';
+        }
+      }
+    });
   }
 
   function handlePricingMethodChange() {
+    var method = getPricingMethod();
+    if (method === 'lme') {
+      document.querySelectorAll('#pricingFormSN input, #pricingFormTA input, #pricingFormW03 input').forEach(function(el) {
+        delete el.dataset.userEdited;
+      });
+    }
     updatePricingMethodUI();
     var pType = getProductType();
     showPricingFormForProduct(pType);
@@ -549,7 +574,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function showPricingFormForProduct(pType) {
-    var method = getPricingMethod();
     var noProductDiv = document.getElementById('pricingNoProduct');
     var formSN = document.getElementById('pricingFormSN');
     var formTA = document.getElementById('pricingFormTA');
@@ -564,13 +588,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (pType !== 'unknown') {
       if (commonFields) commonFields.style.display = 'block';
-      if (method === 'lme') {
-        if (pType === 'sn' && formSN) formSN.style.display = 'block';
-        else if (pType === 'ta' && formTA) formTA.style.display = 'block';
-        else if (pType === 'w03' && formW03) formW03.style.display = 'block';
-      } else {
-        // Manual mode: do not show any formula form, just the common fields
-      }
+      if (pType === 'sn' && formSN) formSN.style.display = 'block';
+      else if (pType === 'ta' && formTA) formTA.style.display = 'block';
+      else if (pType === 'w03' && formW03) formW03.style.display = 'block';
     } else {
       if (noProductDiv) noProductDiv.style.display = 'block';
     }
@@ -648,10 +668,17 @@ document.addEventListener("DOMContentLoaded", function () {
     var gradePct = getPrimaryGradePct(); // e.g. 54.69 means 54.69%
     var gradeFrac = gradePct / 100.0;    // 0.5469
 
-    // LME Paid = LME - Fluc
-    var lmePaid = lme - fluc;
+    var method = getPricingMethod();
+
     var lmePaidEl = document.getElementById('sn_lme_paid');
-    if (lmePaidEl) lmePaidEl.value = lmePaid > 0 ? parseFloat(lmePaid.toFixed(4)) : '';
+    var lmePaid = lme - fluc;
+    if (lmePaidEl) {
+      if (method === 'manual' && lmePaidEl.dataset.userEdited === 'true' && lmePaidEl.value !== '') {
+        lmePaid = parseFloat(lmePaidEl.value) || 0.0;
+      } else {
+        lmePaidEl.value = lmePaid > 0 ? parseFloat(lmePaid.toFixed(4)) : (lmePaid < 0 ? parseFloat(lmePaid.toFixed(4)) : '');
+      }
+    }
 
     // Update grade display
     var gradeDisplayEl = document.getElementById('sn_grade_display');
@@ -659,20 +686,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var pricePerKgUsdVal = 0.0;
     var pricePerKgRwfVal = 0.0;
-    var taxRra = 0.0;
 
-    var method = getPricingMethod();
     var pOpt = purchaseCurrencySelect && purchaseCurrencySelect.selectedIndex >= 0 ? purchaseCurrencySelect.options[purchaseCurrencySelect.selectedIndex] : null;
     var pCode = pOpt ? pOpt.text.split(' - ')[0] : 'RWF';
 
     if (method === 'manual') {
       var manualPrice = parseFloat(purchaseAmountInCurrencyInput ? purchaseAmountInCurrencyInput.value : 0) || 0.0;
-      if (pCode === 'RWF') {
-        pricePerKgRwfVal = manualPrice;
-        pricePerKgUsdVal = exRate > 0 ? manualPrice / exRate : 0.0;
+      if (manualPrice <= 0 && (lme > 0 || lmePaid > 0) && qty > 0) {
+        pricePerKgUsdVal = ((lmePaid * gradeFrac) - tc) / 1000.0;
+        pricePerKgRwfVal = pricePerKgUsdVal * exRate;
+        if (purchaseAmountInCurrencyInput) {
+          purchaseAmountInCurrencyInput.value = pCode === 'RWF' ? pricePerKgRwfVal.toFixed(4) : pricePerKgUsdVal.toFixed(4);
+        }
       } else {
-        pricePerKgUsdVal = manualPrice;
-        pricePerKgRwfVal = manualPrice * exRate;
+        if (pCode === 'RWF') {
+          pricePerKgRwfVal = manualPrice;
+          pricePerKgUsdVal = exRate > 0 ? manualPrice / exRate : 0.0;
+        } else {
+          pricePerKgUsdVal = manualPrice;
+          pricePerKgRwfVal = manualPrice * exRate;
+        }
       }
     } else {
       // Price per kg USD: = ((LME_Paid * Grade%) - TC) / 1000
@@ -688,26 +721,29 @@ document.addEventListener("DOMContentLoaded", function () {
     var pvUsd = pricePerKgUsdVal * qty;
     var pvRwf = pvUsd * exRate;
 
-    if (method === 'manual') {
-      // RRA withholding tax fallback in manual mode (flat 3% of purchase value)
-      taxRra = pvUsd * rraRate;
-    } else {
-      // RRA Tax: max(0, ((LME_Paid * Grade%) - 800) / 1000 * qty * rra%)
-      var rraBase = (lmePaid * gradeFrac) - 800.0;
-      taxRra = rraBase > 0 ? (rraBase / 1000.0) * qty * rraRate : 0.0;
+    var rraBase = (lmePaid * gradeFrac) - 800.0;
+    var defaultTaxRra = (method === 'manual' && lmePaid <= 0) ? (pvUsd * rraRate) : (rraBase > 0 ? (rraBase / 1000.0) * qty * rraRate : 0.0);
+    var defaultTaxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
+    var defaultTaxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
+    var defaultProdCharges = qty * prodRate;
+    var defaultNetPaid = pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges;
+
+    function getValOrSet(id, defVal) {
+      var el = document.getElementById(id);
+      if (!el) return defVal;
+      if (method === 'manual' && el.dataset.userEdited === 'true' && el.value !== '') {
+        var v = parseFloat(el.value);
+        return isNaN(v) ? defVal : v;
+      }
+      el.value = defVal.toFixed(4);
+      return defVal;
     }
 
-    // RMA: (qty * rma_rwf) / exchange_rate
-    var taxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
-
-    // INKOMANE: (qty * inko_rwf) / exchange_rate
-    var taxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
-
-    // Production charges
-    var prodChargesTotal = qty * prodRate;
-
-    // Net paid
-    var netPaid = pvUsd - taxRra - taxRma - taxInko - prodChargesTotal;
+    var taxRra = getValOrSet('sn_tax_rra', defaultTaxRra);
+    var taxRma = getValOrSet('sn_tax_rma', defaultTaxRma);
+    var taxInko = getValOrSet('sn_tax_inkomane', defaultTaxInko);
+    var prodChargesTotal = getValOrSet('sn_prod_charges', defaultProdCharges);
+    var netPaid = getValOrSet('sn_net_paid', defaultNetPaid);
 
     // Update displays
     var pricePerKgEl = document.getElementById('sn_price_per_kg');
@@ -716,17 +752,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (pvUsdEl) pvUsdEl.textContent = '$' + pvUsd.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
     var priceRwfEl = document.getElementById('sn_price_per_kg_rwf');
     if (priceRwfEl) priceRwfEl.textContent = pricePerKgRwfVal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' RWF';
-
-    var taxRraEl = document.getElementById('sn_tax_rra');
-    if (taxRraEl) taxRraEl.value = taxRra.toFixed(4);
-    var taxRmaEl = document.getElementById('sn_tax_rma');
-    if (taxRmaEl) taxRmaEl.value = taxRma.toFixed(4);
-    var taxInkoEl = document.getElementById('sn_tax_inkomane');
-    if (taxInkoEl) taxInkoEl.value = taxInko.toFixed(4);
-    var prodChargesEl = document.getElementById('sn_prod_charges');
-    if (prodChargesEl) prodChargesEl.value = prodChargesTotal.toFixed(4);
-    var netPaidEl = document.getElementById('sn_net_paid');
-    if (netPaidEl) netPaidEl.value = netPaid.toFixed(4);
 
     // Store into shared hidden fields for form submission
     function sh(id, val) { var el = document.getElementById(id); if (el) el.value = val; }
@@ -749,13 +774,8 @@ document.addEventListener("DOMContentLoaded", function () {
     updatePricingSummary(qty, pricePerKgUsdVal, pvUsd, pvRwf, taxRra + taxRma + taxInko + prodChargesTotal, netPaid);
   };
 
-  //        = qty * gradePct * price_per_ta  (gradePct as percentage, e.g. 34.31)
-  //        T = P / K = price_per_kg_usd
-  //        AG = P * 3%             [RRA = purchase_value * 3%]
-  //        AH = (K * 125) / O     [RMA: 125 RWF/kg]
-  //        AI = (K * 40) / O      [INKOMANE: 40 RWF/kg]
-  //        AD = K * R             [Prod fees: R = charges/kg]
-  //        Q  = P - AG - AH - AI - AD  [Net paid]
+  // =========================================================================
+  // TA (TANTALUM / COLTAN) CALCULATION
   // =========================================================================
   window.calcTA = function() {
     var settings = window.taxSettings || {};
@@ -769,6 +789,8 @@ document.addEventListener("DOMContentLoaded", function () {
     var prodRate = parseFloat(document.getElementById('ta_prod_charges_rate') ? document.getElementById('ta_prod_charges_rate').value : 0) || 0.0;
     var gradePct = getPrimaryGradePct(); // e.g. 34.31 means 34.31%
 
+    var method = getPricingMethod();
+
     // Update grade display
     var gradeDisplayEl = document.getElementById('ta_grade_display');
     if (gradeDisplayEl) gradeDisplayEl.textContent = gradePct > 0 ? gradePct.toFixed(4) + '%' : '— (enter grade in Step 3)';
@@ -776,18 +798,25 @@ document.addEventListener("DOMContentLoaded", function () {
     var pricePerKgUsdVal = 0.0;
     var pricePerKgRwfVal = 0.0;
 
-    var method = getPricingMethod();
     var pOpt = purchaseCurrencySelect && purchaseCurrencySelect.selectedIndex >= 0 ? purchaseCurrencySelect.options[purchaseCurrencySelect.selectedIndex] : null;
     var pCode = pOpt ? pOpt.text.split(' - ')[0] : 'RWF';
 
     if (method === 'manual') {
       var manualPrice = parseFloat(purchaseAmountInCurrencyInput ? purchaseAmountInCurrencyInput.value : 0) || 0.0;
-      if (pCode === 'RWF') {
-        pricePerKgRwfVal = manualPrice;
-        pricePerKgUsdVal = exRate > 0 ? manualPrice / exRate : 0.0;
+      if (manualPrice <= 0 && pricePerTa > 0 && gradePct > 0) {
+        pricePerKgUsdVal = gradePct * pricePerTa;
+        pricePerKgRwfVal = pricePerKgUsdVal * exRate;
+        if (purchaseAmountInCurrencyInput) {
+          purchaseAmountInCurrencyInput.value = pCode === 'RWF' ? pricePerKgRwfVal.toFixed(4) : pricePerKgUsdVal.toFixed(4);
+        }
       } else {
-        pricePerKgUsdVal = manualPrice;
-        pricePerKgRwfVal = manualPrice * exRate;
+        if (pCode === 'RWF') {
+          pricePerKgRwfVal = manualPrice;
+          pricePerKgUsdVal = exRate > 0 ? manualPrice / exRate : 0.0;
+        } else {
+          pricePerKgUsdVal = manualPrice;
+          pricePerKgRwfVal = manualPrice * exRate;
+        }
       }
     } else {
       // Price per kg USD = grade_pct * price_per_ta (grade_pct in percent units)
@@ -803,37 +832,34 @@ document.addEventListener("DOMContentLoaded", function () {
     var pvUsd = pricePerKgUsdVal * qty;
     var pvRwf = pvUsd * exRate;
 
-    // RRA = Purchase_Value * rra%
-    var taxRra = pvUsd * rraRate;
+    var defaultTaxRra = pvUsd * rraRate;
+    var defaultTaxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
+    var defaultTaxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
+    var defaultProdCharges = qty * prodRate;
+    var defaultNetPaid = pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges;
 
-    // RMA: (qty * rma_rwf) / exchange_rate
-    var taxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
+    function getValOrSet(id, defVal) {
+      var el = document.getElementById(id);
+      if (!el) return defVal;
+      if (method === 'manual' && el.dataset.userEdited === 'true' && el.value !== '') {
+        var v = parseFloat(el.value);
+        return isNaN(v) ? defVal : v;
+      }
+      el.value = defVal.toFixed(4);
+      return defVal;
+    }
 
-    // INKOMANE: (qty * inko_rwf) / exchange_rate
-    var taxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
-
-    // Production charges
-    var prodChargesTotal = qty * prodRate;
-
-    // Net paid
-    var netPaid = pvUsd - taxRra - taxRma - taxInko - prodChargesTotal;
+    var taxRra = getValOrSet('ta_tax_rra', defaultTaxRra);
+    var taxRma = getValOrSet('ta_tax_rma', defaultTaxRma);
+    var taxInko = getValOrSet('ta_tax_inkomane', defaultTaxInko);
+    var prodChargesTotal = getValOrSet('ta_prod_charges', defaultProdCharges);
+    var netPaid = getValOrSet('ta_net_paid', defaultNetPaid);
 
     // Update displays
     var pricePerKgEl = document.getElementById('ta_price_per_kg');
     if (pricePerKgEl) pricePerKgEl.textContent = '$' + pricePerKgUsdVal.toFixed(4);
     var pvUsdEl = document.getElementById('ta_purchase_value_usd');
     if (pvUsdEl) pvUsdEl.textContent = '$' + pvUsd.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-
-    var taxRraEl = document.getElementById('ta_tax_rra');
-    if (taxRraEl) taxRraEl.value = taxRra.toFixed(4);
-    var taxRmaEl = document.getElementById('ta_tax_rma');
-    if (taxRmaEl) taxRmaEl.value = taxRma.toFixed(4);
-    var taxInkoEl = document.getElementById('ta_tax_inkomane');
-    if (taxInkoEl) taxInkoEl.value = taxInko.toFixed(4);
-    var prodChargesEl = document.getElementById('ta_prod_charges');
-    if (prodChargesEl) prodChargesEl.value = prodChargesTotal.toFixed(4);
-    var netPaidEl = document.getElementById('ta_net_paid');
-    if (netPaidEl) netPaidEl.value = netPaid.toFixed(4);
 
     // Store price_per_ta_unit in the shared hidden field
     var shTa = document.getElementById('pricePerTaUnit'); if (shTa) shTa.value = pricePerTa;
@@ -861,12 +887,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // =========================================================================
   // W03 (WOLFRAMITE / TUNGSTEN) CALCULATION
-  // Excel: R = ((Q * S) - O) / 10   [where Q=MTU Paid, S=WO3% fraction, O=TC]
-  //        M = R * I                [Purchase Value USD]
-  //        J = R * L * I            [Purchase Value RWF]
-  //        AR = ((I * S * (AX/10)) * rra%)   [AX = RMB Price / MTU]
-  //        AV = I * P               [Transport: P = transport_rwf / exRate / qty] -> AV = transport_rwf / exRate
-  //        N  = M - AR - AS - AT - AV
   // =========================================================================
   window.calcW03 = function() {
     var settings = window.taxSettings || {};
@@ -879,9 +899,11 @@ document.addEventListener("DOMContentLoaded", function () {
     var mtu = parseFloat(document.getElementById('w03_lme_price') ? document.getElementById('w03_lme_price').value : 0) || 0.0;
     var rmb = parseFloat(document.getElementById('w03_rmb_price') ? document.getElementById('w03_rmb_price').value : 0) || 0.0;
     var tc = parseFloat(document.getElementById('w03_tc_charges') ? document.getElementById('w03_tc_charges').value : 0) || 0.0;
-    var transportRwf = parseFloat(document.getElementById('w03_transport_rwf') ? document.getElementById('w03_transport_rwf').value : 2000) || 2000.0;
+    var prodRate = parseFloat(document.getElementById('w03_prod_charges_rate') ? document.getElementById('w03_prod_charges_rate').value : 0) || 0.0;
     var gradePct = getPrimaryGradePct(); // e.g. 37.0 means 37%
     var gradeFrac = gradePct / 100.0;    // 0.37
+
+    var method = getPricingMethod();
 
     // Update grade display
     var gradeDisplayEl = document.getElementById('w03_grade_display');
@@ -889,20 +911,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var pricePerKgUsdVal = 0.0;
     var pricePerKgRwfVal = 0.0;
-    var taxRra = 0.0;
 
-    var method = getPricingMethod();
     var pOpt = purchaseCurrencySelect && purchaseCurrencySelect.selectedIndex >= 0 ? purchaseCurrencySelect.options[purchaseCurrencySelect.selectedIndex] : null;
     var pCode = pOpt ? pOpt.text.split(' - ')[0] : 'RWF';
 
     if (method === 'manual') {
       var manualPrice = parseFloat(purchaseAmountInCurrencyInput ? purchaseAmountInCurrencyInput.value : 0) || 0.0;
-      if (pCode === 'RWF') {
-        pricePerKgRwfVal = manualPrice;
-        pricePerKgUsdVal = exRate > 0 ? manualPrice / exRate : 0.0;
+      if (manualPrice <= 0 && mtu > 0 && qty > 0) {
+        pricePerKgUsdVal = ((mtu * gradeFrac) - tc) / 10.0;
+        pricePerKgRwfVal = pricePerKgUsdVal * exRate;
+        if (purchaseAmountInCurrencyInput) {
+          purchaseAmountInCurrencyInput.value = pCode === 'RWF' ? pricePerKgRwfVal.toFixed(4) : pricePerKgUsdVal.toFixed(4);
+        }
       } else {
-        pricePerKgUsdVal = manualPrice;
-        pricePerKgRwfVal = manualPrice * exRate;
+        if (pCode === 'RWF') {
+          pricePerKgRwfVal = manualPrice;
+          pricePerKgUsdVal = exRate > 0 ? manualPrice / exRate : 0.0;
+        } else {
+          pricePerKgUsdVal = manualPrice;
+          pricePerKgRwfVal = manualPrice * exRate;
+        }
       }
     } else {
       // Price per kg USD: = ((MTU * WO3%) - TC) / 10
@@ -918,27 +946,29 @@ document.addEventListener("DOMContentLoaded", function () {
     var pvUsd = pricePerKgUsdVal * qty;
     var pvRwf = pvUsd * exRate;
 
-    if (method === 'manual') {
-      // RRA withholding tax fallback in manual mode (flat 3% of purchase value)
-      taxRra = pvUsd * rraRate;
-    } else {
-      // RRA Tax: ((qty * WO3_frac * (rmb / 10)) * rra%)
-      taxRra = qty * gradeFrac * (rmb / 10.0) * rraRate;
+    var defaultTaxRra = (method === 'manual' && rmb <= 0) ? (pvUsd * rraRate) : (qty * gradeFrac * (rmb / 10.0) * rraRate);
+    var defaultTaxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
+    var defaultTaxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
+    var defaultProdCharges = qty * prodRate;
+    var defaultNetPaid = pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges;
+    var fluc = rmb - mtu;
+
+    function getValOrSet(id, defVal) {
+      var el = document.getElementById(id);
+      if (!el) return defVal;
+      if (method === 'manual' && el.dataset.userEdited === 'true' && el.value !== '') {
+        var v = parseFloat(el.value);
+        return isNaN(v) ? defVal : v;
+      }
+      el.value = defVal.toFixed(4);
+      return defVal;
     }
 
-    // RMA: (qty * rma_rwf) / exchange_rate
-    var taxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
-
-    // INKOMANE: (qty * inko_rwf) / exchange_rate
-    var taxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
-
-    // Transport fees total in USD (AV = transport_rwf / exRate)
-    var transportTotal = exRate > 0 ? transportRwf / exRate : 0.0;
-    var transportPerKgUsd = qty > 0 ? transportTotal / qty : 0.0;
-
-    // Net paid
-    var netPaid = pvUsd - taxRra - taxRma - taxInko - transportTotal;
-    var fluc = rmb - mtu;
+    var taxRra = getValOrSet('w03_tax_rra', defaultTaxRra);
+    var taxRma = getValOrSet('w03_tax_rma', defaultTaxRma);
+    var taxInko = getValOrSet('w03_tax_inkomane', defaultTaxInko);
+    var prodChargesTotal = getValOrSet('w03_prod_charges', defaultProdCharges);
+    var netPaid = getValOrSet('w03_net_paid', defaultNetPaid);
 
     // Update displays
     var pricePerKgEl = document.getElementById('w03_price_per_kg');
@@ -947,17 +977,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (pvUsdEl) pvUsdEl.textContent = '$' + pvUsd.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
     var pvRwfEl = document.getElementById('w03_purchase_value_rwf');
     if (pvRwfEl) pvRwfEl.textContent = pvRwf.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' RWF';
-
-    var taxRraEl = document.getElementById('w03_tax_rra');
-    if (taxRraEl) taxRraEl.value = taxRra.toFixed(4);
-    var taxRmaEl = document.getElementById('w03_tax_rma');
-    if (taxRmaEl) taxRmaEl.value = taxRma.toFixed(4);
-    var taxInkoEl = document.getElementById('w03_tax_inkomane');
-    if (taxInkoEl) taxInkoEl.value = taxInko.toFixed(4);
-    var transportEl = document.getElementById('w03_transport_charges');
-    if (transportEl) transportEl.value = transportTotal.toFixed(4);
-    var netPaidEl = document.getElementById('w03_net_paid');
-    if (netPaidEl) netPaidEl.value = netPaid.toFixed(4);
 
     // Store into shared hidden fields for form submission
     function sh(id, val) { var el = document.getElementById(id); if (el) el.value = val; }
@@ -969,16 +988,16 @@ document.addEventListener("DOMContentLoaded", function () {
     sh('sharedTaxRma', taxRma.toFixed(4));
     sh('sharedTaxInkomane', taxInko.toFixed(4));
     sh('sharedNetPaid', netPaid.toFixed(4));
-    sh('sharedProductionCharges', transportTotal.toFixed(4));
+    sh('sharedProductionCharges', prodChargesTotal.toFixed(4));
     sh('sharedLmePrice', rmb.toFixed(4));      // Store RMB Price in DB lme_price
     sh('sharedFluc', fluc.toFixed(4));          // Store fluc in DB fluc
     sh('sharedTcCharges', tc.toFixed(4));
     sh('sharedLmePaid', mtu.toFixed(4));        // Store MTU Paid in DB lme_paid
-    sh('sharedProductionChargesPerKg', transportPerKgUsd.toFixed(6));
-    var h = document.getElementById('w03_prod_charges_per_kg_hidden'); if (h) h.value = transportPerKgUsd.toFixed(6);
+    sh('sharedProductionChargesPerKg', prodRate.toFixed(6));
+    var h = document.getElementById('w03_prod_charges_per_kg_hidden'); if (h) h.value = prodRate.toFixed(6);
 
     // Summary
-    updatePricingSummary(qty, pricePerKgUsdVal, pvUsd, pvRwf, taxRra + taxRma + taxInko + transportTotal, netPaid);
+    updatePricingSummary(qty, pricePerKgUsdVal, pvUsd, pvRwf, taxRra + taxRma + taxInko + prodChargesTotal, netPaid);
   };
 
   function updatePricingSummary(qty, pricePerKg, pvUsd, pvRwf, totalDeductions, netPaid) {
@@ -991,6 +1010,25 @@ document.addEventListener("DOMContentLoaded", function () {
       '<div class="summary-row"><span>Total Deductions/Taxes:</span><span class="summary-val-usd" style="color:var(--red)">-$' + totalDeductions.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:4}) + '</span></div>' +
       '<div class="summary-row"><span>Net Payable Amount:</span><span class="summary-val-usd" style="color:var(--green)">$' + netPaid.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
   }
+
+  // Wire manual entry inputs to flag user edit and re-trigger calculation
+  var manualEditableIds = [
+    'sn_lme_price', 'sn_fluc', 'sn_lme_paid', 'sn_tc_charges', 'sn_prod_charges_rate',
+    'sn_tax_rra', 'sn_tax_rma', 'sn_tax_inkomane', 'sn_prod_charges', 'sn_net_paid',
+    'ta_price_per_ta', 'ta_prod_charges_rate', 'ta_tax_rra', 'ta_tax_rma', 'ta_tax_inkomane',
+    'ta_prod_charges', 'ta_net_paid',
+    'w03_lme_price', 'w03_rmb_price', 'w03_tc_charges', 'w03_prod_charges_rate',
+    'w03_tax_rra', 'w03_tax_rma', 'w03_tax_inkomane', 'w03_prod_charges', 'w03_net_paid'
+  ];
+  manualEditableIds.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', function() {
+        el.dataset.userEdited = 'true';
+        if (currentStep === 4) triggerProductCalc(getProductType());
+      });
+    }
+  });
 
   // Exchange rate inputs trigger recalculation for current product type
   [purchaseCurrencyValueInput, exchangeRateValueInput].forEach(function(inp) {
@@ -1343,10 +1381,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var w03Mtu = document.getElementById('w03_lme_price'); if (w03Mtu) w03Mtu.value = p.lme_paid || '';
       var w03Rmb = document.getElementById('w03_rmb_price'); if (w03Rmb) w03Rmb.value = p.lme_price || '';
       var w03Tc = document.getElementById('w03_tc_charges'); if (w03Tc) w03Tc.value = p.tc_charges || '';
-      var w03Transport = document.getElementById('w03_transport_rwf');
-      if (w03Transport) {
-        w03Transport.value = (p.production_charges && p.exchange_rate) ? Math.round(p.production_charges * p.exchange_rate) : '2000';
-      }
+      var w03ProdRate = document.getElementById('w03_prod_charges_rate'); if (w03ProdRate) w03ProdRate.value = p.production_charges_per_kg || '';
       // Shared hidden fields
       if (priceKgUsd) priceKgUsd.value = p.price_per_kg_usd || '';
       if (priceKgRwf) priceKgRwf.value = p.price_per_kg_rwf || '';

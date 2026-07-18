@@ -672,8 +672,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
                             <td class="num-cell" style="color: #dc2626;"><?php echo number_format($p['tax_rma'] !== null ? $p['tax_rma'] * $exchangeRate : 0.0, 2); ?></td>
                         </tr>
                         <tr>
-                            <td class="label-cell">Transport fees</td>
-                            <td class="num-cell" style="color: #dc2626;">2,000.00</td>
+                            <td class="label-cell">Production fees</td>
+                            <td class="num-cell" style="color: #dc2626;"><?php echo number_format($p['production_charges'] !== null ? $p['production_charges'] * $exchangeRate : 0.0, 2); ?></td>
                         </tr>
                         <tr>
                             <td class="label-cell">Inkomane</td>
