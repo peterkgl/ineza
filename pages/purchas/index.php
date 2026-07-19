@@ -404,7 +404,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
             }
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     </head>
     <body>
 
@@ -412,6 +413,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
         <button onclick="window.close()" class="btn">
             <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; vertical-align: middle; margin-right: 4px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             Close Tab
+        </button>
+        <button onclick="window.print()" class="btn">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; vertical-align: middle; margin-right: 4px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print / Save PDF
         </button>
         <button onclick="downloadPDF()" class="btn btn-primary">
             <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
@@ -839,36 +844,488 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
             }
         }
 
+        const invoiceData = {
+            purchaseNo: <?php echo json_encode($p['purchase_no']); ?>,
+            purchaseDate: <?php echo json_encode($p['purchase_date']); ?>,
+            supplierName: <?php echo json_encode($p['supplier_name']); ?>,
+            exchangeRate: <?php echo (float)$exchangeRate; ?>,
+            qty: <?php echo (float)$qty; ?>,
+            primaryGradePct: <?php echo (float)$primaryGradePct; ?>,
+            lmePrice: <?php echo (float)($p['lme_price'] !== null ? $p['lme_price'] : 0.0); ?>,
+            fluc: <?php echo (float)($p['fluc'] !== null ? $p['fluc'] : 0.0); ?>,
+            lmePaid: <?php echo (float)($p['lme_paid'] !== null ? $p['lme_paid'] : 0.0); ?>,
+            tcCharges: <?php echo (float)($p['tc_charges'] !== null ? $p['tc_charges'] : 0.0); ?>,
+            pricePerKgUsd: <?php echo (float)($p['price_per_kg_usd'] !== null ? $p['price_per_kg_usd'] : 0.0); ?>,
+            pricePerTaUnit: <?php echo (float)($p['price_per_ta_unit'] !== null ? $p['price_per_ta_unit'] : 0.0); ?>,
+            purchaseValUsd: <?php echo (float)$purchaseValUsd; ?>,
+            purchaseValRwf: <?php echo (float)$purchaseValRwf; ?>,
+            taxRra: <?php echo (float)$p['tax_rra']; ?>,
+            taxRma: <?php echo (float)$p['tax_rma']; ?>,
+            taxInkomane: <?php echo (float)$p['tax_inkomane']; ?>,
+            prodChargesPerKg: <?php echo (float)$p['production_charges_per_kg']; ?>,
+            prodCharges: <?php echo (float)$p['production_charges']; ?>,
+            netPaidUsd: <?php echo (float)$netPaidUsd; ?>,
+            lotsCode: <?php echo json_encode($p['lots_code']); ?>,
+            isTin: <?php echo $is_tin ? 'true' : 'false'; ?>,
+            isTantalum: <?php echo $is_tantalum ? 'true' : 'false'; ?>,
+            isWolframite: <?php echo $is_wolframite ? 'true' : 'false'; ?>
+        };
+
+        function numFormat(val, decimals) {
+            if (decimals === undefined) decimals = 2;
+            if (val === null || val === undefined || isNaN(val)) return '0.00';
+            return Number(val).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        }
+
         function downloadPDF() {
-            var element = document.querySelector('.page-container');
-            
-            // Temporarily adjust styles for clean PDF rendering
-            var originalBoxShadow = element.style.boxShadow;
-            var originalBorderRadius = element.style.borderRadius;
-            var originalPadding = element.style.padding;
-            
-            element.style.boxShadow = 'none';
-            element.style.borderRadius = '0';
-            element.style.padding = '40px'; 
-            
-            var opt = {
-                margin:       [0, 0, 0, 0],
-                filename:     'Purchase_Invoice_<?php echo htmlspecialchars($p['purchase_no']); ?>.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true,
-                    logging: false,
-                    letterRendering: true
+            var logoImg = document.querySelector('.header-logo');
+            var logoBase64 = '';
+            if (logoImg) {
+                try {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = logoImg.naturalWidth || logoImg.width || 200;
+                    canvas.height = logoImg.naturalHeight || logoImg.height || 60;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(logoImg, 0, 0);
+                    logoBase64 = canvas.toDataURL('image/png');
+                } catch(e) {
+                    console.error('Logo conversion error:', e);
+                }
+            }
+
+            var content = [];
+
+            if (logoBase64) {
+                content.push({ image: logoBase64, width: 140, margin: [0, 0, 0, 15] });
+            }
+
+            if (invoiceData.isTin) {
+                // TIN Sn02 Voucher
+                content.push(
+                    { text: 'INEZA AFRICA MINING Ltd', fontSize: 13, bold: true, margin: [0, 0, 0, 6] },
+                    { text: 'PAYMENT VOUCHER: ' + invoiceData.purchaseNo, fontSize: 12, bold: true, margin: [30, 0, 0, 10] },
+                    {
+                        table: {
+                            widths: [60, '*'],
+                            body: [
+                                [{ text: 'Date:', fontSize: 10 }, { text: invoiceData.purchaseDate, fontSize: 10 }],
+                                [{ text: 'Supplier:', bold: true, fontSize: 10 }, { text: invoiceData.supplierName, bold: true, fontSize: 10 }]
+                            ]
+                        },
+                        layout: 'noBorders',
+                        margin: [0, 0, 0, 10]
+                    }
+                );
+
+                var tableBody = [
+                    [
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: 'Fluc', bold: true, style: 'cell' },
+                        { text: 'USD', bold: true, style: 'cell' }
+                    ],
+                    [
+                        { text: 'RATE', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.exchangeRate, 0), style: 'cell' },
+                        { text: '', style: 'cell' }
+                    ],
+                    [
+                        { text: 'QUANTITY', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.qty, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'GRADE', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.primaryGradePct, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'LME', style: 'cell' },
+                        { text: numFormat(invoiceData.lmePrice, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.fluc, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.lmePaid, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'TC', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.tcCharges, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'P.U', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.pricePerKgUsd, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'P.T', bold: true, style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.purchaseValUsd, 2), bold: true, alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: '3% RRA (TC=800)', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.taxRra, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'RMA (50 FRW/KG)', style: 'cell' },
+                        { text: '50', style: 'cell' },
+                        { text: numFormat(invoiceData.qty * 50, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.taxRma, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'INKOMANE (20FRW/KG)', style: 'cell' },
+                        { text: '20', style: 'cell' },
+                        { text: numFormat(invoiceData.qty * 20, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.taxInkomane, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'Prod fees', style: 'cell' },
+                        { text: numFormat(invoiceData.prodChargesPerKg * invoiceData.exchangeRate, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.prodCharges * invoiceData.exchangeRate, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.prodCharges, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [{ text: '', margin: [0, 2, 0, 2], border: [false, false, false, false], colSpan: 4 }, {}, {}, {}],
+                    [
+                        { text: 'A PAYER', bold: true, fillColor: '#FFFF00', style: 'cell' },
+                        { text: '', fillColor: '#FFFF00', style: 'cell' },
+                        { text: '', fillColor: '#FFFF00', style: 'cell' },
+                        { text: numFormat(invoiceData.netPaidUsd, 2), bold: true, alignment: 'right', fillColor: '#FFFF00', style: 'cell' }
+                    ],
+                    [{ text: '', margin: [0, 2, 0, 2], border: [false, false, false, false], colSpan: 4 }, {}, {}, {}],
+                    [
+                        { text: 'ADVANCE PAID (SEE ATTACHED DOCUMENT)', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '0.00', alignment: 'right', style: 'cell' }
+                    ],
+                    [{ text: '', margin: [0, 2, 0, 2], border: [false, false, false, false], colSpan: 4 }, {}, {}, {}],
+                    [
+                        { text: 'NET TO BE PAID', bold: true, fillColor: '#FFC000', style: 'cell' },
+                        { text: '', fillColor: '#FFC000', style: 'cell' },
+                        { text: '', fillColor: '#FFC000', style: 'cell' },
+                        { text: numFormat(invoiceData.netPaidUsd, 2), bold: true, alignment: 'right', fillColor: '#FFC000', style: 'cell' }
+                    ],
+                    [
+                        { text: '', fillColor: '#92D050', style: 'cell' },
+                        { text: '', fillColor: '#92D050', style: 'cell' },
+                        { text: 'IN FRW', bold: true, alignment: 'center', fillColor: '#92D050', style: 'cell' },
+                        { text: numFormat(invoiceData.netPaidUsd * invoiceData.exchangeRate, 2), bold: true, alignment: 'right', fillColor: '#92D050', style: 'cell' }
+                    ]
+                ];
+
+                content.push({
+                    table: {
+                        widths: ['35%', '20%', '22.5%', '22.5%'],
+                        body: tableBody
+                    },
+                    layout: {
+                        hLineWidth: function () { return 0.5; },
+                        vLineWidth: function () { return 0.5; },
+                        hLineColor: function () { return '#cbd5e1'; },
+                        vLineColor: function () { return '#cbd5e1'; }
+                    },
+                    margin: [0, 0, 0, 15]
+                });
+
+            } else if (invoiceData.isTantalum) {
+                // TANTALITE Ta205 Voucher
+                content.push(
+                    { text: 'INEZA AFRICAN MINING Ltd', fontSize: 13, bold: true, margin: [0, 0, 0, 2] },
+                    { text: 'Adress:', fontSize: 10, margin: [0, 0, 0, 2] },
+                    { text: 'Tel:', fontSize: 10, margin: [0, 0, 0, 8] },
+                    { text: 'PAYMENT VOUCHER: ' + invoiceData.purchaseNo, fontSize: 12, bold: true, margin: [30, 0, 0, 10] },
+                    {
+                        table: {
+                            widths: [60, '*'],
+                            body: [
+                                [{ text: 'Date:', bold: true, fontSize: 10 }, { text: invoiceData.purchaseDate, fontSize: 10 }],
+                                [{ text: 'Supplier: ' + invoiceData.supplierName, bold: true, fontSize: 10, colSpan: 2 }, {}]
+                            ]
+                        },
+                        layout: 'noBorders',
+                        margin: [0, 0, 0, 10]
+                    }
+                );
+
+                var tableBody = [
+                    [
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: 'Fluc', bold: true, style: 'cell' },
+                        { text: 'USD', bold: true, style: 'cell' }
+                    ],
+                    [
+                        { text: 'RATE', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.exchangeRate, 0), style: 'cell' },
+                        { text: '', style: 'cell' }
+                    ],
+                    [
+                        { text: 'QUANTITY', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.qty, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'GRADE', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.primaryGradePct, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'PRICE', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.pricePerTaUnit, 2), bold: true, style: 'cell' },
+                        { text: numFormat(invoiceData.pricePerTaUnit, 2), bold: true, alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'P.T', bold: true, style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.purchaseValUsd, 2), bold: true, alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: '3% RRA', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: numFormat(invoiceData.taxRra, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'RMA (125 FRW/KG)', style: 'cell' },
+                        { text: '125', style: 'cell' },
+                        { text: numFormat(invoiceData.qty * 125, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.taxRma, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'INKOMANE (40FRW/KG)', style: 'cell' },
+                        { text: '40', style: 'cell' },
+                        { text: numFormat(invoiceData.qty * 40, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.taxInkomane, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [
+                        { text: 'Prod fees', style: 'cell' },
+                        { text: numFormat(invoiceData.prodChargesPerKg * invoiceData.exchangeRate, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.prodCharges * invoiceData.exchangeRate, 2), style: 'cell' },
+                        { text: numFormat(invoiceData.prodCharges, 2), alignment: 'right', style: 'cell' }
+                    ],
+                    [{ text: '', margin: [0, 2, 0, 2], border: [false, false, false, false], colSpan: 4 }, {}, {}, {}],
+                    [
+                        { text: 'A PAYER', bold: true, fillColor: '#FFFF00', style: 'cell' },
+                        { text: '', fillColor: '#FFFF00', style: 'cell' },
+                        { text: '', fillColor: '#FFFF00', style: 'cell' },
+                        { text: numFormat(invoiceData.netPaidUsd, 2), bold: true, alignment: 'right', fillColor: '#FFFF00', style: 'cell' }
+                    ],
+                    [{ text: '', margin: [0, 2, 0, 2], border: [false, false, false, false], colSpan: 4 }, {}, {}, {}],
+                    [
+                        { text: 'ADVANCE PAID (SEE ATTACHED DOCUMENT)', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '', style: 'cell' },
+                        { text: '0.00', alignment: 'right', style: 'cell' }
+                    ],
+                    [{ text: '', margin: [0, 2, 0, 2], border: [false, false, false, false], colSpan: 4 }, {}, {}, {}],
+                    [
+                        { text: 'NET TO NE PAID', bold: true, fillColor: '#FFC000', style: 'cell' },
+                        { text: '', fillColor: '#FFC000', style: 'cell' },
+                        { text: '', fillColor: '#FFC000', style: 'cell' },
+                        { text: numFormat(invoiceData.netPaidUsd, 2), bold: true, alignment: 'right', fillColor: '#FFC000', style: 'cell' }
+                    ],
+                    [
+                        { text: '', fillColor: '#92D050', style: 'cell' },
+                        { text: '', fillColor: '#92D050', style: 'cell' },
+                        { text: 'IN FRW', bold: true, alignment: 'center', fillColor: '#92D050', style: 'cell' },
+                        { text: numFormat(invoiceData.netPaidUsd * invoiceData.exchangeRate, 2), bold: true, alignment: 'right', fillColor: '#92D050', style: 'cell' }
+                    ]
+                ];
+
+                content.push({
+                    table: {
+                        widths: ['40%', '20%', '20%', '20%'],
+                        body: tableBody
+                    },
+                    layout: {
+                        hLineWidth: function () { return 0.5; },
+                        vLineWidth: function () { return 0.5; },
+                        hLineColor: function () { return '#cbd5e1'; },
+                        vLineColor: function () { return '#cbd5e1'; }
+                    },
+                    margin: [0, 0, 0, 15]
+                });
+
+            } else {
+                // WOLFRAMITE W03 Voucher
+                content.push(
+                    { text: 'PAYMENT VOUCHER FOR INEZA AFRICAN MINING', fontSize: 15, bold: true, alignment: 'center', margin: [0, 0, 0, 15] },
+                    {
+                        table: {
+                            widths: [90, '*', 90, '*'],
+                            body: [
+                                [{ text: 'To:', bold: true, fontSize: 10 }, { text: invoiceData.supplierName, bold: true, fontSize: 10 }, { text: '', fontSize: 10 }, { text: '', fontSize: 10 }],
+                                [{ text: 'Exchange rate', bold: true, fontSize: 10 }, { text: numFormat(invoiceData.exchangeRate, 2), bold: true, fontSize: 10 }, { text: '', fontSize: 10 }, { text: '', fontSize: 10 }],
+                                [{ text: 'RMB Price/MTU', bold: true, fontSize: 10 }, { text: numFormat(invoiceData.lmePrice, 2), bold: true, fontSize: 10 }, { text: '', fontSize: 10 }, { text: '', fontSize: 10 }],
+                                [{ text: 'Lot Number :', bold: true, fontSize: 10 }, { text: '', fontSize: 10 }, { text: '', fontSize: 10 }, { text: invoiceData.lotsCode, bold: true, alignment: 'center', fontSize: 10 }]
+                            ]
+                        },
+                        layout: 'noBorders',
+                        margin: [0, 0, 0, 12]
+                    },
+                    {
+                        table: {
+                            headerRows: 1,
+                            widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+                            body: [
+                                [
+                                    { text: 'DESCRIPTION OF GOODS', bold: true, alignment: 'center', style: 'cell' },
+                                    { text: 'LOT NO.', bold: true, alignment: 'center', style: 'cell' },
+                                    { text: 'Gross weight(MT)', bold: true, alignment: 'center', style: 'cell' },
+                                    { text: 'Moisture (%)', bold: true, alignment: 'center', style: 'cell' },
+                                    { text: 'NET DRY WEIGHT (MT)', bold: true, alignment: 'center', style: 'cell' },
+                                    { text: 'WO3 (%)', bold: true, alignment: 'center', style: 'cell' },
+                                    { text: 'UNIT PRICE (USD/DMTU)', bold: true, alignment: 'center', style: 'cell' },
+                                    { text: 'Price USD/Kg', bold: true, alignment: 'center', style: 'cell' },
+                                    { text: 'TOTAL PRICE (USD)', bold: true, alignment: 'center', style: 'cell' }
+                                ],
+                                [
+                                    { text: 'Tungsten Concentrate/wolframite', alignment: 'center', style: 'cell' },
+                                    { text: invoiceData.lotsCode, alignment: 'center', style: 'cell' },
+                                    { text: numFormat(invoiceData.qty / 1000.0, 3), alignment: 'center', style: 'cell' },
+                                    { text: '', alignment: 'center', style: 'cell' },
+                                    { text: numFormat(invoiceData.qty / 1000.0, 3), alignment: 'center', bold: true, fillColor: '#FFFF00', style: 'cell' },
+                                    { text: numFormat(invoiceData.primaryGradePct, 2), alignment: 'center', bold: true, fillColor: '#FFFF00', style: 'cell' },
+                                    { text: numFormat(invoiceData.lmePaid, 2), alignment: 'center', bold: true, fillColor: '#FFFF00', style: 'cell' },
+                                    { text: numFormat(invoiceData.pricePerKgUsd, 2), alignment: 'center', style: 'cell' },
+                                    { text: numFormat(invoiceData.purchaseValUsd, 2), alignment: 'center', bold: true, style: 'cell' }
+                                ]
+                            ]
+                        },
+                        layout: {
+                            hLineWidth: function () { return 0.5; },
+                            vLineWidth: function () { return 0.5; },
+                            hLineColor: function () { return '#cbd5e1'; },
+                            vLineColor: function () { return '#cbd5e1'; }
+                        },
+                        margin: [0, 0, 0, 15]
+                    },
+                    {
+                        columns: [
+                            { width: '*', text: '' },
+                            {
+                                width: '45%',
+                                table: {
+                                    body: [
+                                        [{ text: 'Amount Rwf', bold: true, style: 'cell' }, { text: numFormat(invoiceData.purchaseValRwf, 2), alignment: 'right', style: 'cell' }],
+                                        [{ text: 'RMA', bold: true, style: 'cell' }, { text: numFormat(invoiceData.taxRma * invoiceData.exchangeRate, 2), style: 'cell' }],
+                                        [{ text: 'Transport fees', bold: true, style: 'cell' }, { text: numFormat(invoiceData.prodCharges * invoiceData.exchangeRate, 2), style: 'cell' }],
+                                        [{ text: 'Inkomane', bold: true, style: 'cell' }, { text: numFormat(invoiceData.taxInkomane * invoiceData.exchangeRate, 2), style: 'cell' }],
+                                        [{ text: 'RRA Tax 3%', bold: true, style: 'cell' }, { text: numFormat(invoiceData.taxRra * invoiceData.exchangeRate, 2), style: 'cell' }],
+                                        [{ text: '', margin: [0, 2, 0, 2], border: [false, false, false, false], colSpan: 2 }, {}],
+                                        [{ text: 'Balance Rwf', bold: true, style: 'cell' }, { text: numFormat(invoiceData.netPaidUsd * invoiceData.exchangeRate, 2), bold: true, style: 'cell' }],
+                                        [{ text: 'Exchange rate', bold: true, style: 'cell' }, { text: numFormat(invoiceData.exchangeRate, 2), style: 'cell' }],
+                                        [{ text: 'Balance USD', bold: true, style: 'cell' }, { text: numFormat(invoiceData.netPaidUsd, 2), bold: true, style: 'cell' }],
+                                        [{ text: 'Advance payment UDS', bold: true, style: 'cell' }, { text: '', style: 'cell' }],
+                                        [{ text: 'Amount to be paid USD', bold: true, style: 'cell' }, { text: numFormat(invoiceData.netPaidUsd, 2), bold: true, style: 'cell' }],
+                                        [{ text: 'Amount to be paid Rwf', bold: true, style: 'cell' }, { text: numFormat(invoiceData.netPaidUsd * invoiceData.exchangeRate, 2), bold: true, style: 'cell' }]
+                                    ]
+                                },
+                                layout: {
+                                    hLineWidth: function () { return 0.5; },
+                                    vLineWidth: function () { return 0.5; },
+                                    hLineColor: function () { return '#cbd5e1'; },
+                                    vLineColor: function () { return '#cbd5e1'; }
+                                }
+                            }
+                        ],
+                        margin: [0, 0, 0, 15]
+                    }
+                );
+            }
+
+            // Signatures block
+            content.push(
+                {
+                    table: {
+                        widths: ['33%', '33%', '34%'],
+                        body: [
+                            [
+                                {
+                                    stack: [
+                                        { text: 'PREPARED BY:', fontSize: 9, margin: [0, 0, 0, 8] },
+                                        { text: 'Name: ______________________', fontSize: 8, margin: [0, 0, 0, 6] },
+                                        { text: 'Signature: __________________', fontSize: 8 }
+                                    ],
+                                    border: [false, false, false, false]
+                                },
+                                {
+                                    stack: [
+                                        { text: 'APPROUVED BY:', fontSize: 9, margin: [0, 0, 0, 8] },
+                                        { text: 'Name: ______________________', fontSize: 8, margin: [0, 0, 0, 6] },
+                                        { text: 'Signature: __________________', fontSize: 8 }
+                                    ],
+                                    border: [false, false, false, false]
+                                },
+                                {
+                                    stack: [
+                                        { text: 'RECEIVED BY:', fontSize: 9, margin: [0, 0, 0, 8] },
+                                        { text: 'Name: ______________________', fontSize: 8, margin: [0, 0, 0, 6] },
+                                        { text: 'Signature: __________________', fontSize: 8 }
+                                    ],
+                                    border: [false, false, false, false]
+                                }
+                            ]
+                        ]
+                    },
+                    margin: [0, 10, 0, 15]
+                }
+            );
+
+            // Footer
+            content.push(
+                {
+                    canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#cbd5e1' }],
+                    margin: [0, 5, 0, 8]
                 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                {
+                    columns: [
+                        {
+                            width: '60%',
+                            stack: [
+                                { text: 'INEZA AFRICAN MINING LTD', bold: true, fontSize: 9, color: '#ec4f25' },
+                                { text: 'Company Number : 123054396', fontSize: 7.5, color: '#475569' },
+                                { text: 'Adress : Plot N. 8425, Kigarama, Gahanga', fontSize: 7.5, color: '#475569' },
+                                { text: 'Industrial area, Kicukiro', fontSize: 7.5, color: '#475569' }
+                            ]
+                        },
+                        {
+                            width: '40%',
+                            alignment: 'right',
+                            stack: [
+                                { text: '+250 784 886 562', fontSize: 7.5, color: '#475569' },
+                                { text: 'info@inezaafricanmincie.com', fontSize: 7.5, color: '#475569' },
+                                { text: 'www.inezaafricanmincie.com', fontSize: 7.5, color: '#ec4f25' }
+                            ]
+                        }
+                    ]
+                }
+            );
+
+            var docDefinition = {
+                pageSize: 'A4',
+                pageMargins: [40, 30, 40, 30],
+                content: content,
+                styles: {
+                    cell: {
+                        fontSize: 8.5,
+                        margin: [2, 2, 2, 2]
+                    }
+                }
             };
-            
-            html2pdf().from(element).set(opt).toPdf().get('pdf').then(function (pdf) {
-                element.style.boxShadow = originalBoxShadow;
-                element.style.borderRadius = originalBorderRadius;
-                element.style.padding = originalPadding;
-            }).save();
+
+            pdfMake.createPdf(docDefinition).download('Purchase_Invoice_' + invoiceData.purchaseNo + '.pdf');
         }
     </script>
     </body>
