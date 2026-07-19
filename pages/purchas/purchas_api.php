@@ -49,6 +49,9 @@ function getSetting($conn, $key, $default = '') {
 function formula_price_per_kg_usd($conn, $lme_price, $tc_charges, $price_per_ta_unit, $grade_pct, $manual_price_usd, $product_type, $fluc = 0.0) {
     if ($product_type === 'tin') {
         $lme_paid = $lme_price - $fluc;
+        if ($lme_paid <= 0 && isset($_POST['lme_paid']) && (float)$_POST['lme_paid'] > 0) {
+            $lme_paid = (float)$_POST['lme_paid'];
+        }
         if ($lme_paid > 0) {
             $grade_fraction = $grade_pct / 100.0;
             return (($lme_paid * $grade_fraction) - $tc_charges) / 1000.0;
@@ -57,6 +60,9 @@ function formula_price_per_kg_usd($conn, $lme_price, $tc_charges, $price_per_ta_
         }
     } elseif ($product_type === 'wolframite') {
         $lme_paid = $lme_price - $fluc;
+        if ($lme_paid <= 0 && isset($_POST['lme_paid']) && (float)$_POST['lme_paid'] > 0) {
+            $lme_paid = (float)$_POST['lme_paid'];
+        }
         if ($lme_paid > 0) {
             $grade_fraction = $grade_pct / 100.0;
             return (($lme_paid * $grade_fraction) - $tc_charges) / 10.0;
@@ -89,6 +95,9 @@ function formula_tax_rra($conn, $lme_price, $grade_pct, $quantity_kg, $purchase_
     
     if ($product_type === 'tin') {
         $lme_paid = $lme_price - $fluc;
+        if ($lme_paid <= 0 && isset($_POST['lme_paid']) && (float)$_POST['lme_paid'] > 0) {
+            $lme_paid = (float)$_POST['lme_paid'];
+        }
         if ($lme_paid > 0) {
             $grade_fraction = $grade_pct / 100.0;
             $tax = (($lme_paid * $grade_fraction) - 800.0) / 1000.0 * $quantity_kg * $rra_rate;
@@ -97,10 +106,14 @@ function formula_tax_rra($conn, $lme_price, $grade_pct, $quantity_kg, $purchase_
             return $purchase_value_usd * $rra_rate;
         }
     } elseif ($product_type === 'wolframite') {
-        if ($lme_price > 0) {
+        $rmb = $lme_price;
+        if ($rmb <= 0 && isset($_POST['lme_price']) && (float)$_POST['lme_price'] > 0) {
+            $rmb = (float)$_POST['lme_price'];
+        }
+        if ($rmb > 0) {
             $grade_fraction = $grade_pct / 100.0;
-            // Wolframite RRA tax uses Full LME (lme_price), not LME Paid
-            return $quantity_kg * $grade_fraction * ($lme_price / 10.0) * $rra_rate;
+            // Wolframite RRA tax uses RMB Price ($rmb) per MTU
+            return $quantity_kg * $grade_fraction * ($rmb / 10.0) * $rra_rate;
         } else {
             return $purchase_value_usd * $rra_rate;
         }
@@ -175,16 +188,16 @@ function calculatePurchaseMetrics($conn, $quantity_kg, $exchange_rate, $lme_pric
     $net_supplier = formula_net_paid_supplier($val_usd, $tax_rra, $tax_rma, $tax_inkomane, $prod_charges);
 
     return [
-        'price_per_kg_usd' => $price_usd,
-        'price_per_kg_rwf' => $price_rwf,
-        'purchase_value_usd' => $val_usd,
-        'purchase_value_rwf' => $val_rwf,
-        'tax_rra' => $tax_rra,
-        'tax_rma' => $tax_rma,
-        'tax_inkomane' => $tax_inkomane,
-        'production_charges' => $prod_charges,
-        'net_paid_supplier_usd' => $net_supplier,
-        'lme_paid' => $lme_price - $fluc
+        'price_per_kg_usd' => round($price_usd, 2),
+        'price_per_kg_rwf' => round($price_rwf, 2),
+        'purchase_value_usd' => round($val_usd, 2),
+        'purchase_value_rwf' => round($val_rwf, 2),
+        'tax_rra' => round($tax_rra, 2),
+        'tax_rma' => round($tax_rma, 2),
+        'tax_inkomane' => round($tax_inkomane, 2),
+        'production_charges' => round($prod_charges, 2),
+        'net_paid_supplier_usd' => round($net_supplier, 2),
+        'lme_paid' => round($lme_price - $fluc, 2)
     ];
 }
 
@@ -997,6 +1010,22 @@ switch ($action) {
             $result = mysqli_stmt_get_result($stmt);
             $productionChargesAccount = mysqli_fetch_assoc($result);
             mysqli_stmt_close($stmt);
+
+            if (!$productionChargesAccount) {
+                mysqli_query($conn, "INSERT INTO accounts (account_name, account_type_id, account_code, is_active) VALUES ('Production Charges', 18, '2054', 1)");
+                $stmt = mysqli_prepare($conn, "
+                    SELECT account_code, accounts.account_type_id
+                    FROM accounts
+                    WHERE account_code = '2054'
+                    LIMIT 1
+                ");
+                if ($stmt) {
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
+                    $productionChargesAccount = mysqli_fetch_assoc($result);
+                    mysqli_stmt_close($stmt);
+                }
+            }
 
             if (!$productionChargesAccount) {
                 throw new Exception("PRODUCTION_CHARGES_PAYABLE account not found.");

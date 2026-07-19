@@ -471,7 +471,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
                     <tr>
                         <td class="label-cell">P.U</td>
                         <td>Price per kg (USD)</td>
-                        <td class="num-cell"><strong>$<?php echo number_format($p['price_per_kg_usd'] !== null ? $p['price_per_kg_usd'] : 0.0, 4); ?></strong></td>
+                        <td class="num-cell"><strong>$<?php echo number_format($p['price_per_kg_usd'] !== null ? (float)$p['price_per_kg_usd'] : 0.0, 2); ?></strong></td>
                     </tr>
                     <tr>
                         <td class="label-cell">P.T</td>
@@ -654,7 +654,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
                         <td class="num-cell"><?php echo number_format($qty / 1000.0, 3); ?></td>
                         <td class="num-cell"><?php echo number_format($primaryGradePct, 2); ?>%</td>
                         <td class="num-cell">$<?php echo number_format($p['price_per_ta_unit'] !== null ? $p['price_per_ta_unit'] : 0.0, 2); ?></td>
-                        <td class="num-cell">$<?php echo number_format($p['price_per_kg_usd'] !== null ? $p['price_per_kg_usd'] : 0.0, 4); ?></td>
+                        <td class="num-cell">$<?php echo number_format($p['price_per_kg_usd'] !== null ? (float)$p['price_per_kg_usd'] : 0.0, 2); ?></td>
                         <td class="num-cell"><strong>$<?php echo number_format($purchaseValUsd, 2); ?></strong></td>
                     </tr>
                 </tbody>

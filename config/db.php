@@ -30,7 +30,7 @@ $accountsToCheck = [
     ['account_name' => 'RRA', 'account_type_id' => 18,'account_code' => '2024'],
     ['account_name' => 'RMA', 'account_type_id' => 18,'account_code' => '2034'],
     ['account_name' => 'Inkomane', 'account_type_id' => 18,'account_code' => '2044'],
-    ['account_name' => 'Production Charges', 'account_type_id' => 62,'account_code' => '2054'],
+    ['account_name' => 'Production Charges', 'account_type_id' => 18,'account_code' => '2054'],
 ];
 
 // check if they exists

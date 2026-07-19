@@ -351,7 +351,7 @@ if ($id > 0) {
           
           <div class="form-group">
             <label for="quantityKg">Quantity (kg) *</label>
-            <input type="number" id="quantityKg" name="quantity_kg" class="form-control" placeholder="0.00" step="any" min="0.0001" required>
+            <input type="number" id="quantityKg" name="quantity_kg" class="form-control" placeholder="0.00" step="0.01" min="0.0001" required>
           </div>
 
           <div class="elements-config-box">
@@ -387,7 +387,7 @@ if ($id > 0) {
             </div>
             <div class="form-group">
               <label for="purchaseCurrencyValue">Currency Value *</label>
-              <input type="number" id="purchaseCurrencyValue" class="form-control" placeholder="1.00" step="any" value="1" required>
+              <input type="number" id="purchaseCurrencyValue" class="form-control" placeholder="1.00" step="0.01" value="1" required>
             </div>
             <div class="form-group">
               <label for="exchangeCurrencyId">Exchange Currency *</label>
@@ -399,7 +399,7 @@ if ($id > 0) {
             </div>
             <div class="form-group">
               <label for="exchangeRateValue">Exchange Rate (RWF/USD) *</label>
-              <input type="number" id="exchangeRateValue" class="form-control" placeholder="0.00068" step="any" value="0.00068" required>
+              <input type="number" id="exchangeRateValue" class="form-control" placeholder="0.00068" step="0.01" value="0.00068" required>
             </div>
           </div>
           <!-- Pricing Method Selection -->
@@ -455,26 +455,26 @@ if ($id > 0) {
             <div class="form-grid-3">
               <div class="form-group">
                 <label for="sn_lme_price">Full LME (USD / Ton) *</label>
-                <input type="number" id="sn_lme_price" class="form-control" placeholder="e.g. 32800" step="any" oninput="calcSN()">
+                <input type="number" id="sn_lme_price" class="form-control" placeholder="e.g. 32800" step="0.01" oninput="calcSN()">
               </div>
               <div class="form-group">
                 <label for="sn_fluc">Fluc (USD / Ton)</label>
-                <input type="number" id="sn_fluc" class="form-control" placeholder="0.00" step="any" oninput="calcSN()" value="0">
+                <input type="number" id="sn_fluc" class="form-control" placeholder="0.00" step="0.01" oninput="calcSN()" value="0">
               </div>
               <div class="form-group">
                 <label for="sn_lme_paid">LME Paid (USD / Ton)</label>
-                <input type="number" id="sn_lme_paid" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="sn_lme_paid" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
             </div>
 
             <div class="form-grid-3">
               <div class="form-group">
                 <label for="sn_tc_charges">TC (USD / Ton)</label>
-                <input type="number" id="sn_tc_charges" class="form-control" placeholder="e.g. 3000" step="any" oninput="calcSN()" value="0">
+                <input type="number" id="sn_tc_charges" class="form-control" placeholder="e.g. 3000" step="0.01" oninput="calcSN()" value="0">
               </div>
               <div class="form-group">
                 <label for="sn_prod_charges_rate">Production Charges (USD / kg)</label>
-                <input type="number" id="sn_prod_charges_rate" class="form-control" placeholder="e.g. 3.50" step="any" oninput="calcSN()" value="0">
+                <input type="number" id="sn_prod_charges_rate" class="form-control" placeholder="e.g. 3.50" step="0.01" oninput="calcSN()" value="0">
               </div>
               <div class="form-group">
                 <label>Sn% Grade (from Step 3)</label>
@@ -488,7 +488,7 @@ if ($id > 0) {
               <div class="form-grid-3">
                 <div class="form-group" style="margin-bottom:0;">
                   <label style="font-size:11px; color:var(--text3);">$ Price / Kg (USD)</label>
-                  <div id="sn_price_per_kg" style="font-size:15px; font-weight:700; color:var(--green); padding:4px 0;">$0.0000</div>
+                  <div id="sn_price_per_kg" style="font-size:15px; font-weight:700; color:var(--green); padding:4px 0;">$0.00</div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
                   <label style="font-size:11px; color:var(--text3);">Purchase Value ($)</label>
@@ -505,26 +505,26 @@ if ($id > 0) {
             <div class="form-grid-3">
               <div class="form-group">
                 <label for="sn_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
-                <input type="number" id="sn_tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="sn_tax_rra" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">
                 <label for="sn_tax_rma">RMA <?php echo number_format($taxSettings['tax_rate_rma_tin'], 0); ?> RWF/kg (USD)</label>
-                <input type="number" id="sn_tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="sn_tax_rma" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">
                 <label for="sn_tax_inkomane">INKOMANE <?php echo number_format($taxSettings['tax_rate_inkomane_tin'], 0); ?> RWF/kg (USD)</label>
-                <input type="number" id="sn_tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="sn_tax_inkomane" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
             </div>
 
             <div class="form-grid-2">
               <div class="form-group">
                 <label for="sn_prod_charges">Production Charges Total (USD)</label>
-                <input type="number" id="sn_prod_charges" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="sn_prod_charges" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">
                 <label for="sn_net_paid">Net Paid to Supplier (USD)</label>
-                <input type="number" id="sn_net_paid" class="form-control" placeholder="0.00" step="any" readonly style="font-weight:700; color:var(--green);">
+                <input type="number" id="sn_net_paid" class="form-control" placeholder="0.00" step="0.01" readonly style="font-weight:700; color:var(--green);">
               </div>
             </div>
 
@@ -544,7 +544,7 @@ if ($id > 0) {
             <div class="form-grid-3">
               <div class="form-group">
                 <label for="ta_price_per_ta">Price / Ta (USD/kg/%Ta) *</label>
-                <input type="number" id="ta_price_per_ta" class="form-control" placeholder="e.g. 1.58" step="any" oninput="calcTA()">
+                <input type="number" id="ta_price_per_ta" class="form-control" placeholder="e.g. 1.58" step="0.01" oninput="calcTA()">
               </div>
               <div class="form-group">
                 <label>Ta205% Grade (from Step 3)</label>
@@ -552,14 +552,14 @@ if ($id > 0) {
               </div>
               <div class="form-group">
                 <label>$ Price / Kg (USD)</label>
-                <div id="ta_price_per_kg" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--green); min-height: 38px;">$0.0000</div>
+                <div id="ta_price_per_kg" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--green); min-height: 38px;">$0.00</div>
               </div>
             </div>
 
             <div class="form-grid-2">
               <div class="form-group">
                 <label for="ta_prod_charges_rate">Production Charges (USD / kg)</label>
-                <input type="number" id="ta_prod_charges_rate" class="form-control" placeholder="e.g. 3.50" step="any" oninput="calcTA()" value="0">
+                <input type="number" id="ta_prod_charges_rate" class="form-control" placeholder="e.g. 3.50" step="0.01" oninput="calcTA()" value="0">
               </div>
               <div class="form-group">
                 <label>Purchase Value ($)</label>
@@ -571,26 +571,26 @@ if ($id > 0) {
             <div class="form-grid-3">
               <div class="form-group">
                 <label for="ta_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
-                <input type="number" id="ta_tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="ta_tax_rra" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">
                 <label for="ta_tax_rma">RMA <?php echo number_format($taxSettings['tax_rate_rma_coltan'], 0); ?> RWF/kg (USD)</label>
-                <input type="number" id="ta_tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="ta_tax_rma" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">
                 <label for="ta_tax_inkomane">INKOMANE <?php echo number_format($taxSettings['tax_rate_inkomane_coltan'], 0); ?> RWF/kg (USD)</label>
-                <input type="number" id="ta_tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="ta_tax_inkomane" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
             </div>
 
             <div class="form-grid-2">
               <div class="form-group">
                 <label for="ta_prod_charges">Production Charges Total (USD)</label>
-                <input type="number" id="ta_prod_charges" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="ta_prod_charges" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">
                 <label for="ta_net_paid">Supplier ($) — Net Paid (USD)</label>
-                <input type="number" id="ta_net_paid" class="form-control" placeholder="0.00" step="any" readonly style="font-weight:700; color:var(--green);">
+                <input type="number" id="ta_net_paid" class="form-control" placeholder="0.00" step="0.01" readonly style="font-weight:700; color:var(--green);">
               </div>
             </div>
 
@@ -610,33 +610,37 @@ if ($id > 0) {
             <div class="form-grid-2">
               <div class="form-group">
                 <label for="w03_lme_price">MTU Paid (USD / MTU) *</label>
-                <input type="number" id="w03_lme_price" class="form-control" placeholder="e.g. 1000" step="any" oninput="calcW03()">
+                <input type="number" id="w03_lme_price" class="form-control" placeholder="e.g. 1000" step="0.01" oninput="calcW03()">
               </div>
               <div class="form-group">
                 <label for="w03_rmb_price">RMB Price / MTU (USD) *</label>
-                <input type="number" id="w03_rmb_price" class="form-control" placeholder="e.g. 1500" step="any" oninput="calcW03()">
+                <input type="number" id="w03_rmb_price" class="form-control" placeholder="e.g. 1500" step="0.01" oninput="calcW03()">
               </div>
             </div>
 
             <div class="form-grid-3">
               <div class="form-group">
                 <label for="w03_tc_charges">TC (USD / MTU)</label>
-                <input type="number" id="w03_tc_charges" class="form-control" placeholder="0.00" step="any" oninput="calcW03()" value="0">
+                <input type="number" id="w03_tc_charges" class="form-control" placeholder="0.00" step="0.01" oninput="calcW03()" value="0">
+              </div>
+              <div class="form-group">
+                <label for="w03_transport_rwf">Transport (RWF / kg)</label>
+                <input type="number" id="w03_transport_rwf" class="form-control" placeholder="e.g. 2000" step="0.01" oninput="calcW03()" value="2000">
               </div>
               <div class="form-group">
                 <label for="w03_prod_charges_rate">Production Charges (USD / kg)</label>
-                <input type="number" id="w03_prod_charges_rate" class="form-control" placeholder="e.g. 3.50" step="any" oninput="calcW03()" value="0">
-              </div>
-              <div class="form-group">
-                <label>WO3% Grade (from Step 3)</label>
-                <div id="w03_grade_display" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; font-weight: 600; color: var(--text); min-height: 38px;">—</div>
+                <input type="number" id="w03_prod_charges_rate" class="form-control" placeholder="0.00" step="0.01" oninput="calcW03()" value="0">
               </div>
             </div>
 
             <div class="form-grid-2">
               <div class="form-group">
+                <label>WO3% Grade (from Step 3)</label>
+                <div id="w03_grade_display" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; font-weight: 600; color: var(--text); min-height: 38px;">—</div>
+              </div>
+              <div class="form-group">
                 <label>$ Price / Kg (USD)</label>
-                <div id="w03_price_per_kg" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--green); min-height: 38px;">$0.0000</div>
+                <div id="w03_price_per_kg" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-weight: 700; color: var(--green); min-height: 38px;">$0.00</div>
               </div>
               <div class="form-group">
                 <label>Purchase Value ($)</label>
@@ -648,26 +652,26 @@ if ($id > 0) {
             <div class="form-grid-3">
               <div class="form-group">
                 <label for="w03_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
-                <input type="number" id="w03_tax_rra" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="w03_tax_rra" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">
                 <label for="w03_tax_rma">RMA <?php echo number_format($taxSettings['tax_rate_rma_wolframite'], 0); ?> RWF/kg (USD)</label>
-                <input type="number" id="w03_tax_rma" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="w03_tax_rma" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">
                 <label for="w03_tax_inkomane">INKOMANE <?php echo number_format($taxSettings['tax_rate_inkomane_wolframite'], 0); ?> RWF/kg (USD)</label>
-                <input type="number" id="w03_tax_inkomane" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="w03_tax_inkomane" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
             </div>
 
             <div class="form-grid-3">
               <div class="form-group">
                 <label for="w03_prod_charges">Production Charges Total (USD)</label>
-                <input type="number" id="w03_prod_charges" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="w03_prod_charges" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">
                 <label for="w03_net_paid">Net Paid to Supplier (USD)</label>
-                <input type="number" id="w03_net_paid" class="form-control" placeholder="0.00" step="any" readonly style="font-weight:700; color:var(--green);">
+                <input type="number" id="w03_net_paid" class="form-control" placeholder="0.00" step="0.01" readonly style="font-weight:700; color:var(--green);">
               </div>
               <div class="form-group">
                 <label>Purchase Value (RWF)</label>
@@ -700,7 +704,7 @@ if ($id > 0) {
               </div>
               <div class="form-group">
                 <label id="amountInCurrencyLabel">Purchase Amount in Currency</label>
-                <input type="number" id="purchaseAmountInCurrency" name="purchase_amount_in_currency" class="form-control" placeholder="0.00" step="any" readonly>
+                <input type="number" id="purchaseAmountInCurrency" name="purchase_amount_in_currency" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
             </div>
             <div class="form-group">
