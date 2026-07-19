@@ -173,11 +173,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
             width: 100%;
             max-width: 800px;
             min-height: 1000px;
-            padding: 80px 60px;
+            padding: 80px 60px 40px 60px;
             box-sizing: border-box;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             position: relative;
             border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .invoice-body-wrapper {
+            flex: 1 0 auto;
         }
 
         .divHeader {
@@ -192,7 +198,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
         }
 
         .divFooter {
-            margin-top: 60px;
+            margin-top: auto;
             border-top: 0.75pt solid var(--accent);
             padding-top: 15px;
             display: flex;
@@ -280,11 +286,21 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
             background-color: var(--grid-bg);
             width: 30%;
         }
-        .excel-grid tr.total-row td {
-            font-weight: 700;
-            background-color: #f1f5f9;
-            border-top: 2px solid var(--text-main);
-            border-bottom: 2px double var(--text-main);
+        .excel-grid-exact {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-size: 11px;
+            color: #000;
+        }
+        .excel-grid-exact th, .excel-grid-exact td {
+            border: 1px solid #000000;
+            padding: 4px 6px;
+            text-align: left;
+        }
+        .excel-grid-exact td.num-cell {
+            text-align: right;
         }
 
         .excel-signatures {
@@ -409,326 +425,391 @@ if (isset($_GET['action']) && $_GET['action'] === 'invoice') {
             <img src="../../src/logo/ineza_logo.png" alt="INEZA Logo" class="header-logo">
         </div>
 
-        <!-- MAIN CONTENT -->
-        <?php if ($is_tin): ?>
-            <!-- TIN VOUCHER (Sn02) -->
-            <div class="voucher-title-section">
-                <h1>PAYMENT VOUCHER</h1>
-                <div class="voucher-subtitle">PAYMENT VOUCHER: <?php echo htmlspecialchars($p['purchase_no']); ?></div>
-            </div>
-            
-            <div class="voucher-meta-container">
-                <div class="voucher-meta-left">
-                    <strong>Date:</strong> <?php echo htmlspecialchars($p['purchase_date']); ?><br>
-                    <strong>Supplier:</strong> <?php echo htmlspecialchars($p['supplier_name']); ?>
+        <div class="invoice-body-wrapper">
+            <!-- MAIN CONTENT -->
+            <?php if ($is_tin): ?>
+                <!-- TIN VOUCHER (Sn02) - EXACT EXCEL MATCH -->
+                <div style="margin-bottom: 15px; font-size: 11px;">
+                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 15px;">INEZA AFRICA MINING Ltd</div>
+                    <div style="font-weight: 700; font-size: 12px; margin-bottom: 12px; margin-left: 60px;">PAYMENT VOUCHER: <?php echo htmlspecialchars($p['purchase_no']); ?></div>
+                    
+                    <table style="font-size: 11px; margin-bottom: 8px; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding-right: 15px; vertical-align: top;">Date:</td>
+                            <td style="vertical-align: top; padding-right: 40px;"><?php echo htmlspecialchars($p['purchase_date']); ?></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 700; padding-right: 15px; vertical-align: top;">Supplier:</td>
+                            <td style="font-weight: 700; font-size: 10px; vertical-align: top;"><?php echo htmlspecialchars($p['supplier_name']); ?></td>
+                        </tr>
+                    </table>
                 </div>
-            </div>
 
-            <table class="excel-grid">
-                <thead>
-                    <tr>
-                        <th style="width: 40%;">Parameter / Item</th>
-                        <th style="width: 30%;">Reference / Formulas</th>
-                        <th style="width: 30%; text-align: right;">Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="label-cell">RATE</td>
-                        <td>Exchange Rate (RWF)</td>
-                        <td class="num-cell"><strong><?php echo number_format($exchangeRate, 2); ?> RWF</strong></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">QUANTITY</td>
-                        <td>Quantity Delivered (kg)</td>
-                        <td class="num-cell"><?php echo number_format($qty, 2); ?> kg</td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">GRADE</td>
-                        <td>Primary Element Grade (%)</td>
-                        <td class="num-cell"><?php echo number_format($primaryGradePct, 2); ?>%</td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">LME Base</td>
-                        <td>LME Price per Ton (USD)</td>
-                        <td class="num-cell">$<?php echo number_format($p['lme_price'] !== null ? $p['lme_price'] : 0.0, 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">LME Discount</td>
-                        <td>LME Discount (USD) (Fluc)</td>
-                        <td class="num-cell">$<?php echo number_format($p['fluc'] !== null ? $p['fluc'] : 0.0, 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">LME Net</td>
-                        <td>Base LME - Discount (USD) (LME Paid)</td>
-                        <td class="num-cell"><strong>$<?php echo number_format($p['lme_paid'] !== null ? $p['lme_paid'] : 0.0, 2); ?></strong></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">TC</td>
-                        <td>Treatment Charges per Ton (USD)</td>
-                        <td class="num-cell">$<?php echo number_format($p['tc_charges'] !== null ? $p['tc_charges'] : 0.0, 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">P.U</td>
-                        <td>Price per kg (USD)</td>
-                        <td class="num-cell"><strong>$<?php echo number_format($p['price_per_kg_usd'] !== null ? (float)$p['price_per_kg_usd'] : 0.0, 2); ?></strong></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">P.T</td>
-                        <td>Price Total (USD)</td>
-                        <td class="num-cell"><strong>$<?php echo number_format($purchaseValUsd, 2); ?></strong></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">3% RRA (TC=800)</td>
-                        <td>Withholding Tax (USD)</td>
-                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_rra'], 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">RMA (50 FRW/KG)</td>
-                        <td>RMA Tax: 50 RWF/kg (Total: <?php echo number_format($qty * 50, 0); ?> FRW)</td>
-                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_rma'], 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">INKOMANE (20FRW/KG)</td>
-                        <td>Inkomane Tax: 20 RWF/kg (Total: <?php echo number_format($qty * 20, 0); ?> FRW)</td>
-                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_inkomane'], 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">Prod fees</td>
-                        <td>Production Fees: <?php echo number_format((float)$p['production_charges_per_kg'], 2); ?> USD/kg</td>
-                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['production_charges'], 2); ?></td>
-                    </tr>
-                    <tr class="total-row">
-                        <td>A PAYER</td>
-                        <td>Net Supplier USD</td>
-                        <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">ADVANCE PAID</td>
-                        <td>Advance Paid (USD)</td>
-                        <td class="num-cell">$0.00</td>
-                    </tr>
-                    <tr class="total-row" style="background-color: #e2e8f0;">
-                        <td>NET TO BE PAID</td>
-                        <td>Net Payable USD</td>
-                        <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
-                    </tr>
-                    <tr class="total-row">
-                        <td>IN FRW</td>
-                        <td>Net Payable RWF</td>
-                        <td class="num-cell"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?> RWF</td>
-                    </tr>
-                </tbody>
-            </table>
-
-        <?php elseif ($is_tantalum): ?>
-            <!-- TANTALITE VOUCHER (Ta205) -->
-            <div class="voucher-title-section">
-                <h1>PAYMENT VOUCHER</h1>
-                <div class="voucher-subtitle">PAYMENT VOUCHER: <?php echo htmlspecialchars($p['purchase_no']); ?></div>
-            </div>
-            
-            <div class="voucher-meta-container">
-                <div class="voucher-meta-left">
-                    <strong>Date:</strong> <?php echo htmlspecialchars($p['purchase_date']); ?><br>
-                    <strong>Supplier:</strong> <?php echo htmlspecialchars($p['supplier_name']); ?>
-                </div>
-            </div>
-
-            <table class="excel-grid">
-                <thead>
-                    <tr>
-                        <th style="width: 40%;">Parameter / Item</th>
-                        <th style="width: 30%;">Reference / Formulas</th>
-                        <th style="width: 30%; text-align: right;">Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="label-cell">RATE</td>
-                        <td>Exchange Rate (RWF)</td>
-                        <td class="num-cell"><strong><?php echo number_format($exchangeRate, 2); ?> RWF</strong></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">QUANTITY</td>
-                        <td>Quantity Delivered (kg)</td>
-                        <td class="num-cell"><?php echo number_format($qty, 2); ?> kg</td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">GRADE</td>
-                        <td>Primary Element Grade (%)</td>
-                        <td class="num-cell"><?php echo number_format($primaryGradePct, 2); ?>%</td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">PRICE</td>
-                        <td>Price per Ta Unit (USD)</td>
-                        <td class="num-cell">$<?php echo number_format($p['price_per_ta_unit'] !== null ? $p['price_per_ta_unit'] : 0.0, 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">P.T</td>
-                        <td>Price Total (USD)</td>
-                        <td class="num-cell"><strong>$<?php echo number_format($purchaseValUsd, 2); ?></strong></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">3% RRA</td>
-                        <td>Withholding Tax (USD)</td>
-                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_rra'], 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">RMA (125 FRW/KG)</td>
-                        <td>RMA Tax: 125 RWF/kg (Total: <?php echo number_format($qty * 125, 0); ?> FRW)</td>
-                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_rma'], 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">INKOMANE (40FRW/KG)</td>
-                        <td>Inkomane Tax: 40 RWF/kg (Total: <?php echo number_format($qty * 40, 0); ?> FRW)</td>
-                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['tax_inkomane'], 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">Prod fees</td>
-                        <td>Production Fees: <?php echo number_format((float)$p['production_charges_per_kg'], 2); ?> USD/kg</td>
-                        <td class="num-cell" style="color: #dc2626;">$<?php echo number_format((float)$p['production_charges'], 2); ?></td>
-                    </tr>
-                    <tr class="total-row">
-                        <td>A PAYER</td>
-                        <td>Net Supplier USD</td>
-                        <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-cell">ADVANCE PAID</td>
-                        <td>Advance Paid (USD)</td>
-                        <td class="num-cell">$0.00</td>
-                    </tr>
-                    <tr class="total-row" style="background-color: #e2e8f0;">
-                        <td>NET TO BE PAID</td>
-                        <td>Net Payable USD</td>
-                        <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
-                    </tr>
-                    <tr class="total-row">
-                        <td>IN FRW</td>
-                        <td>Net Payable RWF</td>
-                        <td class="num-cell"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?> RWF</td>
-                    </tr>
-                </tbody>
-            </table>
-
-        <?php else: ?>
-            <!-- WOLFRAMITE VOUCHER (W03) -->
-            <div class="voucher-title-section">
-                <h1>PAYMENT VOUCHER FOR INEZA AFRICAN MINING</h1>
-            </div>
-            
-            <div class="voucher-meta-container">
-                <div class="voucher-meta-left">
-                    <strong>To:</strong> <?php echo htmlspecialchars($p['supplier_name']); ?>
-                </div>
-                <div class="voucher-meta-right">
-                    <strong>Exchange rate:</strong> <?php echo number_format($exchangeRate, 2); ?> RWF<br>
-                    <strong>RMB Price/MTU:</strong> <?php echo number_format($p['lme_price'] !== null ? $p['lme_price'] : 0.0, 2); ?><br>
-                    <strong>Fluc:</strong> <?php echo number_format($p['fluc'] !== null ? $p['fluc'] : 0.0, 2); ?><br>
-                    <strong>LME Paid:</strong> <?php echo number_format($p['lme_paid'] !== null ? $p['lme_paid'] : 0.0, 2); ?><br>
-                    <strong>Date:</strong> <?php echo htmlspecialchars($p['purchase_date']); ?>
-                </div>
-            </div>
-
-            <table class="excel-grid">
-                <thead>
-                    <tr>
-                        <th>DESCRIPTION OF GOODS</th>
-                        <th>LOT NO.</th>
-                        <th style="text-align: right;">Gross weight(MT)</th>
-                        <th style="text-align: right;">Moisture (%)</th>
-                        <th style="text-align: right;">NET DRY WEIGHT (MT)</th>
-                        <th style="text-align: right;">WO3 (%)</th>
-                        <th style="text-align: right;">UNIT PRICE (USD/DMTU)</th>
-                        <th style="text-align: right;">Price USD/Kg</th>
-                        <th style="text-align: right;">TOTAL PRICE (USD)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Tungsten Concentrate/wolframite</td>
-                        <td><?php echo htmlspecialchars($p['lots_code']); ?></td>
-                        <td class="num-cell"><?php echo number_format($qty / 1000.0, 3); ?></td>
-                        <td class="num-cell">0.00%</td>
-                        <td class="num-cell"><?php echo number_format($qty / 1000.0, 3); ?></td>
-                        <td class="num-cell"><?php echo number_format($primaryGradePct, 2); ?>%</td>
-                        <td class="num-cell">$<?php echo number_format($p['price_per_ta_unit'] !== null ? $p['price_per_ta_unit'] : 0.0, 2); ?></td>
-                        <td class="num-cell">$<?php echo number_format($p['price_per_kg_usd'] !== null ? (float)$p['price_per_kg_usd'] : 0.0, 2); ?></td>
-                        <td class="num-cell"><strong>$<?php echo number_format($purchaseValUsd, 2); ?></strong></td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div style="display: flex; justify-content: flex-end; margin-top: 10px; margin-bottom: 30px;">
-                <table class="excel-grid" style="width: 45%; margin: 0;">
+                <table class="excel-grid-exact">
+                    <colgroup>
+                        <col style="width: 35%;">
+                        <col style="width: 20%;">
+                        <col style="width: 22.5%;">
+                        <col style="width: 22.5%;">
+                    </colgroup>
                     <tbody>
                         <tr>
-                            <td class="label-cell">Amount Rwf</td>
-                            <td class="num-cell"><strong><?php echo number_format($purchaseValRwf, 2); ?></strong></td>
+                            <td></td>
+                            <td></td>
+                            <td style="font-weight: 700; text-align: left;">Fluc</td>
+                            <td style="font-weight: 700; text-align: left;">USD</td>
                         </tr>
                         <tr>
-                            <td class="label-cell">RMA</td>
-                            <td class="num-cell" style="color: #dc2626;"><?php echo number_format($p['tax_rma'] !== null ? $p['tax_rma'] * $exchangeRate : 0.0, 2); ?></td>
+                            <td>RATE</td>
+                            <td></td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format($exchangeRate, 0); ?></td>
+                            <td></td>
                         </tr>
                         <tr>
-                            <td class="label-cell">Production fees</td>
-                            <td class="num-cell" style="color: #dc2626;"><?php echo number_format($p['production_charges'] !== null ? $p['production_charges'] * $exchangeRate : 0.0, 2); ?></td>
+                            <td>QUANTITY</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell"><?php echo number_format($qty, 2); ?></td>
                         </tr>
                         <tr>
-                            <td class="label-cell">Inkomane</td>
-                            <td class="num-cell" style="color: #dc2626;"><?php echo number_format($p['tax_inkomane'] !== null ? $p['tax_inkomane'] * $exchangeRate : 0.0, 2); ?></td>
+                            <td>GRADE</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell"><?php echo number_format($primaryGradePct, 2); ?></td>
                         </tr>
                         <tr>
-                            <td class="label-cell">RRA Tax 3.3%</td>
-                            <td class="num-cell" style="color: #dc2626;"><?php echo number_format($p['tax_rra'] !== null ? $p['tax_rra'] * $exchangeRate : 0.0, 2); ?></td>
-                        </tr>
-                        <tr class="total-row">
-                            <td>Balance Rwf</td>
-                            <td class="num-cell"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?></td>
+                            <td>LME</td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format($p['lme_price'] !== null ? (float)$p['lme_price'] : 0.0, 2); ?></td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format($p['fluc'] !== null ? (float)$p['fluc'] : 0.0, 2); ?></td>
+                            <td class="num-cell"><?php echo number_format($p['lme_paid'] !== null ? (float)$p['lme_paid'] : 0.0, 2); ?></td>
                         </tr>
                         <tr>
-                            <td class="label-cell">Exchange rate</td>
-                            <td class="num-cell"><?php echo number_format($exchangeRate, 2); ?></td>
-                        </tr>
-                        <tr class="total-row" style="background-color: #e2e8f0;">
-                            <td>Balance USD</td>
-                            <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
+                            <td>TC</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell"><?php echo number_format($p['tc_charges'] !== null ? (float)$p['tc_charges'] : 0.0, 2); ?></td>
                         </tr>
                         <tr>
-                            <td class="label-cell">Advance payment USD</td>
-                            <td class="num-cell">$0.00</td>
+                            <td>P.U</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell"><?php echo number_format($p['price_per_kg_usd'] !== null ? (float)$p['price_per_kg_usd'] : 0.0, 2); ?></td>
                         </tr>
-                        <tr class="total-row" style="background-color: #e2e8f0;">
-                            <td>Amount to be paid USD</td>
-                            <td class="num-cell">$<?php echo number_format($netPaidUsd, 2); ?></td>
+                        <tr>
+                            <td style="font-weight: 700;">P.T</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell" style="font-weight: 700;"><?php echo number_format($purchaseValUsd, 2); ?></td>
                         </tr>
-                        <tr class="total-row">
-                            <td>Amount to be paid Rwf</td>
-                            <td class="num-cell"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?> RWF</td>
+                        <tr>
+                            <td>3% RRA (TC=800)</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell"><?php echo number_format((float)$p['tax_rra'], 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td>RMA (50 FRW/KG)</td>
+                            <td class="num-cell" style="text-align: left;">50</td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format($qty * 50, 2); ?></td>
+                            <td class="num-cell"><?php echo number_format((float)$p['tax_rma'], 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td>INKOMANE (20FRW/KG)</td>
+                            <td class="num-cell" style="text-align: left;">20</td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format($qty * 20, 2); ?></td>
+                            <td class="num-cell"><?php echo number_format((float)$p['tax_inkomane'], 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td>Prod fees</td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format((float)$p['production_charges_per_kg'] * $exchangeRate, 2); ?></td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format((float)$p['production_charges'] * $exchangeRate, 2); ?></td>
+                            <td class="num-cell"><?php echo number_format((float)$p['production_charges'], 2); ?></td>
+                        </tr>
+                        <tr style="height: 10px;"><td colspan="4" style="border: none;"></td></tr>
+                        <tr style="background-color: #ffff00;">
+                            <td style="font-weight: 700;">A PAYER</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell" style="font-weight: 700;"><?php echo number_format($netPaidUsd, 2); ?></td>
+                        </tr>
+                        <tr style="height: 10px;"><td colspan="4" style="border: none;"></td></tr>
+                        <tr>
+                            <td>ADVANCE PAID (SEE ATTACHED DOCUMENT)</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell">0.00</td>
+                        </tr>
+                        <tr style="height: 10px;"><td colspan="4" style="border: none;"></td></tr>
+                        <tr style="background-color: #ffc000;">
+                            <td style="font-weight: 700;">NET TO BE PAID</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell" style="font-weight: 700;"><?php echo number_format($netPaidUsd, 2); ?></td>
+                        </tr>
+                        <tr style="background-color: #92d050;">
+                            <td></td>
+                            <td></td>
+                            <td style="font-weight: 700; text-align: center;">IN FRW</td>
+                            <td class="num-cell" style="font-weight: 700;"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?></td>
                         </tr>
                     </tbody>
                 </table>
-            </div>
 
-        <?php endif; ?>
+            <?php elseif ($is_tantalum): ?>
+                <!-- TANTALITE VOUCHER (Ta205) - EXACT EXCEL MATCH -->
+                <div style="margin-bottom: 15px; font-size: 11px;">
+                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">INEZA AFRICAN MINING Ltd</div>
+                    <div style="font-weight: 700; font-size: 11px; margin-bottom: 2px;">Adress:</div>
+                    <div style="font-size: 11px; margin-bottom: 12px;">Tel:</div>
+                    <div style="font-weight: 700; font-size: 12px; margin-bottom: 12px; margin-left: 60px;">PAYMENT VOUCHER: <?php echo htmlspecialchars($p['purchase_no']); ?></div>
+                    
+                    <table style="font-size: 11px; margin-bottom: 8px; border-collapse: collapse;">
+                        <tr>
+                            <td style="font-weight: 700; padding-right: 15px; vertical-align: top;">Date:</td>
+                            <td style="vertical-align: top; padding-right: 40px;"><?php echo htmlspecialchars($p['purchase_date']); ?></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 700; padding-right: 15px; vertical-align: top;">Supplier: <?php echo htmlspecialchars($p['supplier_name']); ?></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </div>
 
-        <!-- SIGNATURES -->
-        <div class="excel-signatures">
-            <div class="sig-box">
-                <div class="sig-title">PREPARED BY:</div>
-                <div class="sig-field">Name: <span class="sig-line"></span></div>
-                <div class="sig-field">Signature: <span class="sig-line"></span></div>
-            </div>
-            <div class="sig-box">
-                <div class="sig-title">APPROVED BY:</div>
-                <div class="sig-field">Name: <span class="sig-line"></span></div>
-                <div class="sig-field">Signature: <span class="sig-line"></span></div>
-            </div>
-            <div class="sig-box">
-                <div class="sig-title">RECEIVED BY:</div>
-                <div class="sig-field">Name: <span class="sig-line"></span></div>
-                <div class="sig-field">Signature: <span class="sig-line"></span></div>
+                <table class="excel-grid-exact">
+                    <colgroup>
+                        <col style="width: 40%;">
+                        <col style="width: 20%;">
+                        <col style="width: 20%;">
+                        <col style="width: 20%;">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td style="font-weight: 700; text-align: left;">Fluc</td>
+                            <td style="font-weight: 700; text-align: left;">USD</td>
+                        </tr>
+                        <tr>
+                            <td>RATE</td>
+                            <td></td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format($exchangeRate, 0); ?></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>QUANTITY</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell"><?php echo number_format($qty, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td>GRADE</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell"><?php echo number_format($primaryGradePct, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td>PRICE</td>
+                            <td></td>
+                            <td class="num-cell" style="font-weight: 700; text-align: left;"><?php echo number_format($p['price_per_ta_unit'] !== null ? (float)$p['price_per_ta_unit'] : 0.0, 2); ?></td>
+                            <td class="num-cell" style="font-weight: 700;"><?php echo number_format($p['price_per_ta_unit'] !== null ? (float)$p['price_per_ta_unit'] : 0.0, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 700;">P.T</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell" style="font-weight: 700;"><?php echo number_format($purchaseValUsd, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td>3% RRA</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell"><?php echo number_format((float)$p['tax_rra'], 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td>RMA (125 FRW/KG)</td>
+                            <td class="num-cell" style="text-align: left;">125</td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format($qty * 125, 2); ?></td>
+                            <td class="num-cell"><?php echo number_format((float)$p['tax_rma'], 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td>INKOMANE (40FRW/KG)</td>
+                            <td class="num-cell" style="text-align: left;">40</td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format($qty * 40, 2); ?></td>
+                            <td class="num-cell"><?php echo number_format((float)$p['tax_inkomane'], 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td>Prod fees</td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format((float)$p['production_charges_per_kg'] * $exchangeRate, 2); ?></td>
+                            <td class="num-cell" style="text-align: left;"><?php echo number_format((float)$p['production_charges'] * $exchangeRate, 2); ?></td>
+                            <td class="num-cell"><?php echo number_format((float)$p['production_charges'], 2); ?></td>
+                        </tr>
+                        <tr style="height: 10px;"><td colspan="4" style="border: none;"></td></tr>
+                        <tr style="background-color: #ffff00;">
+                            <td style="font-weight: 700;">A PAYER</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell" style="font-weight: 700;"><?php echo number_format($netPaidUsd, 2); ?></td>
+                        </tr>
+                        <tr style="height: 10px;"><td colspan="4" style="border: none;"></td></tr>
+                        <tr>
+                            <td>ADVANCE PAID (SEE ATTACHED DOCUMENT)</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell">0.00</td>
+                        </tr>
+                        <tr style="height: 10px;"><td colspan="4" style="border: none;"></td></tr>
+                        <tr style="background-color: #ffc000;">
+                            <td style="font-weight: 700;">NET TO NE PAID</td>
+                            <td></td>
+                            <td></td>
+                            <td class="num-cell" style="font-weight: 700;"><?php echo number_format($netPaidUsd, 2); ?></td>
+                        </tr>
+                        <tr style="background-color: #92d050;">
+                            <td></td>
+                            <td></td>
+                            <td style="font-weight: 700; text-align: center;">IN FRW</td>
+                            <td class="num-cell" style="font-weight: 700;"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            <?php else: ?>
+                <!-- WOLFRAMITE VOUCHER (W03) - EXACT EXCEL MATCH -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 style="font-size: 20px; font-weight: 700; color: #000; margin: 0; text-transform: uppercase;">PAYMENT VOUCHER FOR INEZA AFRICAN MINING</h1>
+                </div>
+                
+                <table style="width: 100%; font-size: 11px; margin-bottom: 15px; border-collapse: collapse;">
+                    <tr>
+                        <td style="font-weight: 700; width: 120px;">To:</td>
+                        <td style="font-weight: 700;"><?php echo htmlspecialchars($p['supplier_name']); ?></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 700;">Exchange rate</td>
+                        <td style="font-weight: 700;"><?php echo number_format($exchangeRate, 2); ?></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 700;">RMB Price/MTU</td>
+                        <td style="font-weight: 700;"><?php echo number_format($p['lme_price'] !== null ? (float)$p['lme_price'] : 0.0, 2); ?></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 700;">Lot Number :</td>
+                        <td></td>
+                        <td></td>
+                        <td style="font-weight: 700; text-align: center;"><?php echo htmlspecialchars($p['lots_code']); ?></td>
+                    </tr>
+                </table>
+
+                <table class="excel-grid-exact" style="margin-bottom: 15px;">
+                    <thead>
+                        <tr>
+                            <th style="font-weight: 700; text-align: center;">DESCRIPTION OF GOODS</th>
+                            <th style="font-weight: 700; text-align: center;">LOT NO.</th>
+                            <th style="font-weight: 700; text-align: center;">Gross weight(MT)</th>
+                            <th style="font-weight: 700; text-align: center;">Moisture     （%）</th>
+                            <th style="font-weight: 700; text-align: center;">NET DRY WEIGHT       (MT)</th>
+                            <th style="font-weight: 700; text-align: center;">WO3 (%)</th>
+                            <th style="font-weight: 700; text-align: center;">UNIT PRICE  (USD/DMTU)</th>
+                            <th style="font-weight: 700; text-align: center;">Price USD/Kg</th>
+                            <th style="font-weight: 700; text-align: center;">TOTAL PRICE （USD)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="text-align: center;">Tungsten Concentrate/wolframite</td>
+                            <td style="text-align: center;"><?php echo htmlspecialchars($p['lots_code']); ?></td>
+                            <td style="text-align: center;"><?php echo number_format($qty / 1000.0, 3); ?></td>
+                            <td style="text-align: center;"></td>
+                            <td style="text-align: center; background-color: #ffff00; font-weight: 700;"><?php echo number_format($qty / 1000.0, 3); ?></td>
+                            <td style="text-align: center; background-color: #ffff00; font-weight: 700;"><?php echo number_format($primaryGradePct, 2); ?></td>
+                            <td style="text-align: center; background-color: #ffff00; font-weight: 700;"><?php echo number_format($p['lme_paid'] !== null ? (float)$p['lme_paid'] : 0.0, 2); ?></td>
+                            <td style="text-align: center;"><?php echo number_format($p['price_per_kg_usd'] !== null ? (float)$p['price_per_kg_usd'] : 0.0, 2); ?></td>
+                            <td style="text-align: center; font-weight: 700;"><?php echo number_format($purchaseValUsd, 2); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 25px;">
+                    <table class="excel-grid-exact" style="width: 40%; margin: 0;">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 700;">Amount Rwf</td>
+                                <td class="num-cell" style="font-weight: 500;"><?php echo number_format($purchaseValRwf, 2); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">RMA</td>
+                                <td class="num-cell" style="text-align: left;"><?php echo number_format($p['tax_rma'] !== null ? (float)$p['tax_rma'] * $exchangeRate : 0.0, 2); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Transport fees</td>
+                                <td class="num-cell" style="text-align: left;"><?php echo number_format($p['production_charges'] !== null ? (float)$p['production_charges'] * $exchangeRate : 0.0, 2); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Inkomane</td>
+                                <td class="num-cell" style="text-align: left;"><?php echo number_format($p['tax_inkomane'] !== null ? (float)$p['tax_inkomane'] * $exchangeRate : 0.0, 2); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">RRA Tax 3%</td>
+                                <td class="num-cell" style="text-align: left;"><?php echo number_format($p['tax_rra'] !== null ? (float)$p['tax_rra'] * $exchangeRate : 0.0, 2); ?></td>
+                            </tr>
+                            <tr style="height: 6px;"><td colspan="2" style="border: none;"></td></tr>
+                            <tr>
+                                <td style="font-weight: 700;">Balance Rwf</td>
+                                <td class="num-cell" style="font-weight: 700; text-align: left;"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Exchange rate</td>
+                                <td class="num-cell" style="text-align: left;"><?php echo number_format($exchangeRate, 2); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Balance USD</td>
+                                <td class="num-cell" style="font-weight: 700; text-align: left;"><?php echo number_format($netPaidUsd, 2); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Advance payment UDS</td>
+                                <td class="num-cell"></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Amount to be paid USD</td>
+                                <td class="num-cell" style="font-weight: 700; text-align: left;"><?php echo number_format($netPaidUsd, 2); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Amount to be paid Rwf</td>
+                                <td class="num-cell" style="font-weight: 700; text-align: left;"><?php echo number_format($netPaidUsd * $exchangeRate, 2); ?></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            <?php endif; ?>
+
+            <!-- SIGNATURES (EXACT EXCEL MATCH) -->
+            <div style="margin-top: 30px; margin-bottom: 20px; font-size: 11px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="vertical-align: top; width: 33%; padding-right: 15px;">
+                            <div style="font-weight: 400; margin-bottom: 8px;">PREPARED BY:</div>
+                            <div style="margin-bottom: 6px;">Name: <span style="display: inline-block; width: 65%; border-bottom: 1px solid #000;"></span></div>
+                            <div>Signature: <span style="display: inline-block; width: 55%; border-bottom: 1px solid #000;"></span></div>
+                        </td>
+                        <td style="vertical-align: top; width: 33%; padding-right: 15px;">
+                            <div style="font-weight: 400; margin-bottom: 8px;">APPROUVED BY:</div>
+                            <div style="margin-bottom: 6px;">Name: <span style="display: inline-block; width: 65%; border-bottom: 1px solid #000;"></span></div>
+                            <div>Signature: <span style="display: inline-block; width: 55%; border-bottom: 1px solid #000;"></span></div>
+                        </td>
+                        <td style="vertical-align: top; width: 33%;">
+                            <div style="font-weight: 400; margin-bottom: 8px;">RECEIVED BY:</div>
+                            <div style="margin-bottom: 6px;">Name: <span style="display: inline-block; width: 65%; border-bottom: 1px solid #000;"></span></div>
+                            <div>Signature: <span style="display: inline-block; width: 55%; border-bottom: 1px solid #000;"></span></div>
+                        </td>
+                    </tr>
+                </table>
             </div>
         </div>
 
