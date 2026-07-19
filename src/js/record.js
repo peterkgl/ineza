@@ -629,7 +629,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function updateGradeDisplays(pType) {
     var gradePct = getPrimaryGradePct();
-    var gradeText = gradePct > 0 ? round2(gradePct).toFixed(2) + '%' : '— (enter grade in Step 3)';
+    var gradeText = gradePct > 0 ? (Math.round(gradePct * 100) / 100).toFixed(2) + '%' : '— (enter grade in Step 3)';
     if (pType === 'sn') {
       var el = document.getElementById('sn_grade_display');
       if (el) el.textContent = gradeText;
@@ -658,29 +658,29 @@ document.addEventListener("DOMContentLoaded", function () {
     var inkoRwf = settings['tax_rate_inkomane_tin'] || 20.0;
 
     var exRate = getExchangeRate();
-    var qty = round2(parseFloat(qtyInput ? qtyInput.value : 0) || 0.0);
-    var lme = round2(parseFloat(document.getElementById('sn_lme_price') ? document.getElementById('sn_lme_price').value : 0) || 0.0);
-    var fluc = round2(parseFloat(document.getElementById('sn_fluc') ? document.getElementById('sn_fluc').value : 0) || 0.0);
-    var tc = round2(parseFloat(document.getElementById('sn_tc_charges') ? document.getElementById('sn_tc_charges').value : 0) || 0.0);
-    var prodRate = round2(parseFloat(document.getElementById('sn_prod_charges_rate') ? document.getElementById('sn_prod_charges_rate').value : 0) || 0.0);
-    var gradePct = round2(getPrimaryGradePct());
+    var qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0.0;
+    var lme = parseFloat(document.getElementById('sn_lme_price') ? document.getElementById('sn_lme_price').value : 0) || 0.0;
+    var fluc = parseFloat(document.getElementById('sn_fluc') ? document.getElementById('sn_fluc').value : 0) || 0.0;
+    var tc = parseFloat(document.getElementById('sn_tc_charges') ? document.getElementById('sn_tc_charges').value : 0) || 0.0;
+    var prodRate = parseFloat(document.getElementById('sn_prod_charges_rate') ? document.getElementById('sn_prod_charges_rate').value : 0) || 0.0;
+    var gradePct = getPrimaryGradePct();
     var gradeFrac = gradePct / 100.0;
 
     var method = getPricingMethod();
 
     var lmePaidEl = document.getElementById('sn_lme_paid');
-    var lmePaid = round2(lme - fluc);
+    var lmePaid = lme - fluc;
     if (lmePaidEl) {
       if (method === 'manual' && lmePaidEl.dataset.userEdited === 'true' && lmePaidEl.value !== '') {
-        lmePaid = round2(parseFloat(lmePaidEl.value) || 0.0);
+        lmePaid = parseFloat(lmePaidEl.value) || 0.0;
       } else {
-        lmePaidEl.value = lmePaid > 0 ? lmePaid.toFixed(2) : (lmePaid < 0 ? lmePaid.toFixed(2) : '');
+        lmePaidEl.value = lmePaid !== 0 ? lmePaid.toFixed(2) : '';
       }
     }
 
     // Update grade display
     var gradeDisplayEl = document.getElementById('sn_grade_display');
-    if (gradeDisplayEl) gradeDisplayEl.textContent = gradePct > 0 ? gradePct.toFixed(2) + '%' : '— (enter grade in Step 3)';
+    if (gradeDisplayEl) gradeDisplayEl.textContent = gradePct > 0 ? (Math.round(gradePct * 100) / 100).toFixed(2) + '%' : '— (enter grade in Step 3)';
 
     var pricePerKgUsdVal = 0.0;
     var pricePerKgRwfVal = 0.0;
@@ -689,50 +689,50 @@ document.addEventListener("DOMContentLoaded", function () {
     var pCode = pOpt ? pOpt.text.split(' - ')[0] : 'RWF';
 
     if (method === 'manual') {
-      var manualPrice = round2(parseFloat(purchaseAmountInCurrencyInput ? purchaseAmountInCurrencyInput.value : 0) || 0.0);
+      var manualPrice = parseFloat(purchaseAmountInCurrencyInput ? purchaseAmountInCurrencyInput.value : 0) || 0.0;
       if (manualPrice <= 0 && (lme > 0 || lmePaid > 0) && qty > 0) {
-        pricePerKgUsdVal = round2(((lmePaid * gradeFrac) - tc) / 1000.0);
-        pricePerKgRwfVal = round2(pricePerKgUsdVal * exRate);
+        pricePerKgUsdVal = ((lmePaid * gradeFrac) - tc) / 1000.0;
+        pricePerKgRwfVal = pricePerKgUsdVal * exRate;
         if (purchaseAmountInCurrencyInput) {
           purchaseAmountInCurrencyInput.value = pCode === 'RWF' ? pricePerKgRwfVal.toFixed(2) : pricePerKgUsdVal.toFixed(2);
         }
       } else {
         if (pCode === 'RWF') {
           pricePerKgRwfVal = manualPrice;
-          pricePerKgUsdVal = round2(exRate > 0 ? manualPrice / exRate : 0.0);
+          pricePerKgUsdVal = exRate > 0 ? manualPrice / exRate : 0.0;
         } else {
           pricePerKgUsdVal = manualPrice;
-          pricePerKgRwfVal = round2(manualPrice * exRate);
+          pricePerKgRwfVal = manualPrice * exRate;
         }
       }
     } else {
-      pricePerKgUsdVal = round2(qty > 0 && lmePaid > 0 ? ((lmePaid * gradeFrac) - tc) / 1000.0 : 0.0);
-      pricePerKgRwfVal = round2(pricePerKgUsdVal * exRate);
+      pricePerKgUsdVal = qty > 0 && lmePaid > 0 ? ((lmePaid * gradeFrac) - tc) / 1000.0 : 0.0;
+      pricePerKgRwfVal = pricePerKgUsdVal * exRate;
       
       if (purchaseAmountInCurrencyInput) {
         purchaseAmountInCurrencyInput.value = pCode === 'RWF' ? pricePerKgRwfVal.toFixed(2) : pricePerKgUsdVal.toFixed(2);
       }
     }
 
-    var pvUsd = round2(pricePerKgUsdVal * qty);
-    var pvRwf = round2(pvUsd * exRate);
+    var pvUsd = pricePerKgUsdVal * qty;
+    var pvRwf = pvUsd * exRate;
 
     var rraBase = (lmePaid * gradeFrac) - 800.0;
-    var defaultTaxRra = round2((method === 'manual' && lmePaid <= 0) ? (pvUsd * rraRate) : (rraBase > 0 ? (rraBase / 1000.0) * qty * rraRate : 0.0));
-    var defaultTaxRma = round2(exRate > 0 ? (qty * rmaRwf) / exRate : 0.0);
-    var defaultTaxInko = round2(exRate > 0 ? (qty * inkoRwf) / exRate : 0.0);
-    var defaultProdCharges = round2(qty * prodRate);
-    var defaultNetPaid = round2(pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges);
+    var defaultTaxRra = (method === 'manual' && lmePaid <= 0) ? (pvUsd * rraRate) : (rraBase > 0 ? (rraBase / 1000.0) * qty * rraRate : 0.0);
+    var defaultTaxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
+    var defaultTaxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
+    var defaultProdCharges = qty * prodRate;
+    var defaultNetPaid = pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges;
 
     function getValOrSet(id, defVal) {
       var el = document.getElementById(id);
-      if (!el) return round2(defVal);
+      if (!el) return defVal;
       if (method === 'manual' && el.dataset.userEdited === 'true' && el.value !== '') {
         var v = parseFloat(el.value);
-        return isNaN(v) ? round2(defVal) : round2(v);
+        return isNaN(v) ? defVal : v;
       }
-      el.value = round2(defVal).toFixed(2);
-      return round2(defVal);
+      el.value = defVal.toFixed(2);
+      return defVal;
     }
 
     var taxRra = getValOrSet('sn_tax_rra', defaultTaxRra);
@@ -743,28 +743,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Update displays
     var pricePerKgEl = document.getElementById('sn_price_per_kg');
-    if (pricePerKgEl) pricePerKgEl.textContent = '$' + pricePerKgUsdVal.toFixed(2);
+    if (pricePerKgEl) pricePerKgEl.textContent = '$' + (Math.round(pricePerKgUsdVal * 100) / 100).toFixed(2);
     var pvUsdEl = document.getElementById('sn_purchase_value_usd');
-    if (pvUsdEl) pvUsdEl.textContent = '$' + pvUsd.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    if (pvUsdEl) pvUsdEl.textContent = '$' + (Math.round(pvUsd * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
     var priceRwfEl = document.getElementById('sn_price_per_kg_rwf');
-    if (priceRwfEl) priceRwfEl.textContent = pricePerKgRwfVal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' RWF';
+    if (priceRwfEl) priceRwfEl.textContent = (Math.round(pricePerKgRwfVal * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' RWF';
 
     // Store into shared hidden fields for form submission
     function sh(id, val) { var el = document.getElementById(id); if (el) el.value = val; }
-    sh('pricePerKgUsd', pricePerKgUsdVal.toFixed(2));
-    sh('pricePerKgRwf', pricePerKgRwfVal.toFixed(2));
-    sh('sharedPurchaseValueUsd', pvUsd.toFixed(2));
-    sh('sharedPurchaseValueRwf', pvRwf.toFixed(2));
-    sh('sharedTaxRra', taxRra.toFixed(2));
-    sh('sharedTaxRma', taxRma.toFixed(2));
-    sh('sharedTaxInkomane', taxInko.toFixed(2));
-    sh('sharedNetPaid', netPaid.toFixed(2));
-    sh('sharedProductionCharges', prodChargesTotal.toFixed(2));
-    sh('sharedLmePrice', lme.toFixed(2));
-    sh('sharedFluc', fluc.toFixed(2));
-    sh('sharedTcCharges', tc.toFixed(2));
-    sh('sharedLmePaid', lmePaid.toFixed(2));
-    sh('sharedProductionChargesPerKg', prodRate.toFixed(2));
+    sh('pricePerKgUsd', (Math.round(pricePerKgUsdVal * 100) / 100).toFixed(2));
+    sh('pricePerKgRwf', (Math.round(pricePerKgRwfVal * 100) / 100).toFixed(2));
+    sh('sharedPurchaseValueUsd', (Math.round(pvUsd * 100) / 100).toFixed(2));
+    sh('sharedPurchaseValueRwf', (Math.round(pvRwf * 100) / 100).toFixed(2));
+    sh('sharedTaxRra', (Math.round(taxRra * 100) / 100).toFixed(2));
+    sh('sharedTaxRma', (Math.round(taxRma * 100) / 100).toFixed(2));
+    sh('sharedTaxInkomane', (Math.round(taxInko * 100) / 100).toFixed(2));
+    sh('sharedNetPaid', (Math.round(netPaid * 100) / 100).toFixed(2));
+    sh('sharedProductionCharges', (Math.round(prodChargesTotal * 100) / 100).toFixed(2));
+    sh('sharedLmePrice', (Math.round(lme * 100) / 100).toFixed(2));
+    sh('sharedFluc', (Math.round(fluc * 100) / 100).toFixed(2));
+    sh('sharedTcCharges', (Math.round(tc * 100) / 100).toFixed(2));
+    sh('sharedLmePaid', (Math.round(lmePaid * 100) / 100).toFixed(2));
+    sh('sharedProductionChargesPerKg', prodRate.toFixed(4));
 
     // Summary
     updatePricingSummary(qty, pricePerKgUsdVal, pvUsd, pvRwf, taxRra + taxRma + taxInko + prodChargesTotal, netPaid);
@@ -780,16 +780,16 @@ document.addEventListener("DOMContentLoaded", function () {
     var inkoRwf = settings['tax_rate_inkomane_coltan'] || 40.0;
 
     var exRate = getExchangeRate();
-    var qty = round2(parseFloat(qtyInput ? qtyInput.value : 0) || 0.0);
-    var pricePerTa = round2(parseFloat(document.getElementById('ta_price_per_ta') ? document.getElementById('ta_price_per_ta').value : 0) || 0.0);
-    var prodRate = round2(parseFloat(document.getElementById('ta_prod_charges_rate') ? document.getElementById('ta_prod_charges_rate').value : 0) || 0.0);
-    var gradePct = round2(getPrimaryGradePct());
+    var qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0.0;
+    var pricePerTa = parseFloat(document.getElementById('ta_price_per_ta') ? document.getElementById('ta_price_per_ta').value : 0) || 0.0;
+    var prodRate = parseFloat(document.getElementById('ta_prod_charges_rate') ? document.getElementById('ta_prod_charges_rate').value : 0) || 0.0;
+    var gradePct = getPrimaryGradePct();
 
     var method = getPricingMethod();
 
     // Update grade display
     var gradeDisplayEl = document.getElementById('ta_grade_display');
-    if (gradeDisplayEl) gradeDisplayEl.textContent = gradePct > 0 ? gradePct.toFixed(2) + '%' : '— (enter grade in Step 3)';
+    if (gradeDisplayEl) gradeDisplayEl.textContent = gradePct > 0 ? (Math.round(gradePct * 100) / 100).toFixed(2) + '%' : '— (enter grade in Step 3)';
 
     var pricePerKgUsdVal = 0.0;
     var pricePerKgRwfVal = 0.0;
@@ -798,49 +798,49 @@ document.addEventListener("DOMContentLoaded", function () {
     var pCode = pOpt ? pOpt.text.split(' - ')[0] : 'RWF';
 
     if (method === 'manual') {
-      var manualPrice = round2(parseFloat(purchaseAmountInCurrencyInput ? purchaseAmountInCurrencyInput.value : 0) || 0.0);
+      var manualPrice = parseFloat(purchaseAmountInCurrencyInput ? purchaseAmountInCurrencyInput.value : 0) || 0.0;
       if (manualPrice <= 0 && pricePerTa > 0 && gradePct > 0) {
-        pricePerKgUsdVal = round2(gradePct * pricePerTa);
-        pricePerKgRwfVal = round2(pricePerKgUsdVal * exRate);
+        pricePerKgUsdVal = gradePct * pricePerTa;
+        pricePerKgRwfVal = pricePerKgUsdVal * exRate;
         if (purchaseAmountInCurrencyInput) {
           purchaseAmountInCurrencyInput.value = pCode === 'RWF' ? pricePerKgRwfVal.toFixed(2) : pricePerKgUsdVal.toFixed(2);
         }
       } else {
         if (pCode === 'RWF') {
           pricePerKgRwfVal = manualPrice;
-          pricePerKgUsdVal = round2(exRate > 0 ? manualPrice / exRate : 0.0);
+          pricePerKgUsdVal = exRate > 0 ? manualPrice / exRate : 0.0;
         } else {
           pricePerKgUsdVal = manualPrice;
-          pricePerKgRwfVal = round2(manualPrice * exRate);
+          pricePerKgRwfVal = manualPrice * exRate;
         }
       }
     } else {
-      pricePerKgUsdVal = round2(gradePct * pricePerTa);
-      pricePerKgRwfVal = round2(pricePerKgUsdVal * exRate);
+      pricePerKgUsdVal = gradePct * pricePerTa;
+      pricePerKgRwfVal = pricePerKgUsdVal * exRate;
       
       if (purchaseAmountInCurrencyInput) {
         purchaseAmountInCurrencyInput.value = pCode === 'RWF' ? pricePerKgRwfVal.toFixed(2) : pricePerKgUsdVal.toFixed(2);
       }
     }
 
-    var pvUsd = round2(pricePerKgUsdVal * qty);
-    var pvRwf = round2(pvUsd * exRate);
+    var pvUsd = pricePerKgUsdVal * qty;
+    var pvRwf = pvUsd * exRate;
 
-    var defaultTaxRra = round2(pvUsd * rraRate);
-    var defaultTaxRma = round2(exRate > 0 ? (qty * rmaRwf) / exRate : 0.0);
-    var defaultTaxInko = round2(exRate > 0 ? (qty * inkoRwf) / exRate : 0.0);
-    var defaultProdCharges = round2(qty * prodRate);
-    var defaultNetPaid = round2(pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges);
+    var defaultTaxRra = pvUsd * rraRate;
+    var defaultTaxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
+    var defaultTaxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
+    var defaultProdCharges = qty * prodRate;
+    var defaultNetPaid = pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges;
 
     function getValOrSet(id, defVal) {
       var el = document.getElementById(id);
-      if (!el) return round2(defVal);
+      if (!el) return defVal;
       if (method === 'manual' && el.dataset.userEdited === 'true' && el.value !== '') {
         var v = parseFloat(el.value);
-        return isNaN(v) ? round2(defVal) : round2(v);
+        return isNaN(v) ? defVal : v;
       }
-      el.value = round2(defVal).toFixed(2);
-      return round2(defVal);
+      el.value = defVal.toFixed(2);
+      return defVal;
     }
 
     var taxRra = getValOrSet('ta_tax_rra', defaultTaxRra);
@@ -851,29 +851,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Update displays
     var pricePerKgEl = document.getElementById('ta_price_per_kg');
-    if (pricePerKgEl) pricePerKgEl.textContent = '$' + pricePerKgUsdVal.toFixed(2);
+    if (pricePerKgEl) pricePerKgEl.textContent = '$' + (Math.round(pricePerKgUsdVal * 100) / 100).toFixed(2);
     var pvUsdEl = document.getElementById('ta_purchase_value_usd');
-    if (pvUsdEl) pvUsdEl.textContent = '$' + pvUsd.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    if (pvUsdEl) pvUsdEl.textContent = '$' + (Math.round(pvUsd * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
 
     // Store price_per_ta_unit in the shared hidden field
     var shTa = document.getElementById('pricePerTaUnit'); if (shTa) shTa.value = pricePerTa.toFixed(2);
 
     // Store into shared hidden fields for form submission
     function sh(id, val) { var el = document.getElementById(id); if (el) el.value = val; }
-    sh('pricePerKgUsd', pricePerKgUsdVal.toFixed(2));
-    sh('pricePerKgRwf', pricePerKgRwfVal.toFixed(2));
-    sh('sharedPurchaseValueUsd', pvUsd.toFixed(2));
-    sh('sharedPurchaseValueRwf', pvRwf.toFixed(2));
-    sh('sharedTaxRra', taxRra.toFixed(2));
-    sh('sharedTaxRma', taxRma.toFixed(2));
-    sh('sharedTaxInkomane', taxInko.toFixed(2));
-    sh('sharedNetPaid', netPaid.toFixed(2));
-    sh('sharedProductionCharges', prodChargesTotal.toFixed(2));
+    sh('pricePerKgUsd', (Math.round(pricePerKgUsdVal * 100) / 100).toFixed(2));
+    sh('pricePerKgRwf', (Math.round(pricePerKgRwfVal * 100) / 100).toFixed(2));
+    sh('sharedPurchaseValueUsd', (Math.round(pvUsd * 100) / 100).toFixed(2));
+    sh('sharedPurchaseValueRwf', (Math.round(pvRwf * 100) / 100).toFixed(2));
+    sh('sharedTaxRra', (Math.round(taxRra * 100) / 100).toFixed(2));
+    sh('sharedTaxRma', (Math.round(taxRma * 100) / 100).toFixed(2));
+    sh('sharedTaxInkomane', (Math.round(taxInko * 100) / 100).toFixed(2));
+    sh('sharedNetPaid', (Math.round(netPaid * 100) / 100).toFixed(2));
+    sh('sharedProductionCharges', (Math.round(prodChargesTotal * 100) / 100).toFixed(2));
     sh('sharedLmePrice', '0.00');
     sh('sharedFluc', '0.00');
     sh('sharedTcCharges', '0.00');
     sh('sharedLmePaid', '0.00');
-    sh('sharedProductionChargesPerKg', prodRate.toFixed(2));
+    sh('sharedProductionChargesPerKg', prodRate.toFixed(4));
 
     // Summary
     updatePricingSummary(qty, pricePerKgUsdVal, pvUsd, pvRwf, taxRra + taxRma + taxInko + prodChargesTotal, netPaid);
@@ -889,33 +889,33 @@ document.addEventListener("DOMContentLoaded", function () {
     var inkoRwf = settings['tax_rate_inkomane_wolframite'] || 20.0;
 
     var exRate = getExchangeRate();
-    var qty = round2(parseFloat(qtyInput ? qtyInput.value : 0) || 0.0);
-    var mtu = round2(parseFloat(document.getElementById('w03_lme_price') ? document.getElementById('w03_lme_price').value : 0) || 0.0);
-    var rmb = round2(parseFloat(document.getElementById('w03_rmb_price') ? document.getElementById('w03_rmb_price').value : 0) || 0.0);
-    var tc = round2(parseFloat(document.getElementById('w03_tc_charges') ? document.getElementById('w03_tc_charges').value : 0) || 0.0);
+    var qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0.0;
+    var mtu = parseFloat(document.getElementById('w03_lme_price') ? document.getElementById('w03_lme_price').value : 0) || 0.0;
+    var rmb = parseFloat(document.getElementById('w03_rmb_price') ? document.getElementById('w03_rmb_price').value : 0) || 0.0;
+    var tc = parseFloat(document.getElementById('w03_tc_charges') ? document.getElementById('w03_tc_charges').value : 0) || 0.0;
     var transportRwfInput = document.getElementById('w03_transport_rwf');
-    var transportRwf = round2(parseFloat(transportRwfInput ? transportRwfInput.value : 2000) || 2000.0);
+    var transportRwf = parseFloat(transportRwfInput ? transportRwfInput.value : 2000) || 2000.0;
 
     var prodRateInput = document.getElementById('w03_prod_charges_rate');
-    var prodRate = round2(exRate > 0 ? transportRwf / exRate : 0.0);
+    var prodRate = exRate > 0 ? transportRwf / exRate : 0.0;
     if (prodRateInput) {
       if (transportRwfInput && transportRwfInput.dataset.userEdited === 'true') {
-        prodRateInput.value = prodRate.toFixed(2);
+        prodRateInput.value = prodRate.toFixed(4);
       } else if (prodRateInput.value !== '' && parseFloat(prodRateInput.value) > 0 && (!transportRwfInput || transportRwfInput.value === '')) {
-        prodRate = round2(parseFloat(prodRateInput.value) || 0.0);
+        prodRate = parseFloat(prodRateInput.value) || 0.0;
       } else {
-        prodRateInput.value = prodRate.toFixed(2);
+        prodRateInput.value = prodRate.toFixed(4);
       }
     }
 
-    var gradePct = round2(getPrimaryGradePct());
+    var gradePct = getPrimaryGradePct();
     var gradeFrac = gradePct / 100.0;
 
     var method = getPricingMethod();
 
     // Update grade display
     var gradeDisplayEl = document.getElementById('w03_grade_display');
-    if (gradeDisplayEl) gradeDisplayEl.textContent = gradePct > 0 ? gradePct.toFixed(2) + '%' : '— (enter grade in Step 3)';
+    if (gradeDisplayEl) gradeDisplayEl.textContent = gradePct > 0 ? (Math.round(gradePct * 100) / 100).toFixed(2) + '%' : '— (enter grade in Step 3)';
 
     var pricePerKgUsdVal = 0.0;
     var pricePerKgRwfVal = 0.0;
@@ -924,50 +924,50 @@ document.addEventListener("DOMContentLoaded", function () {
     var pCode = pOpt ? pOpt.text.split(' - ')[0] : 'RWF';
 
     if (method === 'manual') {
-      var manualPrice = round2(parseFloat(purchaseAmountInCurrencyInput ? purchaseAmountInCurrencyInput.value : 0) || 0.0);
+      var manualPrice = parseFloat(purchaseAmountInCurrencyInput ? purchaseAmountInCurrencyInput.value : 0) || 0.0;
       if (manualPrice <= 0 && mtu > 0 && qty > 0) {
-        pricePerKgUsdVal = round2(((mtu * gradeFrac) - tc) / 10.0);
-        pricePerKgRwfVal = round2(pricePerKgUsdVal * exRate);
+        pricePerKgUsdVal = ((mtu * gradeFrac) - tc) / 10.0;
+        pricePerKgRwfVal = pricePerKgUsdVal * exRate;
         if (purchaseAmountInCurrencyInput) {
           purchaseAmountInCurrencyInput.value = pCode === 'RWF' ? pricePerKgRwfVal.toFixed(2) : pricePerKgUsdVal.toFixed(2);
         }
       } else {
         if (pCode === 'RWF') {
           pricePerKgRwfVal = manualPrice;
-          pricePerKgUsdVal = round2(exRate > 0 ? manualPrice / exRate : 0.0);
+          pricePerKgUsdVal = exRate > 0 ? manualPrice / exRate : 0.0;
         } else {
           pricePerKgUsdVal = manualPrice;
-          pricePerKgRwfVal = round2(manualPrice * exRate);
+          pricePerKgRwfVal = manualPrice * exRate;
         }
       }
     } else {
-      pricePerKgUsdVal = round2(qty > 0 && mtu > 0 ? ((mtu * gradeFrac) - tc) / 10.0 : 0.0);
-      pricePerKgRwfVal = round2(pricePerKgUsdVal * exRate);
+      pricePerKgUsdVal = qty > 0 && mtu > 0 ? ((mtu * gradeFrac) - tc) / 10.0 : 0.0;
+      pricePerKgRwfVal = pricePerKgUsdVal * exRate;
       
       if (purchaseAmountInCurrencyInput) {
         purchaseAmountInCurrencyInput.value = pCode === 'RWF' ? pricePerKgRwfVal.toFixed(2) : pricePerKgUsdVal.toFixed(2);
       }
     }
 
-    var pvUsd = round2(pricePerKgUsdVal * qty);
-    var pvRwf = round2(pvUsd * exRate);
+    var pvUsd = pricePerKgUsdVal * qty;
+    var pvRwf = pvUsd * exRate;
 
-    var defaultTaxRra = round2((method === 'manual' && rmb <= 0) ? (pvUsd * rraRate) : (qty * gradeFrac * (rmb / 10.0) * rraRate));
-    var defaultTaxRma = round2(exRate > 0 ? (qty * rmaRwf) / exRate : 0.0);
-    var defaultTaxInko = round2(exRate > 0 ? (qty * inkoRwf) / exRate : 0.0);
-    var defaultProdCharges = round2(qty * prodRate);
-    var defaultNetPaid = round2(pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges);
-    var fluc = round2(rmb - mtu);
+    var defaultTaxRra = (method === 'manual' && rmb <= 0) ? (pvUsd * rraRate) : (qty * gradeFrac * (rmb / 10.0) * rraRate);
+    var defaultTaxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
+    var defaultTaxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
+    var defaultProdCharges = qty * prodRate;
+    var defaultNetPaid = pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges;
+    var fluc = rmb - mtu;
 
     function getValOrSet(id, defVal) {
       var el = document.getElementById(id);
-      if (!el) return round2(defVal);
+      if (!el) return defVal;
       if (method === 'manual' && el.dataset.userEdited === 'true' && el.value !== '') {
         var v = parseFloat(el.value);
-        return isNaN(v) ? round2(defVal) : round2(v);
+        return isNaN(v) ? defVal : v;
       }
-      el.value = round2(defVal).toFixed(2);
-      return round2(defVal);
+      el.value = defVal.toFixed(2);
+      return defVal;
     }
 
     var taxRra = getValOrSet('w03_tax_rra', defaultTaxRra);
@@ -978,29 +978,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Update displays
     var pricePerKgEl = document.getElementById('w03_price_per_kg');
-    if (pricePerKgEl) pricePerKgEl.textContent = '$' + pricePerKgUsdVal.toFixed(2);
+    if (pricePerKgEl) pricePerKgEl.textContent = '$' + (Math.round(pricePerKgUsdVal * 100) / 100).toFixed(2);
     var pvUsdEl = document.getElementById('w03_purchase_value_usd');
-    if (pvUsdEl) pvUsdEl.textContent = '$' + pvUsd.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    if (pvUsdEl) pvUsdEl.textContent = '$' + (Math.round(pvUsd * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
     var pvRwfEl = document.getElementById('w03_purchase_value_rwf');
-    if (pvRwfEl) pvRwfEl.textContent = pvRwf.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' RWF';
+    if (pvRwfEl) pvRwfEl.textContent = (Math.round(pvRwf * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' RWF';
 
     // Store into shared hidden fields for form submission
     function sh(id, val) { var el = document.getElementById(id); if (el) el.value = val; }
-    sh('pricePerKgUsd', pricePerKgUsdVal.toFixed(2));
-    sh('pricePerKgRwf', pricePerKgRwfVal.toFixed(2));
-    sh('sharedPurchaseValueUsd', pvUsd.toFixed(2));
-    sh('sharedPurchaseValueRwf', pvRwf.toFixed(2));
-    sh('sharedTaxRra', taxRra.toFixed(2));
-    sh('sharedTaxRma', taxRma.toFixed(2));
-    sh('sharedTaxInkomane', taxInko.toFixed(2));
-    sh('sharedNetPaid', netPaid.toFixed(2));
-    sh('sharedProductionCharges', prodChargesTotal.toFixed(2));
-    sh('sharedLmePrice', rmb.toFixed(2));
-    sh('sharedFluc', fluc.toFixed(2));
-    sh('sharedTcCharges', tc.toFixed(2));
-    sh('sharedLmePaid', mtu.toFixed(2));
-    sh('sharedProductionChargesPerKg', prodRate.toFixed(2));
-    var h = document.getElementById('w03_prod_charges_per_kg_hidden'); if (h) h.value = prodRate.toFixed(2);
+    sh('pricePerKgUsd', (Math.round(pricePerKgUsdVal * 100) / 100).toFixed(2));
+    sh('pricePerKgRwf', (Math.round(pricePerKgRwfVal * 100) / 100).toFixed(2));
+    sh('sharedPurchaseValueUsd', (Math.round(pvUsd * 100) / 100).toFixed(2));
+    sh('sharedPurchaseValueRwf', (Math.round(pvRwf * 100) / 100).toFixed(2));
+    sh('sharedTaxRra', (Math.round(taxRra * 100) / 100).toFixed(2));
+    sh('sharedTaxRma', (Math.round(taxRma * 100) / 100).toFixed(2));
+    sh('sharedTaxInkomane', (Math.round(taxInko * 100) / 100).toFixed(2));
+    sh('sharedNetPaid', (Math.round(netPaid * 100) / 100).toFixed(2));
+    sh('sharedProductionCharges', (Math.round(prodChargesTotal * 100) / 100).toFixed(2));
+    sh('sharedLmePrice', (Math.round(rmb * 100) / 100).toFixed(2));
+    sh('sharedFluc', (Math.round(fluc * 100) / 100).toFixed(2));
+    sh('sharedTcCharges', (Math.round(tc * 100) / 100).toFixed(2));
+    sh('sharedLmePaid', (Math.round(mtu * 100) / 100).toFixed(2));
+    sh('sharedProductionChargesPerKg', prodRate.toFixed(4));
+    var h = document.getElementById('w03_prod_charges_per_kg_hidden'); if (h) h.value = prodRate.toFixed(4);
 
     // Summary
     updatePricingSummary(qty, pricePerKgUsdVal, pvUsd, pvRwf, taxRra + taxRma + taxInko + prodChargesTotal, netPaid);
@@ -1010,11 +1010,11 @@ document.addEventListener("DOMContentLoaded", function () {
     var el = document.getElementById('pricingSummaryPreview');
     if (!el) return;
     el.innerHTML =
-      '<div class="summary-row"><span>Quantity:</span><span class="summary-val-usd">' + round2(qty).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' kg</span></div>' +
-      '<div class="summary-row"><span>Unit Price:</span><span class="summary-val-usd">$' + round2(pricePerKg).toFixed(2) + '</span></div>' +
-      '<div class="summary-row"><span>Purchase Value:</span><span class="summary-val-usd">$' + round2(pvUsd).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' <span class="summary-val-rwf">(' + round2(pvRwf).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' RWF)</span></span></div>' +
-      '<div class="summary-row"><span>Total Deductions/Taxes:</span><span class="summary-val-usd" style="color:var(--red)">-$' + round2(totalDeductions).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>' +
-      '<div class="summary-row"><span>Net Payable Amount:</span><span class="summary-val-usd" style="color:var(--green)">$' + round2(netPaid).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+      '<div class="summary-row"><span>Quantity:</span><span class="summary-val-usd">' + (Math.round(qty * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' kg</span></div>' +
+      '<div class="summary-row"><span>Unit Price:</span><span class="summary-val-usd">$' + (Math.round(pricePerKg * 100) / 100).toFixed(2) + '</span></div>' +
+      '<div class="summary-row"><span>Purchase Value:</span><span class="summary-val-usd">$' + (Math.round(pvUsd * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' <span class="summary-val-rwf">(' + (Math.round(pvRwf * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' RWF)</span></span></div>' +
+      '<div class="summary-row"><span>Total Deductions/Taxes:</span><span class="summary-val-usd" style="color:var(--red)">-$' + (Math.round(totalDeductions * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>' +
+      '<div class="summary-row"><span>Net Payable Amount:</span><span class="summary-val-usd" style="color:var(--green)">$' + (Math.round(netPaid * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
   }
 
   // Wire manual entry inputs to flag user edit and re-trigger calculation
