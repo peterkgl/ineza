@@ -94,13 +94,14 @@ function formula_tax_rra($conn, $lme_price, $grade_pct, $quantity_kg, $purchase_
     $rra_rate = (float)getSetting($conn, 'tax_rate_rra', '3.0') / 100.0;
     
     if ($product_type === 'tin') {
-        $lme_paid = $lme_price - $fluc;
-        if ($lme_paid <= 0 && isset($_POST['lme_paid']) && (float)$_POST['lme_paid'] > 0) {
-            $lme_paid = (float)$_POST['lme_paid'];
+        // RRA calculation for SN (tin) is based on Full LME ($lme_price) per Excel sheet Purchase Logs_SN
+        $full_lme = $lme_price;
+        if ($full_lme <= 0 && isset($_POST['lme_price']) && (float)$_POST['lme_price'] > 0) {
+            $full_lme = (float)$_POST['lme_price'];
         }
-        if ($lme_paid > 0) {
+        if ($full_lme > 0) {
             $grade_fraction = $grade_pct / 100.0;
-            $tax = (($lme_paid * $grade_fraction) - 800.0) / 1000.0 * $quantity_kg * $rra_rate;
+            $tax = (($full_lme * $grade_fraction) - 800.0) / 1000.0 * $quantity_kg * $rra_rate;
             return max(0.0, $tax);
         } else {
             return $purchase_value_usd * $rra_rate;
@@ -185,18 +186,24 @@ function calculatePurchaseMetrics($conn, $quantity_kg, $exchange_rate, $lme_pric
     $tax_inkomane = formula_tax_inkomane($conn, $quantity_kg, $exchange_rate, $product_type);
     $prod_charges = formula_production_charges($quantity_kg, $production_charges_per_kg);
     
-    $net_supplier = formula_net_paid_supplier($val_usd, $tax_rra, $tax_rma, $tax_inkomane, $prod_charges);
+    $val_usd_rounded = round($val_usd, 2);
+    $tax_rra_rounded = round($tax_rra, 2);
+    $tax_rma_rounded = round($tax_rma, 2);
+    $tax_inkomane_rounded = round($tax_inkomane, 2);
+    $prod_charges_rounded = round($prod_charges, 2);
+
+    $net_supplier_rounded = round($val_usd_rounded - $tax_rra_rounded - $tax_rma_rounded - $tax_inkomane_rounded - $prod_charges_rounded, 2);
 
     return [
         'price_per_kg_usd' => round($price_usd, 2),
         'price_per_kg_rwf' => round($price_rwf, 2),
-        'purchase_value_usd' => round($val_usd, 2),
+        'purchase_value_usd' => $val_usd_rounded,
         'purchase_value_rwf' => round($val_rwf, 2),
-        'tax_rra' => round($tax_rra, 2),
-        'tax_rma' => round($tax_rma, 2),
-        'tax_inkomane' => round($tax_inkomane, 2),
-        'production_charges' => round($prod_charges, 2),
-        'net_paid_supplier_usd' => round($net_supplier, 2),
+        'tax_rra' => $tax_rra_rounded,
+        'tax_rma' => $tax_rma_rounded,
+        'tax_inkomane' => $tax_inkomane_rounded,
+        'production_charges' => $prod_charges_rounded,
+        'net_paid_supplier_usd' => $net_supplier_rounded,
         'lme_paid' => round($lme_price - $fluc, 2)
     ];
 }

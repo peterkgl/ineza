@@ -717,12 +717,20 @@ document.addEventListener("DOMContentLoaded", function () {
     var pvUsd = pricePerKgUsdVal * qty;
     var pvRwf = pvUsd * exRate;
 
-    var rraBase = (lmePaid * gradeFrac) - 800.0;
-    var defaultTaxRra = (method === 'manual' && lmePaid <= 0) ? (pvUsd * rraRate) : (rraBase > 0 ? (rraBase / 1000.0) * qty * rraRate : 0.0);
+    // RRA is calculated based on Full LME (lme) per Excel sheet Purchase Logs_SN
+    var rraBase = (lme * gradeFrac) - 800.0;
+    var defaultTaxRra = (method === 'manual' && lme <= 0) ? (pvUsd * rraRate) : (rraBase > 0 ? (rraBase / 1000.0) * qty * rraRate : 0.0);
     var defaultTaxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
     var defaultTaxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
     var defaultProdCharges = qty * prodRate;
-    var defaultNetPaid = pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges;
+
+    var pvUsdRounded = Math.round(pvUsd * 100) / 100;
+    var taxRraRounded = Math.round(defaultTaxRra * 100) / 100;
+    var taxRmaRounded = Math.round(defaultTaxRma * 100) / 100;
+    var taxInkoRounded = Math.round(defaultTaxInko * 100) / 100;
+    var prodChargesRounded = Math.round(defaultProdCharges * 100) / 100;
+
+    var defaultNetPaid = pvUsdRounded - taxRraRounded - taxRmaRounded - taxInkoRounded - prodChargesRounded;
 
     function getValOrSet(id, defVal) {
       var el = document.getElementById(id);
