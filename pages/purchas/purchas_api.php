@@ -119,7 +119,8 @@ function formula_tax_rra($conn, $lme_price, $grade_pct, $quantity_kg, $purchase_
             return $purchase_value_usd * $rra_rate;
         }
     } else { // tantalum / coltan
-        return $purchase_value_usd * $rra_rate;
+        // RRA tax for Ta (Tantalum/Coltan) is 3.0% per Excel sheet Purchase Logs_Ta (formula P*3%)
+        return $purchase_value_usd * 0.03;
     }
 }
 
@@ -653,11 +654,17 @@ switch ($action) {
             $price_per_kg_rwf = $price_per_kg_usd * $exchange_rate;
             $purchase_value_usd = isset($_POST['purchase_value_usd']) && $_POST['purchase_value_usd'] !== '' ? (float)$_POST['purchase_value_usd'] : ($price_per_kg_usd * $quantity_kg);
             $purchase_value_rwf = isset($_POST['purchase_value_rwf']) && $_POST['purchase_value_rwf'] !== '' ? (float)$_POST['purchase_value_rwf'] : ($price_per_kg_rwf * $quantity_kg);
-            $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : 0.0;
-            $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : 0.0;
-            $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : 0.0;
+            $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : formula_tax_rra($conn, $lme_price, $grade_pct, $quantity_kg, $purchase_value_usd, $product_type, $fluc);
+            $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : formula_tax_rma($conn, $quantity_kg, $exchange_rate, $product_type);
+            $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : formula_tax_inkomane($conn, $quantity_kg, $exchange_rate, $product_type);
             $production_charges = isset($_POST['production_charges']) && $_POST['production_charges'] !== '' ? (float)$_POST['production_charges'] : ($quantity_kg * (float)$production_charges_per_kg);
-            $net_paid_supplier_usd = isset($_POST['net_paid_supplier_usd']) && $_POST['net_paid_supplier_usd'] !== '' ? (float)$_POST['net_paid_supplier_usd'] : ($purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges);
+            
+            $purchase_value_usd = round($purchase_value_usd, 2);
+            $tax_rra = round($tax_rra, 2);
+            $tax_rma = round($tax_rma, 2);
+            $tax_inkomane = round($tax_inkomane, 2);
+            $production_charges = round($production_charges, 2);
+            $net_paid_supplier_usd = isset($_POST['net_paid_supplier_usd']) && $_POST['net_paid_supplier_usd'] !== '' ? (float)$_POST['net_paid_supplier_usd'] : round($purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges, 2);
             if ($lme_price !== null && $fluc !== null) {
                 $lme_paid = $lme_price - $fluc;
             } elseif (isset($_POST['lme_paid']) && $_POST['lme_paid'] !== '') {
@@ -1289,11 +1296,17 @@ switch ($action) {
             $price_per_kg_rwf = $price_per_kg_usd * $exchange_rate;
             $purchase_value_usd = isset($_POST['purchase_value_usd']) && $_POST['purchase_value_usd'] !== '' ? (float)$_POST['purchase_value_usd'] : ($price_per_kg_usd * $quantity_kg);
             $purchase_value_rwf = isset($_POST['purchase_value_rwf']) && $_POST['purchase_value_rwf'] !== '' ? (float)$_POST['purchase_value_rwf'] : ($price_per_kg_rwf * $quantity_kg);
-            $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : 0.0;
-            $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : 0.0;
-            $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : 0.0;
+            $tax_rra = isset($_POST['tax_rra']) && $_POST['tax_rra'] !== '' ? (float)$_POST['tax_rra'] : formula_tax_rra($conn, $lme_price, $grade_pct, $quantity_kg, $purchase_value_usd, $product_type, $fluc);
+            $tax_rma = isset($_POST['tax_rma']) && $_POST['tax_rma'] !== '' ? (float)$_POST['tax_rma'] : formula_tax_rma($conn, $quantity_kg, $exchange_rate, $product_type);
+            $tax_inkomane = isset($_POST['tax_inkomane']) && $_POST['tax_inkomane'] !== '' ? (float)$_POST['tax_inkomane'] : formula_tax_inkomane($conn, $quantity_kg, $exchange_rate, $product_type);
             $production_charges = isset($_POST['production_charges']) && $_POST['production_charges'] !== '' ? (float)$_POST['production_charges'] : ($quantity_kg * (float)$production_charges_per_kg);
-            $net_paid_supplier_usd = isset($_POST['net_paid_supplier_usd']) && $_POST['net_paid_supplier_usd'] !== '' ? (float)$_POST['net_paid_supplier_usd'] : ($purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges);
+            
+            $purchase_value_usd = round($purchase_value_usd, 2);
+            $tax_rra = round($tax_rra, 2);
+            $tax_rma = round($tax_rma, 2);
+            $tax_inkomane = round($tax_inkomane, 2);
+            $production_charges = round($production_charges, 2);
+            $net_paid_supplier_usd = isset($_POST['net_paid_supplier_usd']) && $_POST['net_paid_supplier_usd'] !== '' ? (float)$_POST['net_paid_supplier_usd'] : round($purchase_value_usd - $tax_rra - $tax_rma - $tax_inkomane - $production_charges, 2);
             if ($lme_price !== null && $fluc !== null) {
                 $lme_paid = $lme_price - $fluc;
             } elseif (isset($_POST['lme_paid']) && $_POST['lme_paid'] !== '') {

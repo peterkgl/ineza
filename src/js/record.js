@@ -783,7 +783,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // =========================================================================
   window.calcTA = function() {
     var settings = window.taxSettings || {};
-    var rraRate = (settings['tax_rate_rra'] || 3.0) / 100.0;
+    var rraRate = 0.03; // RRA 3.0% for Ta per Purchase Logs_Ta
     var rmaRwf = settings['tax_rate_rma_coltan'] || 125.0;
     var inkoRwf = settings['tax_rate_inkomane_coltan'] || 40.0;
 
@@ -838,7 +838,14 @@ document.addEventListener("DOMContentLoaded", function () {
     var defaultTaxRma = exRate > 0 ? (qty * rmaRwf) / exRate : 0.0;
     var defaultTaxInko = exRate > 0 ? (qty * inkoRwf) / exRate : 0.0;
     var defaultProdCharges = qty * prodRate;
-    var defaultNetPaid = pvUsd - defaultTaxRra - defaultTaxRma - defaultTaxInko - defaultProdCharges;
+
+    var pvUsdRounded = Math.round(pvUsd * 100) / 100;
+    var taxRraRounded = Math.round(defaultTaxRra * 100) / 100;
+    var taxRmaRounded = Math.round(defaultTaxRma * 100) / 100;
+    var taxInkoRounded = Math.round(defaultTaxInko * 100) / 100;
+    var prodChargesRounded = Math.round(defaultProdCharges * 100) / 100;
+
+    var defaultNetPaid = pvUsdRounded - taxRraRounded - taxRmaRounded - taxInkoRounded - prodChargesRounded;
 
     function getValOrSet(id, defVal) {
       var el = document.getElementById(id);

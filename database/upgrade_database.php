@@ -130,10 +130,64 @@ if ($permId) {
         } else {
             echo "Failed to attach '$permCode' to Admin role: " . mysqli_error($conn) . "\n";
         }
-    } else {
-        echo "Permission '$permCode' is already attached to Admin role.\n";
     }
+}
+
+// 5. Ensure bank_statement_balances table exists and has account_id
+$bankStmtBalSql = "
+CREATE TABLE IF NOT EXISTS `bank_statement_balances` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `account_id` int(11) DEFAULT NULL,
+  `report_slug` varchar(100) NOT NULL,
+  `as_of_date` date NOT NULL,
+  `balance` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_slug_date` (`report_slug`,`as_of_date`),
+  KEY `idx_account_date` (`account_id`,`as_of_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+";
+if (mysqli_query($conn, $bankStmtBalSql)) {
+    echo "Table 'bank_statement_balances' verified/created successfully.\n";
+} else {
+    echo "Error creating table 'bank_statement_balances': " . mysqli_error($conn) . "\n";
+}
+
+$checkColStmt = mysqli_query($conn, "SHOW COLUMNS FROM `bank_statement_balances` LIKE 'account_id'");
+if ($checkColStmt && mysqli_num_rows($checkColStmt) === 0) {
+    $alterStmt = "ALTER TABLE `bank_statement_balances` ADD `account_id` int(11) DEFAULT NULL AFTER `id`";
+    if (mysqli_query($conn, $alterStmt)) {
+        echo "Added column 'account_id' to table 'bank_statement_balances'.\n";
+    } else {
+        echo "Error adding column 'account_id': " . mysqli_error($conn) . "\n";
+    }
+}
+
+// 6. Create bank_balance_history table for balance movements history
+$balanceHistorySql = "
+CREATE TABLE IF NOT EXISTS `bank_balance_history` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `account_id` int(11) NOT NULL,
+  `report_slug` varchar(100) NOT NULL,
+  `as_of_date` date NOT NULL,
+  `old_balance` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `new_balance` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `change_amount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `notes` varchar(255) DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_hist_account_date` (`account_id`,`as_of_date`),
+  KEY `idx_hist_slug` (`report_slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+";
+if (mysqli_query($conn, $balanceHistorySql)) {
+    echo "Table 'bank_balance_history' verified/created successfully.\n";
+} else {
+    echo "Error creating table 'bank_balance_history': " . mysqli_error($conn) . "\n";
 }
 
 echo "Database upgrade completed.\n";
 ?>
+

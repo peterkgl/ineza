@@ -570,7 +570,7 @@ if ($id > 0) {
             <div style="font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:10px;">Government Taxes Retained</div>
             <div class="form-grid-3">
               <div class="form-group">
-                <label for="ta_tax_rra">RRA <?php echo number_format($taxSettings['tax_rate_rra'], 1); ?>% (USD)</label>
+                <label for="ta_tax_rra">RRA 3.0% (USD)</label>
                 <input type="number" id="ta_tax_rra" class="form-control" placeholder="0.00" step="0.01" readonly>
               </div>
               <div class="form-group">

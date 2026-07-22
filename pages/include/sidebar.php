@@ -114,12 +114,17 @@ $showTrialBalance = hasPermission($conn, $sidebarUserId, 'view_trial_balance');
 $showAccountLedger = hasPermission($conn, $sidebarUserId, 'view_account_ledger');
 
 // Individual Finance Reports
+$showBanks = hasPermission($conn, $sidebarUserId, 'view_banks') || hasPermission($conn, $sidebarUserId, 'view_cash') || hasPermission($conn, $sidebarUserId, 'view_bank_reconciliation');
 $showCash = hasPermission($conn, $sidebarUserId, 'view_cash');
 $showBalanceSheet = hasPermission($conn, $sidebarUserId, 'view_balance_sheet');
 $showEquityReport = hasPermission($conn, $sidebarUserId, 'view_equity_report');
 $showComprehensiveIncome = hasPermission($conn, $sidebarUserId, 'view_comprehensive_income');
 $showStatementOfCashFlow = hasPermission($conn, $sidebarUserId, 'view_statement_of_cash_flow');
 $showNote = hasPermission($conn, $sidebarUserId, 'view_note');
+$showBankReconciliation = hasPermission($conn, $sidebarUserId, 'view_bank_reconciliation') || 
+                          hasPermission($conn, $sidebarUserId, 'manage_bank_reconciliation') ||
+                          hasPermission($conn, $sidebarUserId, 'view_report_bank_recon_rwf') ||
+                          hasPermission($conn, $sidebarUserId, 'view_report_bank_recon_usd');
 
 // Individual Mining Reports
 $showRepBankReconUsd = hasPermission($conn, $sidebarUserId, 'view_report_bank_recon_usd');
@@ -228,9 +233,23 @@ $showSettings = hasPermission($conn, $sidebarUserId, 'manage_settings');
     <?php endif; ?>
   <?php endif; ?>
 
-  <?php if ($showCash || $showCurrencies || $showBalanceSheet || $showEquityReport || $showComprehensiveIncome || $showStatementOfCashFlow || $showNote): ?>
+  <?php if ($showBanks || $showCash || $showCurrencies || $showBalanceSheet || $showEquityReport || $showComprehensiveIncome || $showStatementOfCashFlow || $showNote || $showBankReconciliation): ?>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Finance</div>
+    <?php if ($showBanks): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], '/banks/') !== false || strpos($_SERVER['SCRIPT_NAME'], 'banks') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>banks/index" id="nav-banks">
+        <svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+        Banks
+        <span class="nav-badge green">New</span>
+      </a>
+    <?php endif; ?>
+    <?php if ($showBankReconciliation): ?>
+      <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'bank_reconciliation') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>bank_reconciliation/index" id="nav-bank-reconciliation">
+        <svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+        Bank Reconciliation
+        <span class="nav-badge blue">Module</span>
+      </a>
+    <?php endif; ?>
     <?php if ($showCash): ?>
       <a class="nav-item <?php echo (strpos($_SERVER['SCRIPT_NAME'], 'cash') !== false) ? 'active' : ''; ?>" href="<?php echo $prefix_to_pages; ?>cash/index" id="nav-cash">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
