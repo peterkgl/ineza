@@ -99,7 +99,7 @@ $num_code = (int)$acct_code;
 $movements_query = "
     SELECT jel.id, jel.journal_entry_id, jel.debit, jel.credit, jel.description as line_desc, 
            jel.is_reconciled, jel.reconciled_at, 
-           je.entry_date, je.entry_number, je.description as je_desc, je.reference, je.created_at
+           je.entry_date, je.journal_no as entry_number, je.description as je_desc, je.journal_no as reference, je.created_at
     FROM journal_entry_lines jel
     JOIN journal_entries je ON jel.journal_entry_id = je.id
     WHERE (jel.account_id = $current_acct_id OR jel.account_id = $num_code OR CAST(jel.account_id AS CHAR) = '$acct_code_esc')

@@ -113,8 +113,8 @@ $txQuery = "
         jel.description AS line_desc,
         jel.is_reconciled,
         je.entry_date,
-        je.entry_number,
-        je.reference,
+        je.journal_no AS entry_number,
+        je.journal_no AS reference,
         je.description AS journal_desc,
         je.created_at
     FROM journal_entry_lines jel
